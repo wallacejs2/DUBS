@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { db } from './db.ts';
 import { 
@@ -16,6 +17,10 @@ export function useEnterpriseGroups() {
       ...g,
       dealershipCount: dealerships.filter(d => d.enterprise_group_id === g.id).length
     }));
+    
+    // Sort alphabetically
+    enriched.sort((a, b) => a.name.localeCompare(b.name));
+    
     setGroups(enriched);
     setLoading(false);
   }, []);
@@ -50,6 +55,10 @@ export function useDealerships(filters?: { search?: string; status?: string; gro
     if (filters?.group) {
       data = data.filter(d => d.enterprise_group_id === filters.group);
     }
+
+    // Sort alphabetically
+    data.sort((a, b) => a.name.localeCompare(b.name));
+
     setDealerships(data);
     setLoading(false);
   }, [filters]);
