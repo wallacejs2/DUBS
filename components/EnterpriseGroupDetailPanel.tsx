@@ -139,6 +139,36 @@ const EnterpriseGroupDetailPanel: React.FC<EnterpriseGroupDetailPanelProps> = ({
         <div className="flex-1 overflow-y-auto p-8 bg-white custom-scrollbar">
           <div className="animate-in fade-in duration-500 space-y-8">
             
+            {/* IDs Section */}
+            <div className="grid grid-cols-2 gap-4">
+               <div>
+                  <Label>PP Sys ID</Label>
+                  {isEditing ? (
+                     <input 
+                       value={formData.pp_sys_id || ''} 
+                       onChange={(e) => setFormData({...formData, pp_sys_id: e.target.value})}
+                       className="w-full px-2 py-1 text-[12px] border border-slate-200 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white font-normal font-mono"
+                       placeholder="PP-###"
+                     />
+                  ) : (
+                     <div className="text-base font-medium text-slate-800 font-mono">{group.pp_sys_id || '---'}</div>
+                  )}
+               </div>
+               <div>
+                  <Label>ERA ID</Label>
+                  {isEditing ? (
+                     <input 
+                       value={formData.era_system_id || ''} 
+                       onChange={(e) => setFormData({...formData, era_system_id: e.target.value})}
+                       className="w-full px-2 py-1 text-[12px] border border-slate-200 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white font-normal font-mono"
+                       placeholder="ERA-###"
+                     />
+                  ) : (
+                     <div className="text-base font-medium text-slate-800 font-mono">{group.era_system_id || '---'}</div>
+                  )}
+               </div>
+            </div>
+
             {/* Stats Compact */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
               <div>

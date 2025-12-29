@@ -1,16 +1,18 @@
+
 import React, { useState } from 'react';
 import { 
   Building2, Users, ClipboardCheck, LayoutDashboard, 
-  Menu, Bell, Search, LogOut 
+  Menu, Search 
 } from 'lucide-react';
 import DealershipsPage from './pages/DealershipsPage.tsx';
 import EnterpriseGroupsPage from './pages/EnterpriseGroupsPage.tsx';
 import QAPage from './pages/QAPage.tsx';
+import DashboardPage from './pages/DashboardPage.tsx';
 
 type NavPage = 'dealerships' | 'groups' | 'qa' | 'dashboard';
 
 const App: React.FC = () => {
-  const [activePage, setActivePage] = useState<NavPage>('dealerships');
+  const [activePage, setActivePage] = useState<NavPage>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   const navItems = [
@@ -25,15 +27,8 @@ const App: React.FC = () => {
       case 'dealerships': return <DealershipsPage />;
       case 'groups': return <EnterpriseGroupsPage />;
       case 'qa': return <QAPage />;
-      case 'dashboard': return (
-        <div className="p-8 flex items-center justify-center h-full">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-slate-800 mb-2">Welcome to Curator</h1>
-            <p className="text-xs text-slate-500">Select a section from the sidebar to manage your business operations.</p>
-          </div>
-        </div>
-      );
-      default: return <DealershipsPage />;
+      case 'dashboard': return <DashboardPage />;
+      default: return <DashboardPage />;
     }
   };
 
@@ -68,13 +63,6 @@ const App: React.FC = () => {
             </button>
           ))}
         </nav>
-
-        <div className="p-3 border-t border-slate-100">
-          <button className={`w-full flex items-center gap-3 px-3 py-2 text-slate-500 hover:bg-red-50 hover:text-red-600 rounded-lg transition-all`}>
-            <LogOut size={18} />
-            {isSidebarOpen && <span className="text-[13px]">Sign Out</span>}
-          </button>
-        </div>
       </aside>
 
       {/* Main Content */}
@@ -94,24 +82,6 @@ const App: React.FC = () => {
                 type="text" 
                 placeholder="Global search..." 
                 className="pl-9 pr-4 py-1.5 bg-slate-100 border-none rounded-full w-56 text-[12px] focus:ring-1 focus:ring-indigo-500 transition-all"
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <button className="relative p-1.5 text-slate-400 hover:text-indigo-600">
-              <Bell size={18} />
-              <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-red-500 rounded-full border border-white"></span>
-            </button>
-            <div className="flex items-center gap-2.5 pl-4 border-l border-slate-200">
-              <div className="text-right">
-                <p className="text-[13px] font-semibold text-slate-800 leading-tight">Admin User</p>
-                <p className="text-[10px] text-slate-400">System Manager</p>
-              </div>
-              <img 
-                src="https://picsum.photos/seed/admin/40/40" 
-                className="w-8 h-8 rounded-full ring-2 ring-white shadow-sm"
-                alt="Profile" 
               />
             </div>
           </div>

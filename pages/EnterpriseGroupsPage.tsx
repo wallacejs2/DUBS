@@ -120,6 +120,27 @@ const EnterpriseGroupsPage: React.FC = () => {
                   placeholder="e.g. Hendrick Automotive"
                 />
               </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1 block">PP Sys ID</label>
+                  <input 
+                    value={editingGroup?.pp_sys_id || ''} 
+                    onChange={e => setEditingGroup({...editingGroup, pp_sys_id: e.target.value})}
+                    className="w-full px-3 py-2 text-xs bg-slate-50 rounded-lg border border-slate-200 outline-none focus:ring-1 focus:ring-indigo-500 transition-all font-normal"
+                    placeholder="PP-###"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1 block">ERA ID</label>
+                  <input 
+                    value={editingGroup?.era_system_id || ''} 
+                    onChange={e => setEditingGroup({...editingGroup, era_system_id: e.target.value})}
+                    className="w-full px-3 py-2 text-xs bg-slate-50 rounded-lg border border-slate-200 outline-none focus:ring-1 focus:ring-indigo-500 transition-all font-normal"
+                    placeholder="ERA-###"
+                  />
+                </div>
+              </div>
+
               <div className="flex gap-3 pt-4">
                 <button 
                   type="button" 

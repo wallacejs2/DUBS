@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { 
   X, Trash2, Edit3, Save, RefreshCw, Plus, Minus, Check, ArrowLeft
@@ -74,7 +75,11 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
   const [formData, setFormData] = useState<DealershipWithRelations>(dealership);
   const [groups, setGroups] = useState(initialGroups);
   const [isAddingGroup, setIsAddingGroup] = useState(false);
+  
+  // New Group Inline State
   const [newGroupName, setNewGroupName] = useState('');
+  const [newGroupPP, setNewGroupPP] = useState('');
+  const [newGroupERA, setNewGroupERA] = useState('');
 
   useEffect(() => {
     // When dealership changes, update form data.
@@ -182,12 +187,49 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
   };
   // ------------------------------------------
 
+  const handleGroupSelect = (val: string) => {
+     updateField('enterprise_group_id', val);
+     if (val) {
+        const selectedGroup = groups.find(g => g.id === val);
+        if (selectedGroup) {
+           setFormData(prev => ({
+              ...prev,
+              pp_sys_id: selectedGroup.pp_sys_id || prev.pp_sys_id,
+              era_system_id: selectedGroup.era_system_id || prev.era_system_id
+           }));
+        }
+     }
+  };
+
   const handleAddGroup = () => {
     if (newGroupName.trim()) {
-      const id = db.upsertEnterpriseGroup({ name: newGroupName, description: 'Added via Detail Panel' });
-      setGroups([...groups, { id, name: newGroupName, description: '', created_at: new Date().toISOString() }]);
+      const newGroupData = {
+         name: newGroupName,
+         description: 'Added via Detail Panel',
+         pp_sys_id: newGroupPP,
+         era_system_id: newGroupERA
+      };
+      
+      const id = db.upsertEnterpriseGroup(newGroupData);
+      
+      const newGroup = {
+         id,
+         ...newGroupData,
+         created_at: new Date().toISOString()
+      };
+      
+      setGroups([...groups, newGroup]);
       updateField('enterprise_group_id', id);
+      
+      setFormData(prev => ({
+         ...prev,
+         pp_sys_id: newGroupPP || prev.pp_sys_id,
+         era_system_id: newGroupERA || prev.era_system_id
+      }));
+
       setNewGroupName('');
+      setNewGroupPP('');
+      setNewGroupERA('');
       setIsAddingGroup(false);
     }
   };
@@ -317,27 +359,38 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
             <h3 className="text-[11px] font-bold text-slate-800 uppercase tracking-widest mt-6">Account Details</h3>
 
             <div className="grid grid-cols-3 gap-6">
-               <div>
+               <div className="min-w-0">
                   <Label>Enterprise Group</Label>
                   {isEditing ? (
                     <div className="flex flex-col gap-2">
-                      <Select 
-                        value={formData.enterprise_group_id}
-                        onChange={(v) => updateField('enterprise_group_id', v)}
-                        options={[
-                          { label: 'Single (Independent)', value: '' },
-                          ...groups.map(g => ({ label: g.name, value: g.id }))
-                        ]}
-                      />
-                      {isAddingGroup ? (
-                        <div className="flex gap-1 animate-in slide-in-from-top">
-                           <Input value={newGroupName} onChange={(v) => setNewGroupName(v)} placeholder="Group Name" />
-                           <button onClick={handleAddGroup} className="p-1 bg-indigo-600 text-white rounded"><Check size={12} /></button>
-                           <button onClick={() => setIsAddingGroup(false)} className="p-1 bg-slate-200 text-slate-500 rounded"><X size={12} /></button>
-                        </div>
-                      ) : (
-                        <button onClick={() => setIsAddingGroup(true)} className="text-[9px] font-bold text-indigo-600 text-left hover:underline">+ Add New Group</button>
-                      )}
+                       {!isAddingGroup ? (
+                         <>
+                           <Select 
+                              value={formData.enterprise_group_id}
+                              onChange={handleGroupSelect}
+                              options={[
+                                { label: 'Single (Independent)', value: '' },
+                                ...groups.map(g => ({ label: g.name, value: g.id }))
+                              ]}
+                            />
+                            <button onClick={() => setIsAddingGroup(true)} className="text-[9px] font-bold text-indigo-600 text-left hover:underline">+ Add New Group</button>
+                         </>
+                       ) : (
+                         <div className="bg-indigo-50 p-2 rounded-lg border border-indigo-100 animate-in fade-in zoom-in-95">
+                            <div className="flex justify-between items-center mb-1">
+                               <span className="text-[9px] font-bold text-indigo-800">New Group</span>
+                               <button onClick={() => setIsAddingGroup(false)} className="text-indigo-400 hover:text-indigo-800"><X size={12} /></button>
+                            </div>
+                            <div className="space-y-1">
+                               <Input value={newGroupName} onChange={(v) => setNewGroupName(v)} placeholder="Name" />
+                               <div className="grid grid-cols-2 gap-1">
+                                  <Input value={newGroupPP} onChange={(v) => setNewGroupPP(v)} placeholder="PP ID" className="font-mono text-[10px]" />
+                                  <Input value={newGroupERA} onChange={(v) => setNewGroupERA(v)} placeholder="ERA ID" className="font-mono text-[10px]" />
+                               </div>
+                               <button onClick={handleAddGroup} className="w-full text-[9px] bg-indigo-600 text-white rounded py-1 mt-1 font-bold">Create</button>
+                            </div>
+                         </div>
+                       )}
                     </div>
                   ) : (
                      <DataValue value={dealership.enterprise_group?.name || 'Single (Independent)'} />

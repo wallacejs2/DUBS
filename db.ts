@@ -65,7 +65,9 @@ class CuratorLocalDB extends EventTarget {
       id: groupId,
       name: 'Penske Automotive Group',
       description: 'A leading international transportation services company.',
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
+      pp_sys_id: 'PP-100',
+      era_system_id: 'ERA-X82'
     }];
 
     const dealerId = crypto.randomUUID();

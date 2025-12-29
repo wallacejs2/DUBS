@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { X, Save, Plus, Trash2, Check, Minus } from 'lucide-react';
 import { 
@@ -23,7 +24,11 @@ const STATES = [
 const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, onCancel, groups: initialGroups }) => {
   const [groups, setGroups] = useState(initialGroups);
   const [isAddingGroup, setIsAddingGroup] = useState(false);
+  
+  // New Group Form State
   const [newGroupName, setNewGroupName] = useState('');
+  const [newGroupPP, setNewGroupPP] = useState('');
+  const [newGroupERA, setNewGroupERA] = useState('');
 
   const [formData, setFormData] = useState<Partial<DealershipWithRelations>>(initialData || {
     status: DealershipStatus.DMT_PENDING,
@@ -121,12 +126,54 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
   };
 
   // Group Logic
+  const handleGroupSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const groupId = e.target.value;
+    updateField('enterprise_group_id', groupId);
+    
+    // Auto-populate IDs from the selected group
+    if (groupId) {
+      const selectedGroup = groups.find(g => g.id === groupId);
+      if (selectedGroup) {
+        setFormData(prev => ({
+           ...prev,
+           pp_sys_id: selectedGroup.pp_sys_id || prev.pp_sys_id,
+           era_system_id: selectedGroup.era_system_id || prev.era_system_id
+        }));
+      }
+    }
+  };
+
   const handleAddGroup = () => {
     if (newGroupName.trim()) {
-      const id = db.upsertEnterpriseGroup({ name: newGroupName, description: 'Created via Dealership Form' });
-      setGroups([...groups, { id, name: newGroupName, description: '', created_at: new Date().toISOString() }]);
+      const newGroupData = {
+         name: newGroupName,
+         description: 'Created via Dealership Form',
+         pp_sys_id: newGroupPP,
+         era_system_id: newGroupERA
+      };
+      
+      const id = db.upsertEnterpriseGroup(newGroupData);
+      
+      const newGroup = { 
+         id, 
+         ...newGroupData, 
+         created_at: new Date().toISOString() 
+      };
+      
+      setGroups([...groups, newGroup]);
       updateField('enterprise_group_id', id);
+      
+      // Auto-populate dealership fields with the new group values
+      setFormData(prev => ({
+         ...prev,
+         pp_sys_id: newGroupPP || prev.pp_sys_id,
+         era_system_id: newGroupERA || prev.era_system_id
+      }));
+
+      // Reset
       setNewGroupName('');
+      setNewGroupPP('');
+      setNewGroupERA('');
       setIsAddingGroup(false);
     }
   };
@@ -232,35 +279,62 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="space-y-1">
                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Enterprise Group</label>
-                <div className="flex gap-2">
-                  <select 
-                    value={formData.enterprise_group_id || ''} 
-                    onChange={e => updateField('enterprise_group_id', e.target.value)}
-                    className="flex-1 px-3 py-2 text-xs rounded-lg border border-slate-200 focus:ring-1 focus:ring-indigo-500 outline-none font-normal"
-                  >
-                    <option value="">Single (Independent)</option>
-                    {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
-                  </select>
-                  {isAddingGroup ? (
-                    <div className="flex items-center gap-1 animate-in slide-in-from-right">
-                       <input 
-                         value={newGroupName}
-                         onChange={e => setNewGroupName(e.target.value)}
-                         placeholder="New Group Name"
-                         className="w-32 px-2 py-2 text-xs rounded-lg border border-indigo-200 outline-none"
-                         autoFocus
-                       />
-                       <button type="button" onClick={handleAddGroup} className="p-2 bg-indigo-600 text-white rounded-lg"><Check size={14} /></button>
-                       <button type="button" onClick={() => setIsAddingGroup(false)} className="p-2 bg-slate-100 text-slate-500 rounded-lg"><X size={14} /></button>
-                    </div>
+                <div className="flex gap-2 items-start">
+                  {!isAddingGroup ? (
+                    <>
+                       <select 
+                        value={formData.enterprise_group_id || ''} 
+                        onChange={handleGroupSelect}
+                        className="flex-1 px-3 py-2 text-xs rounded-lg border border-slate-200 focus:ring-1 focus:ring-indigo-500 outline-none font-normal"
+                      >
+                        <option value="">Single (Independent)</option>
+                        {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+                      </select>
+                      <button 
+                        type="button" 
+                        onClick={() => setIsAddingGroup(true)}
+                        className="px-3 py-2 bg-indigo-50 text-indigo-600 rounded-lg text-xs font-bold hover:bg-indigo-100 whitespace-nowrap"
+                      >
+                        + New
+                      </button>
+                    </>
                   ) : (
-                    <button 
-                      type="button" 
-                      onClick={() => setIsAddingGroup(true)}
-                      className="px-3 py-2 bg-indigo-50 text-indigo-600 rounded-lg text-xs font-bold hover:bg-indigo-100"
-                    >
-                      + Add
-                    </button>
+                    <div className="flex-1 p-3 bg-indigo-50 border border-indigo-100 rounded-xl animate-in fade-in zoom-in-95 duration-200">
+                       <div className="flex justify-between items-center mb-2">
+                          <span className="text-[10px] font-bold text-indigo-800">New Group</span>
+                          <button type="button" onClick={() => setIsAddingGroup(false)} className="text-indigo-400 hover:text-indigo-800"><X size={14}/></button>
+                       </div>
+                       <div className="space-y-2">
+                          <input 
+                            value={newGroupName}
+                            onChange={e => setNewGroupName(e.target.value)}
+                            placeholder="Group Name"
+                            className="w-full px-2 py-1.5 text-xs rounded-lg border border-indigo-200 outline-none"
+                            autoFocus
+                          />
+                          <div className="grid grid-cols-2 gap-2">
+                             <input 
+                                value={newGroupPP}
+                                onChange={e => setNewGroupPP(e.target.value)}
+                                placeholder="PP ID"
+                                className="w-full px-2 py-1.5 text-xs rounded-lg border border-indigo-200 outline-none font-mono"
+                             />
+                             <input 
+                                value={newGroupERA}
+                                onChange={e => setNewGroupERA(e.target.value)}
+                                placeholder="ERA ID"
+                                className="w-full px-2 py-1.5 text-xs rounded-lg border border-indigo-200 outline-none font-mono"
+                             />
+                          </div>
+                          <button 
+                            type="button" 
+                            onClick={handleAddGroup} 
+                            className="w-full py-1.5 bg-indigo-600 text-white rounded-lg text-[10px] font-bold mt-1 hover:bg-indigo-700"
+                          >
+                            Create & Select
+                          </button>
+                       </div>
+                    </div>
                   )}
                 </div>
               </div>

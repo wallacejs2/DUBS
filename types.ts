@@ -59,6 +59,8 @@ export interface EnterpriseGroup {
   description: string;
   dealershipCount?: number;
   created_at: string;
+  pp_sys_id?: string;
+  era_system_id?: string;
 }
 
 export interface WebsiteLink {
