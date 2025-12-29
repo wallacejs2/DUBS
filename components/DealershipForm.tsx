@@ -34,8 +34,32 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
       id: '', dealership_id: '', sales_contact_name: '', enrollment_contact_name: '', 
       assigned_specialist_name: '', poc_name: '', poc_phone: '', poc_email: ''
     },
-    orders: []
+    orders: [{
+      id: crypto.randomUUID(),
+      dealership_id: '',
+      received_date: new Date().toISOString().split('T')[0],
+      order_number: '',
+      status: OrderStatus.PENDING,
+      products: []
+    }]
   });
+
+  // Ensure if initialData was provided but had empty orders, we add one
+  if (initialData && (!initialData.orders || initialData.orders.length === 0)) {
+     if (!formData.orders || formData.orders.length === 0) {
+       setFormData(prev => ({
+         ...prev,
+         orders: [{
+            id: crypto.randomUUID(),
+            dealership_id: initialData.id || '',
+            received_date: new Date().toISOString().split('T')[0],
+            order_number: '',
+            status: OrderStatus.PENDING,
+            products: []
+         }]
+       }));
+     }
+  }
 
   const updateField = (field: keyof DealershipWithRelations, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -68,25 +92,6 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
   };
 
   // Order Logic
-  const addOrder = () => {
-    const orders = [...(formData.orders || [])];
-    orders.push({
-      id: crypto.randomUUID(),
-      dealership_id: formData.id || '',
-      received_date: new Date().toISOString().split('T')[0],
-      order_number: '',
-      status: OrderStatus.PENDING,
-      products: []
-    });
-    updateField('orders', orders);
-  };
-
-  const removeOrder = (idx: number) => {
-    const orders = [...(formData.orders || [])];
-    orders.splice(idx, 1);
-    updateField('orders', orders);
-  };
-
   const updateOrder = (idx: number, field: keyof Order, val: any) => {
     const orders = [...(formData.orders || [])];
     (orders[idx] as any)[field] = val;
@@ -174,7 +179,7 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
                   <input 
                     value={formData.cif_number || ''} 
                     onChange={e => updateField('cif_number', e.target.value)}
-                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:ring-1 focus:ring-indigo-500 outline-none font-mono"
+                    className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 focus:ring-1 focus:ring-indigo-500 outline-none font-mono"
                     placeholder="CIF-#####"
                   />
                </div>
@@ -294,13 +299,9 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-1">
+              <div className="md:col-span-2 space-y-1">
                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Address</label>
                 <input required value={formData.address_line1 || ''} onChange={e => updateField('address_line1', e.target.value)} className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 outline-none font-normal" placeholder="Street Address" />
-              </div>
-              <div className="space-y-1">
-                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">City</label>
-                <input required value={formData.city || ''} onChange={e => updateField('city', e.target.value)} className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 outline-none font-normal" />
               </div>
               <div className="space-y-1">
                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">State</label>
@@ -386,11 +387,9 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
 
             <div className="space-y-6">
                {formData.orders?.map((order, orderIdx) => (
-                 <div key={orderIdx} className="bg-slate-50 p-5 rounded-2xl border border-slate-200 relative">
-                    <button type="button" onClick={() => removeOrder(orderIdx)} className="absolute top-3 right-3 text-slate-400 hover:text-red-500 bg-white rounded-lg p-1 shadow-sm border border-slate-100"><X size={14} /></button>
-                    
+                 <div key={orderIdx} className="bg-slate-50 p-3 rounded-xl border border-slate-100 relative">
                     {/* Header: Date & Order # */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 border-b border-slate-200 pb-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
                         <div className="space-y-1">
                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Received Date</label>
                            <input type="date" value={order.received_date ? order.received_date.split('T')[0] : ''} onChange={e => updateOrder(orderIdx, 'received_date', e.target.value)} className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 outline-none font-normal bg-white" />
@@ -402,40 +401,38 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
                     </div>
 
                     {/* Products List */}
-                    <div className="space-y-3">
-                       <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1 block">Line Items</label>
-                       {order.products?.map((product, prodIdx) => (
-                          <div key={prodIdx} className="flex gap-3 items-center">
-                             <div className="flex-1">
-                               <select 
-                                 value={product.product_code} 
-                                 onChange={e => updateProductInOrder(orderIdx, prodIdx, 'product_code', e.target.value)} 
-                                 className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 outline-none font-normal bg-white"
-                                >
-                                 {Object.values(ProductCode).map(p => <option key={p} value={p}>{p}</option>)}
-                               </select>
-                             </div>
-                             <div className="w-32">
-                               <input 
-                                 type="number" 
-                                 value={product.amount} 
-                                 onChange={e => updateProductInOrder(orderIdx, prodIdx, 'amount', parseFloat(e.target.value))} 
-                                 className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 outline-none font-normal bg-white" 
-                                 placeholder="Price"
-                                />
-                             </div>
-                             <button type="button" onClick={() => removeProductFromOrder(orderIdx, prodIdx)} className="p-2 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50"><Minus size={14} /></button>
-                          </div>
-                       ))}
-                       <button type="button" onClick={() => addProductToOrder(orderIdx)} className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1.5 uppercase tracking-wider mt-2">
-                         <Plus size={12} /> Add Product
+                    <div>
+                       <div className="grid grid-cols-[1fr_120px_auto] gap-3 mb-2 px-1">
+                          <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Product</label>
+                          <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Price ($)</label>
+                       </div>
+                       <div className="space-y-2">
+                          {order.products?.map((product, prodIdx) => (
+                              <div key={prodIdx} className="grid grid-cols-[1fr_120px_auto] gap-3 items-center">
+                                 <select 
+                                   value={product.product_code} 
+                                   onChange={e => updateProductInOrder(orderIdx, prodIdx, 'product_code', e.target.value)} 
+                                   className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 outline-none font-normal bg-white"
+                                  >
+                                   {Object.values(ProductCode).map(p => <option key={p} value={p}>{p}</option>)}
+                                 </select>
+                                 <input 
+                                   type="number" 
+                                   value={product.amount} 
+                                   onChange={e => updateProductInOrder(orderIdx, prodIdx, 'amount', parseFloat(e.target.value))} 
+                                   className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 outline-none font-normal bg-white" 
+                                   placeholder="0.00"
+                                  />
+                                 <button type="button" onClick={() => removeProductFromOrder(orderIdx, prodIdx)} className="p-2 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors"><Minus size={14} /></button>
+                              </div>
+                           ))}
+                       </div>
+                       <button type="button" onClick={() => addProductToOrder(orderIdx)} className="mt-3 text-[10px] font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1.5 uppercase tracking-wider">
+                         <Plus size={12} /> Add New Product
                        </button>
                     </div>
                  </div>
                ))}
-               <button type="button" onClick={addOrder} className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1.5 uppercase tracking-wider bg-indigo-50 px-3 py-2 rounded-lg w-fit">
-                <Plus size={12} /> Add New Order
-              </button>
             </div>
 
           </form>

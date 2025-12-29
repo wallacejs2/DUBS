@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { X, ArrowRight, Edit3, Trash2, Info, Users, Save, RefreshCw } from 'lucide-react';
+
+import React, { useState, useEffect, useMemo } from 'react';
+import { X, ArrowRight, Edit3, Trash2, Save, RefreshCw } from 'lucide-react';
 import { EnterpriseGroup, Dealership, DealershipStatus } from '../types';
+import { useOrders } from '../hooks';
 
 interface EnterpriseGroupDetailPanelProps {
   group: EnterpriseGroup;
@@ -10,17 +12,6 @@ interface EnterpriseGroupDetailPanelProps {
   onDelete: () => void;
   onViewDealer: (id: string) => void;
 }
-
-const SectionHeader = ({ title, icon: Icon }: { title: string, icon: any }) => (
-  <div className="mt-12 mb-6 flex items-center justify-between border-b border-slate-100 pb-2">
-    <div className="flex items-center gap-2">
-      <Icon size={14} className="text-indigo-500" />
-      <h3 className="text-[11px] font-bold text-slate-800 uppercase tracking-[0.2em]">
-        {title}
-      </h3>
-    </div>
-  </div>
-);
 
 const Label = ({ children }: { children?: React.ReactNode }) => (
   <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">
@@ -38,6 +29,9 @@ const EnterpriseGroupDetailPanel: React.FC<EnterpriseGroupDetailPanelProps> = ({
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<EnterpriseGroup>(group);
+  
+  // Fetch orders for revenue calculation and product count
+  const { orders } = useOrders();
 
   useEffect(() => {
     setFormData(group);
@@ -53,15 +47,34 @@ const EnterpriseGroupDetailPanel: React.FC<EnterpriseGroupDetailPanelProps> = ({
     setIsEditing(false);
   };
 
+  const monthlyRevenue = useMemo(() => {
+    const liveDealerIds = new Set(dealerships.filter(d => d.status === DealershipStatus.LIVE).map(d => d.id));
+    return orders
+      .filter(o => liveDealerIds.has(o.dealership_id))
+      .reduce((sum, order) => {
+        const orderTotal = order.products?.reduce((pSum, p) => pSum + (Number(p.amount) || 0), 0) || 0;
+        return sum + orderTotal;
+      }, 0);
+  }, [dealerships, orders]);
+
+  const totalProductsCount = useMemo(() => {
+    const groupDealerIds = new Set(dealerships.map(d => d.id));
+    return orders
+      .filter(o => groupDealerIds.has(o.dealership_id))
+      .reduce((total, order) => total + (order.products?.length || 0), 0);
+  }, [dealerships, orders]);
+
+  const formatCurrency = (val: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
+
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]" onClick={isEditing ? undefined : onClose}></div>
-      <div className="relative w-full max-w-2xl bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+      <div className="relative w-full max-w-4xl bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
         
         {/* Header */}
         <div className="p-8 border-b border-slate-100 flex justify-between items-start bg-white sticky top-0 z-30">
           <div className="flex-1">
-            <div className="flex items-center gap-3 mb-3">
+            <div className="flex items-center gap-3 mb-2">
               <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest bg-slate-100 px-2 py-0.5 rounded-sm">
                 GROUP HIERARCHY
               </span>
@@ -123,77 +136,73 @@ const EnterpriseGroupDetailPanel: React.FC<EnterpriseGroupDetailPanelProps> = ({
         </div>
 
         {/* Content Scroll Area */}
-        <div className="flex-1 overflow-y-auto p-10 bg-white custom-scrollbar">
-          <div className="animate-in fade-in duration-500">
+        <div className="flex-1 overflow-y-auto p-8 bg-white custom-scrollbar">
+          <div className="animate-in fade-in duration-500 space-y-8">
             
-            {/* Corporate Profile */}
-            <SectionHeader title="Corporate Profile" icon={Info} />
-            <div className="px-1 mb-10">
-              <Label>Executive Summary</Label>
-              {isEditing ? (
-                <textarea 
-                  value={formData.description || ''}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
-                  className="w-full h-32 p-3 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:ring-1 focus:ring-indigo-500 outline-none font-normal resize-none"
-                  placeholder="Enter description..."
-                />
-              ) : (
-                <p className="text-[12px] text-slate-700 font-medium leading-relaxed italic">
-                  {group.description || 'No descriptive information available.'}
-                </p>
-              )}
-            </div>
-            
-            <div className="grid grid-cols-2 gap-8 px-1">
+            {/* Stats Compact */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+              <div>
+                <Label>Dealerships</Label>
+                <div className="text-xl font-bold text-slate-900 tracking-tight">{dealerships.length}</div>
+              </div>
               <div>
                 <Label>Asset Inventory</Label>
-                <div className="text-2xl font-medium text-slate-900 tracking-tighter">{dealerships.length} Units</div>
+                <div className="text-xl font-bold text-blue-600 tracking-tight">{totalProductsCount}</div>
               </div>
               <div>
                 <Label>Portfolio Health</Label>
-                <div className="text-2xl font-medium text-indigo-600 tracking-tighter">
+                <div className="text-xl font-bold text-indigo-600 tracking-tight">
                   {dealerships.length > 0 
-                    ? `${Math.round((dealerships.filter(d => d.status === DealershipStatus.LIVE).length / dealerships.length) * 100)}% ACTIVE` 
-                    : '0% ACTIVE'}
+                    ? `${Math.round((dealerships.filter(d => d.status === DealershipStatus.LIVE).length / dealerships.length) * 100)}%` 
+                    : '0%'}
                 </div>
+              </div>
+              <div>
+                <Label>Monthly Revenue</Label>
+                <div className="text-xl font-bold text-emerald-600 tracking-tight">{formatCurrency(monthlyRevenue)}</div>
               </div>
             </div>
 
             {/* Entities List */}
-            <SectionHeader title="Associated Ledger Entities" icon={Users} />
-            <div className="px-1 pb-16">
-              {dealerships.length === 0 ? (
-                <div className="text-center py-20 bg-slate-50 border border-slate-100 border-dashed rounded-2xl">
-                  <p className="text-slate-400 text-[10px] uppercase font-bold tracking-[0.2em]">Zero Entities Assigned</p>
-                </div>
-              ) : (
-                <div className="divide-y divide-slate-100 border-t border-slate-100">
-                  {dealerships.map((dealer) => (
-                    <div 
-                      key={dealer.id} 
-                      className="flex items-center justify-between p-5 bg-white hover:bg-slate-50 transition-colors cursor-pointer group"
-                      onClick={() => onViewDealer(dealer.id)}
-                    >
-                      <div className="min-w-0">
-                        <p className="text-[12px] font-medium text-slate-900 truncate tracking-tight">{dealer.name}</p>
-                        <p className="text-[10px] text-slate-400 uppercase font-bold tracking-tighter">{dealer.city}, {dealer.state}</p>
+            <div>
+              <Label>Associated Dealerships</Label>
+              <div className="mt-2">
+                {dealerships.length === 0 ? (
+                  <div className="text-center py-10 bg-white border border-slate-100 border-dashed rounded-xl">
+                    <p className="text-slate-400 text-[10px] uppercase font-bold tracking-[0.1em]">No dealerships assigned</p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    {dealerships.map((dealer) => (
+                      <div 
+                        key={dealer.id} 
+                        className="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-xl hover:border-indigo-200 hover:shadow-sm transition-all cursor-pointer group"
+                        onClick={() => onViewDealer(dealer.id)}
+                      >
+                        <div className="min-w-0">
+                          <p className="text-[12px] font-bold text-slate-800 truncate tracking-tight group-hover:text-indigo-700">{dealer.name}</p>
+                          <div className="flex items-center gap-2 mt-0.5">
+                             <span className="text-[10px] font-mono text-slate-400">{dealer.cif_number || 'NO CIF'}</span>
+                             <span className="text-[10px] text-slate-400">•</span>
+                             <p className="text-[10px] text-slate-500 font-mono tracking-tighter">
+                               {dealer.store_number || '--'} / {dealer.branch_number || '--'}
+                             </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <span className={`px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest rounded-md bg-slate-50 text-slate-600 border border-slate-100`}>
+                            {dealer.status}
+                          </span>
+                          <ArrowRight size={16} className="text-slate-200 group-hover:text-indigo-600 transition-colors" />
+                        </div>
                       </div>
-                      <div className="flex items-center gap-6">
-                        <span className={`px-2 py-0.5 text-[8px] font-bold uppercase tracking-widest rounded-none bg-slate-100 text-slate-600`}>
-                          {dealer.status}
-                        </span>
-                        <ArrowRight size={16} className="text-slate-200 group-hover:text-indigo-600 transition-colors" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
+
           </div>
-        </div>
-        
-        <div className="p-8 bg-slate-50 border-t border-slate-100 text-center">
-          <p className="text-[10px] text-slate-400 uppercase font-bold tracking-[0.2em]">System Timestamp: {new Date(group.created_at).toLocaleDateString()}</p>
         </div>
       </div>
     </div>

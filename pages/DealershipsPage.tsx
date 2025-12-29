@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { Plus, FileSpreadsheet } from 'lucide-react';
-import { useDealerships, useEnterpriseGroups } from '../hooks';
-import { DealershipWithRelations, DealershipStatus } from '../types';
+
+import React, { useState, useMemo } from 'react';
+import { Plus, FileSpreadsheet, DollarSign, Building2, TrendingUp, Users, AlertCircle, Package } from 'lucide-react';
+import { useDealerships, useEnterpriseGroups, useOrders } from '../hooks';
+import { DealershipWithRelations, DealershipStatus, ProductCode } from '../types';
 import DealershipCard from '../components/DealershipCard';
 import DealershipForm from '../components/DealershipForm';
 import DealershipDetailPanel from '../components/DealershipDetailPanel';
@@ -9,14 +10,56 @@ import FilterBar from '../components/FilterBar';
 
 const DealershipsPage: React.FC = () => {
   const [filters, setFilters] = useState({ search: '', status: '', group: '' });
+  
+  // Data for List (Filtered)
   const { dealerships, loading, upsert, remove, getDetails } = useDealerships(filters);
+  
+  // Data for Metrics (All)
+  const { dealerships: allDealerships } = useDealerships(); 
   const { groups } = useEnterpriseGroups();
+  const { orders } = useOrders();
   
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedDealerId, setSelectedDealerId] = useState<string | null>(null);
   const [editingDealer, setEditingDealer] = useState<DealershipWithRelations | null>(null);
 
   const selectedDealerDetails = selectedDealerId ? getDetails(selectedDealerId) : null;
+
+  // --- Metrics Calculation ---
+  const metrics = useMemo(() => {
+    const total = allDealerships.length;
+    
+    const counts = allDealerships.reduce((acc, d) => {
+      acc[d.status] = (acc[d.status] || 0) + 1;
+      return acc;
+    }, {} as Record<DealershipStatus, number>);
+
+    // Calculate Revenue for Live Dealerships
+    const liveDealerIds = new Set(allDealerships.filter(d => d.status === DealershipStatus.LIVE).map(d => d.id));
+    const monthlyRevenue = orders
+      .filter(o => liveDealerIds.has(o.dealership_id))
+      .reduce((sum, order) => {
+        const orderTotal = order.products?.reduce((pSum, p) => pSum + (Number(p.amount) || 0), 0) || 0;
+        return sum + orderTotal;
+      }, 0);
+
+    // Calculate Product Counts for Non-Cancelled Dealerships
+    const activeDealerIds = new Set(allDealerships.filter(d => d.status !== DealershipStatus.CANCELLED).map(d => d.id));
+    const productCounts = orders
+        .filter(o => activeDealerIds.has(o.dealership_id))
+        .reduce((acc, order) => {
+            order.products?.forEach(p => {
+                if (p.product_code) {
+                    acc[p.product_code] = (acc[p.product_code] || 0) + 1;
+                }
+            });
+            return acc;
+        }, {} as Record<string, number>);
+
+    return { total, counts, monthlyRevenue, productCounts };
+  }, [allDealerships, orders]);
+
+  const formatCurrency = (val: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
 
   const handleCreate = (data: Partial<DealershipWithRelations>) => {
     upsert(data);
@@ -29,6 +72,13 @@ const DealershipsPage: React.FC = () => {
       remove(selectedDealerId);
       setSelectedDealerId(null);
     }
+  };
+
+  const checkIsManaged = (dealerId: string) => {
+    return orders.some(o => 
+      o.dealership_id === dealerId && 
+      o.products.some(p => p.product_code === ProductCode.P15392_MANAGED)
+    );
   };
 
   return (
@@ -49,6 +99,61 @@ const DealershipsPage: React.FC = () => {
             <Plus size={16} /> New Dealership
           </button>
         </div>
+      </div>
+
+      {/* Main Metrics Section */}
+      <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-9 gap-3 mb-3">
+        {/* Total Card */}
+        <div className="col-span-1 md:col-span-2 xl:col-span-2 bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between h-24">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 bg-slate-100 rounded-lg text-slate-600"><Building2 size={16} /></div>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Dealerships</span>
+          </div>
+          <div className="text-2xl font-extrabold text-slate-800">{metrics.total}</div>
+        </div>
+
+        {/* Revenue Card */}
+        <div className="col-span-1 md:col-span-2 xl:col-span-2 bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between h-24">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 bg-emerald-50 rounded-lg text-emerald-600"><DollarSign size={16} /></div>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Monthly Revenue (Live)</span>
+          </div>
+          <div className="text-2xl font-extrabold text-slate-800">{formatCurrency(metrics.monthlyRevenue)}</div>
+        </div>
+
+        {/* Status Counts */}
+        <div className="col-span-1 bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-center h-24">
+             <span className="text-[9px] font-bold text-slate-400 uppercase mb-1">Live</span>
+             <span className="text-xl font-bold text-emerald-600">{metrics.counts[DealershipStatus.LIVE] || 0}</span>
+        </div>
+        <div className="col-span-1 bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-center h-24">
+             <span className="text-[9px] font-bold text-slate-400 uppercase mb-1">Onboarding</span>
+             <span className="text-xl font-bold text-indigo-600">{metrics.counts[DealershipStatus.ONBOARDING] || 0}</span>
+        </div>
+        <div className="col-span-1 bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-center h-24">
+             <span className="text-[9px] font-bold text-slate-400 uppercase mb-1">Pending</span>
+             <span className="text-xl font-bold text-slate-600">{(metrics.counts[DealershipStatus.DMT_PENDING] || 0) + (metrics.counts[DealershipStatus.DMT_APPROVED] || 0)}</span>
+        </div>
+        <div className="col-span-1 bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-center h-24">
+             <span className="text-[9px] font-bold text-slate-400 uppercase mb-1">Hold</span>
+             <span className="text-xl font-bold text-orange-600">{metrics.counts[DealershipStatus.HOLD] || 0}</span>
+        </div>
+        <div className="col-span-1 bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-center h-24">
+             <span className="text-[9px] font-bold text-slate-400 uppercase mb-1">Cancelled</span>
+             <span className="text-xl font-bold text-red-600">{metrics.counts[DealershipStatus.CANCELLED] || 0}</span>
+        </div>
+      </div>
+
+      {/* Product Metrics Section */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3 mb-6">
+        {Object.values(ProductCode).map((code) => (
+            <div key={code} className="bg-slate-50 p-2.5 rounded-lg border border-slate-200 flex flex-col justify-center items-center text-center">
+                <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wide mb-1 break-words w-full">
+                  {code.replace(/^\d+\s*-?\s*/, '')}
+                </span>
+                <span className="text-lg font-bold text-slate-700">{metrics.productCounts[code] || 0}</span>
+            </div>
+        ))}
       </div>
 
       <FilterBar 
@@ -91,6 +196,8 @@ const DealershipsPage: React.FC = () => {
             <DealershipCard 
               key={dealer.id} 
               dealership={dealer} 
+              groupName={groups.find(g => g.id === dealer.enterprise_group_id)?.name}
+              isManaged={checkIsManaged(dealer.id)}
               onClick={() => setSelectedDealerId(dealer.id)}
             />
           ))}

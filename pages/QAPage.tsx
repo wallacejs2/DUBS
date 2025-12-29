@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Plus, User, Mail, Copy, Check, Search, Trash2, Edit3, X } from 'lucide-react';
 import { useShoppers } from '../hooks';
@@ -180,40 +181,40 @@ const QAPage: React.FC = () => {
                <div className="grid grid-cols-2 gap-4">
                  <div className="space-y-1">
                    <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">First Name</label>
-                   <input required name="first_name" defaultValue={selectedShopper?.first_name} className="w-full px-3 py-2 text-[11px] bg-slate-50 rounded-lg border border-slate-100 focus:ring-1 focus:ring-indigo-500 outline-none font-normal" />
+                   <input required name="first_name" defaultValue={selectedShopper?.first_name} className="w-full px-3 py-2 text-xs bg-slate-50 rounded-lg border border-slate-100 focus:ring-1 focus:ring-indigo-500 outline-none font-normal" />
                  </div>
                  <div className="space-y-1">
                    <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Last Name</label>
-                   <input required name="last_name" defaultValue={selectedShopper?.last_name} className="w-full px-3 py-2 text-[11px] bg-slate-50 rounded-lg border border-slate-100 focus:ring-1 focus:ring-indigo-500 outline-none font-normal" />
+                   <input required name="last_name" defaultValue={selectedShopper?.last_name} className="w-full px-3 py-2 text-xs bg-slate-50 rounded-lg border border-slate-100 focus:ring-1 focus:ring-indigo-500 outline-none font-normal" />
                  </div>
                </div>
 
                <div className="space-y-1">
                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
-                 <input required type="email" name="email" defaultValue={selectedShopper?.email} className="w-full px-3 py-2 text-[11px] bg-slate-50 rounded-lg border border-slate-100 focus:ring-1 focus:ring-indigo-500 outline-none font-normal" />
+                 <input required type="email" name="email" defaultValue={selectedShopper?.email} className="w-full px-3 py-2 text-xs bg-slate-50 rounded-lg border border-slate-100 focus:ring-1 focus:ring-indigo-500 outline-none font-normal" />
                </div>
 
                <div className="grid grid-cols-2 gap-4">
                  <div className="space-y-1">
                    <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Login Username</label>
-                   <input name="username" defaultValue={selectedShopper?.username} className="w-full px-3 py-2 text-[11px] bg-slate-50 rounded-lg border border-slate-100 focus:ring-1 focus:ring-indigo-500 outline-none font-normal" />
+                   <input name="username" defaultValue={selectedShopper?.username} className="w-full px-3 py-2 text-xs bg-slate-50 rounded-lg border border-slate-100 focus:ring-1 focus:ring-indigo-500 outline-none font-normal" />
                  </div>
                  <div className="space-y-1">
                    <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Login Password</label>
-                   <input name="password" defaultValue={selectedShopper?.password} className="w-full px-3 py-2 text-[11px] bg-slate-50 rounded-lg border border-slate-100 focus:ring-1 focus:ring-indigo-500 outline-none font-normal" />
+                   <input name="password" defaultValue={selectedShopper?.password} className="w-full px-3 py-2 text-xs bg-slate-50 rounded-lg border border-slate-100 focus:ring-1 focus:ring-indigo-500 outline-none font-normal" />
                  </div>
                </div>
 
                <div className="grid grid-cols-2 gap-4">
                  <div className="space-y-1">
                    <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Current Status</label>
-                   <select name="status" defaultValue={selectedShopper?.status || ShopperStatus.ACTIVE} className="w-full px-3 py-2 text-[11px] bg-slate-50 rounded-lg border border-slate-100 focus:ring-1 focus:ring-indigo-500 outline-none font-normal">
+                   <select name="status" defaultValue={selectedShopper?.status || ShopperStatus.ACTIVE} className="w-full px-3 py-2 text-xs bg-slate-50 rounded-lg border border-slate-100 focus:ring-1 focus:ring-indigo-500 outline-none font-normal">
                      {Object.values(ShopperStatus).map(s => <option key={s} value={s}>{s}</option>)}
                    </select>
                  </div>
                  <div className="space-y-1">
                    <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Audit Priority</label>
-                   <select name="priority" defaultValue={selectedShopper?.priority || ShopperPriority.MEDIUM} className="w-full px-3 py-2 text-[11px] bg-slate-50 rounded-lg border border-slate-100 focus:ring-1 focus:ring-indigo-500 outline-none font-normal">
+                   <select name="priority" defaultValue={selectedShopper?.priority || ShopperPriority.MEDIUM} className="w-full px-3 py-2 text-xs bg-slate-50 rounded-lg border border-slate-100 focus:ring-1 focus:ring-indigo-500 outline-none font-normal">
                      {Object.values(ShopperPriority).map(p => <option key={p} value={p}>{p}</option>)}
                    </select>
                  </div>
