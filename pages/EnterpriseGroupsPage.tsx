@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { Plus, Users, Search, MoreVertical, Trash2, Edit3, X, Save } from 'lucide-react';
+import { Plus, Users, X, Edit3, Trash2 } from 'lucide-react';
 import { useEnterpriseGroups, useDealerships } from '../hooks';
 import { EnterpriseGroup } from '../types';
 import EnterpriseGroupDetailPanel from '../components/EnterpriseGroupDetailPanel';
@@ -25,6 +24,13 @@ const EnterpriseGroupsPage: React.FC = () => {
   const groupDealerships = selectedGroupId 
     ? dealerships.filter(d => d.enterprise_group_id === selectedGroupId)
     : [];
+
+  const handleDeleteFromPanel = () => {
+    if (selectedGroupId && window.confirm(`Delete ${selectedGroup?.name}?`)) {
+      remove(selectedGroupId);
+      setSelectedGroupId(null);
+    }
+  };
 
   return (
     <div className="animate-in fade-in duration-700">
@@ -65,12 +71,11 @@ const EnterpriseGroupsPage: React.FC = () => {
                 </div>
                 <div className="min-w-0">
                   <h3 className="text-[13px] font-bold text-slate-800 group-hover:text-indigo-600 transition-colors leading-tight truncate">{group.name}</h3>
-                  <p className="text-slate-400 text-[10px] mt-0.5 line-clamp-1">{group.description || 'No description provided.'}</p>
+                  <p className="text-slate-400 text-[10px] mt-0.5 line-clamp-1 font-normal">{group.description || 'No description provided.'}</p>
                   <div className="flex items-center gap-3 mt-1.5">
                     <span className="px-2 py-0.5 bg-slate-100 text-slate-500 text-[9px] font-bold uppercase rounded-full border border-slate-200 group-hover:bg-indigo-50 group-hover:text-indigo-600 group-hover:border-indigo-100 transition-all">
                       {group.dealershipCount} Dealerships
                     </span>
-                    <span className="text-[9px] text-slate-300 font-medium">Created {new Date(group.created_at).toLocaleDateString()}</span>
                   </div>
                 </div>
               </div>
@@ -107,7 +112,7 @@ const EnterpriseGroupsPage: React.FC = () => {
                   required
                   value={editingGroup?.name || ''} 
                   onChange={e => setEditingGroup({...editingGroup, name: e.target.value})}
-                  className="w-full px-3 py-2 text-[11px] bg-slate-50 rounded-lg border border-slate-200 outline-none focus:ring-1 focus:ring-indigo-500 transition-all font-medium"
+                  className="w-full px-3 py-2 text-[11px] bg-slate-50 rounded-lg border border-slate-200 outline-none focus:ring-1 focus:ring-indigo-500 transition-all font-normal"
                   placeholder="e.g. Hendrick Automotive"
                 />
               </div>
@@ -116,7 +121,7 @@ const EnterpriseGroupsPage: React.FC = () => {
                 <textarea 
                   value={editingGroup?.description || ''} 
                   onChange={e => setEditingGroup({...editingGroup, description: e.target.value})}
-                  className="w-full px-3 py-2 text-[11px] bg-slate-50 rounded-lg border border-slate-200 outline-none focus:ring-1 focus:ring-indigo-500 transition-all font-medium h-24 resize-none"
+                  className="w-full px-3 py-2 text-[11px] bg-slate-50 rounded-lg border border-slate-200 outline-none focus:ring-1 focus:ring-indigo-500 transition-all font-normal h-24 resize-none"
                   placeholder="Describe the group..."
                 />
               </div>
@@ -145,6 +150,8 @@ const EnterpriseGroupsPage: React.FC = () => {
           group={selectedGroup}
           dealerships={groupDealerships}
           onClose={() => setSelectedGroupId(null)}
+          onUpdate={(data) => upsert(data)}
+          onDelete={handleDeleteFromPanel}
           onViewDealer={(id) => {
             setSelectedGroupId(null);
           }}

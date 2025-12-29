@@ -1,4 +1,5 @@
 
+
 export enum DealershipStatus {
   DMT_PENDING = 'DMT-Pending',
   DMT_APPROVED = 'DMT-Approved',
@@ -11,18 +12,24 @@ export enum DealershipStatus {
 export enum CRMProvider {
   FOCUS = 'FOCUS',
   CDK = 'CDK',
-  DEALERSOCKET = 'DealerSocket',
-  ELEAD = 'eLead',
-  REYNOLDS = 'Reynolds',
-  VIN_SOLUTIONS = 'VinSolutions',
-  OTHER = 'Other'
+  DEALER_OWNED = 'DealerOwned',
+  DEALER_SOCKET = 'DealerSocket',
+  DRIVE_CENTRIC = 'DriveCentric',
+  ELEAD = 'Elead',
+  MOMENTUM = 'Momentum',
+  OPLOGIC = 'OpLogic',
+  TEKION = 'Tekion',
+  VIN_SOLUTIONS = 'VinSolutions'
 }
 
 export enum ProductCode {
-  P15391SE = '15391-SE',
-  P15392Managed = '15392-Managed',
-  P15393Enterprise = '15393-Enterprise',
-  P15394Basic = '15394-Basic'
+  P15391_SE = '15391 - SE',
+  P15392_MANAGED = '15392 - Managed',
+  P15435_ADDL_WEB = '15435 - Addl. Web',
+  P15436_MNGD_ADDL = '15436 Mngd Addl. Web',
+  P15382_PREV_SE = '15382 - Prev. SE',
+  P15381_PREV_AA = '15381 - Prev. AA',
+  P15390_SMS = '15390 - SMS'
 }
 
 export enum OrderStatus {
@@ -78,17 +85,19 @@ export interface ReynoldsSolution {
   solution_details: string;
 }
 
+export interface OrderProduct {
+  id: string;
+  product_code: ProductCode;
+  amount: number;
+}
+
 export interface Order {
   id: string;
   dealership_id: string;
   order_number: string;
-  product_name: string;
-  product_code: ProductCode;
-  amount: number;
-  order_date: string;
-  delivery_date?: string;
-  received_date?: string;
+  received_date: string;
   status: OrderStatus;
+  products: OrderProduct[];
   notes?: string;
 }
 

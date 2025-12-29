@@ -24,15 +24,6 @@ const DealershipsPage: React.FC = () => {
     setEditingDealer(null);
   };
 
-  const handleEdit = () => {
-    // This is now handled inline in the panel, but we keep this for the "New" button if it were used for editing
-    if (selectedDealerDetails) {
-      setEditingDealer(selectedDealerDetails);
-      setIsFormOpen(true);
-      setSelectedDealerId(null);
-    }
-  };
-
   const handleDelete = () => {
     if (selectedDealerId && window.confirm('Are you sure you want to delete this dealership? This will also remove all related orders and data.')) {
       remove(selectedDealerId);
@@ -120,7 +111,7 @@ const DealershipsPage: React.FC = () => {
           dealership={selectedDealerDetails}
           groups={groups}
           onClose={() => setSelectedDealerId(null)}
-          onUpdate={upsert}
+          onUpdate={(data) => upsert(data)}
           onDelete={handleDelete}
         />
       )}

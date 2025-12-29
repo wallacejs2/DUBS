@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Search, Filter, X } from 'lucide-react';
 
@@ -36,7 +35,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
           value={searchValue}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder={searchPlaceholder}
-          className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all outline-none"
+          className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all outline-none font-normal"
         />
         {searchValue && (
           <button 
@@ -55,7 +54,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
             <select 
               value={filter.value}
               onChange={(e) => filter.onChange(e.target.value)}
-              className="bg-transparent text-sm font-medium text-slate-700 outline-none cursor-pointer py-2 pr-2"
+              className="bg-transparent text-sm font-normal text-slate-700 outline-none cursor-pointer py-2 pr-2"
             >
               <option value="">All</option>
               {filter.options.map(opt => (

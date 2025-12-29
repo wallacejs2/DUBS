@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Plus, User, Mail, Copy, Check, Search, Trash2, Edit3, X } from 'lucide-react';
 import { useShoppers } from '../hooks';
@@ -99,18 +98,18 @@ const QAPage: React.FC = () => {
                       </div>
                       <div className="min-w-0">
                         <p className="text-[11px] font-bold text-slate-800 leading-tight truncate">{shopper.first_name} {shopper.last_name}</p>
-                        <p className="text-[10px] text-slate-400 truncate">{shopper.email}</p>
+                        <p className="text-[10px] text-slate-400 truncate font-normal">{shopper.email}</p>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4">
                     <div className="space-y-1">
                       <div className="flex items-center gap-1.5 group/copy cursor-pointer" onClick={() => handleCopy(shopper.username || '', `u-${shopper.id}`)}>
-                        <span className="text-[9px] font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-500">{shopper.username || '---'}</span>
+                        <span className="text-[9px] font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-500 font-normal">{shopper.username || '---'}</span>
                         {copiedId === `u-${shopper.id}` ? <Check size={10} className="text-emerald-500" /> : <Copy size={10} className="text-slate-300 opacity-0 group-hover/copy:opacity-100" />}
                       </div>
                       <div className="flex items-center gap-1.5 group/copy cursor-pointer" onClick={() => handleCopy(shopper.password || '', `p-${shopper.id}`)}>
-                        <span className="text-[9px] font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-500">••••••••</span>
+                        <span className="text-[9px] font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-500 font-normal">••••••••</span>
                         {copiedId === `p-${shopper.id}` ? <Check size={10} className="text-emerald-500" /> : <Copy size={10} className="text-slate-300 opacity-0 group-hover/copy:opacity-100" />}
                       </div>
                     </div>
@@ -181,40 +180,40 @@ const QAPage: React.FC = () => {
                <div className="grid grid-cols-2 gap-4">
                  <div className="space-y-1">
                    <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">First Name</label>
-                   <input required name="first_name" defaultValue={selectedShopper?.first_name} className="w-full px-3 py-2 text-[11px] bg-slate-50 rounded-lg border border-slate-100 focus:ring-1 focus:ring-indigo-500 outline-none" />
+                   <input required name="first_name" defaultValue={selectedShopper?.first_name} className="w-full px-3 py-2 text-[11px] bg-slate-50 rounded-lg border border-slate-100 focus:ring-1 focus:ring-indigo-500 outline-none font-normal" />
                  </div>
                  <div className="space-y-1">
                    <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Last Name</label>
-                   <input required name="last_name" defaultValue={selectedShopper?.last_name} className="w-full px-3 py-2 text-[11px] bg-slate-50 rounded-lg border border-slate-100 focus:ring-1 focus:ring-indigo-500 outline-none" />
+                   <input required name="last_name" defaultValue={selectedShopper?.last_name} className="w-full px-3 py-2 text-[11px] bg-slate-50 rounded-lg border border-slate-100 focus:ring-1 focus:ring-indigo-500 outline-none font-normal" />
                  </div>
                </div>
 
                <div className="space-y-1">
                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
-                 <input required type="email" name="email" defaultValue={selectedShopper?.email} className="w-full px-3 py-2 text-[11px] bg-slate-50 rounded-lg border border-slate-100 focus:ring-1 focus:ring-indigo-500 outline-none" />
+                 <input required type="email" name="email" defaultValue={selectedShopper?.email} className="w-full px-3 py-2 text-[11px] bg-slate-50 rounded-lg border border-slate-100 focus:ring-1 focus:ring-indigo-500 outline-none font-normal" />
                </div>
 
                <div className="grid grid-cols-2 gap-4">
                  <div className="space-y-1">
                    <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Login Username</label>
-                   <input name="username" defaultValue={selectedShopper?.username} className="w-full px-3 py-2 text-[11px] bg-slate-50 rounded-lg border border-slate-100 focus:ring-1 focus:ring-indigo-500 outline-none" />
+                   <input name="username" defaultValue={selectedShopper?.username} className="w-full px-3 py-2 text-[11px] bg-slate-50 rounded-lg border border-slate-100 focus:ring-1 focus:ring-indigo-500 outline-none font-normal" />
                  </div>
                  <div className="space-y-1">
                    <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Login Password</label>
-                   <input name="password" defaultValue={selectedShopper?.password} className="w-full px-3 py-2 text-[11px] bg-slate-50 rounded-lg border border-slate-100 focus:ring-1 focus:ring-indigo-500 outline-none" />
+                   <input name="password" defaultValue={selectedShopper?.password} className="w-full px-3 py-2 text-[11px] bg-slate-50 rounded-lg border border-slate-100 focus:ring-1 focus:ring-indigo-500 outline-none font-normal" />
                  </div>
                </div>
 
                <div className="grid grid-cols-2 gap-4">
                  <div className="space-y-1">
                    <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Current Status</label>
-                   <select name="status" defaultValue={selectedShopper?.status || ShopperStatus.ACTIVE} className="w-full px-3 py-2 text-[11px] bg-slate-50 rounded-lg border border-slate-100 focus:ring-1 focus:ring-indigo-500 outline-none">
+                   <select name="status" defaultValue={selectedShopper?.status || ShopperStatus.ACTIVE} className="w-full px-3 py-2 text-[11px] bg-slate-50 rounded-lg border border-slate-100 focus:ring-1 focus:ring-indigo-500 outline-none font-normal">
                      {Object.values(ShopperStatus).map(s => <option key={s} value={s}>{s}</option>)}
                    </select>
                  </div>
                  <div className="space-y-1">
                    <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Audit Priority</label>
-                   <select name="priority" defaultValue={selectedShopper?.priority || ShopperPriority.MEDIUM} className="w-full px-3 py-2 text-[11px] bg-slate-50 rounded-lg border border-slate-100 focus:ring-1 focus:ring-indigo-500 outline-none">
+                   <select name="priority" defaultValue={selectedShopper?.priority || ShopperPriority.MEDIUM} className="w-full px-3 py-2 text-[11px] bg-slate-50 rounded-lg border border-slate-100 focus:ring-1 focus:ring-indigo-500 outline-none font-normal">
                      {Object.values(ShopperPriority).map(p => <option key={p} value={p}>{p}</option>)}
                    </select>
                  </div>

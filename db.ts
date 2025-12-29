@@ -1,4 +1,5 @@
 
+
 import { 
   Dealership, EnterpriseGroup, Order, Shopper, 
   DealershipWithRelations, WebsiteLink, DealershipContacts, 
@@ -105,7 +106,7 @@ class CuratorLocalDB extends EventTarget {
       enrollment_contact_name: 'Sarah Chen',
       assigned_specialist_name: 'Jordan Smith',
       poc_name: 'Mike Johnson',
-      poc_phone: '562-555-0123',
+      poc_phone: '(562) 555-0123',
       poc_email: 'mjohnson@penske.com'
     }];
 
@@ -113,11 +114,15 @@ class CuratorLocalDB extends EventTarget {
       id: crypto.randomUUID(),
       dealership_id: dealerId,
       order_number: 'ORD-5521',
-      product_name: 'Managed SEO & SEM',
-      product_code: ProductCode.P15392Managed,
-      amount: 4500,
-      order_date: new Date().toISOString(),
-      status: OrderStatus.COMPLETED
+      received_date: new Date().toISOString(),
+      status: OrderStatus.COMPLETED,
+      products: [
+        {
+          id: crypto.randomUUID(),
+          product_code: ProductCode.P15392_MANAGED,
+          amount: 4500
+        }
+      ]
     }];
 
     this.data.shoppers = [{
@@ -186,7 +191,7 @@ class CuratorLocalDB extends EventTarget {
       name: payload.name || 'Untitled Dealership',
       enterprise_group_id: payload.enterprise_group_id,
       status: payload.status || DealershipStatus.DMT_PENDING,
-      crm_provider: payload.crm_provider || CRMProvider.OTHER,
+      crm_provider: payload.crm_provider || CRMProvider.FOCUS,
       contract_value: payload.contract_value || 0,
       purchase_date: payload.purchase_date || now,
       go_live_date: payload.go_live_date,
@@ -228,10 +233,23 @@ class CuratorLocalDB extends EventTarget {
       this.data.contacts.push({ ...payload.contacts, id: payload.contacts.id || crypto.randomUUID(), dealership_id: id });
     }
 
-    // Reynolds Solution
+    // Reynolds Solution (kept for legacy support if needed, though not in new spec)
     if (payload.reynolds_solution) {
       this.data.reynoldsSolutions = this.data.reynoldsSolutions.filter(r => r.dealership_id !== id);
       this.data.reynoldsSolutions.push({ ...payload.reynolds_solution, id: payload.reynolds_solution.id || crypto.randomUUID(), dealership_id: id });
+    }
+
+    // Orders
+    if (payload.orders) {
+      this.data.orders = this.data.orders.filter(o => o.dealership_id !== id);
+      payload.orders.forEach(order => {
+        this.data.orders.push({ 
+           ...order, 
+           id: order.id || crypto.randomUUID(), 
+           dealership_id: id,
+           products: order.products || [] 
+        });
+      });
     }
 
     this.save();
