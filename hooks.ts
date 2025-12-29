@@ -1,10 +1,9 @@
-
 import { useState, useEffect, useCallback } from 'react';
-import { db } from './db';
+import { db } from './db.ts';
 import { 
   Dealership, DealershipWithRelations, EnterpriseGroup, 
   Shopper, Order 
-} from './types';
+} from './types.ts';
 
 export function useEnterpriseGroups() {
   const [groups, setGroups] = useState<EnterpriseGroup[]>([]);

@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { 
   Building2, Users, ClipboardCheck, LayoutDashboard, 
-  Settings, Menu, X, Bell, Search, LogOut 
+  Menu, Bell, Search, LogOut 
 } from 'lucide-react';
-import DealershipsPage from './pages/DealershipsPage';
-import EnterpriseGroupsPage from './pages/EnterpriseGroupsPage';
-import QAPage from './pages/QAPage';
+import DealershipsPage from './pages/DealershipsPage.tsx';
+import EnterpriseGroupsPage from './pages/EnterpriseGroupsPage.tsx';
+import QAPage from './pages/QAPage.tsx';
 
 type NavPage = 'dealerships' | 'groups' | 'qa' | 'dashboard';
 
