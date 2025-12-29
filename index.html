@@ -11,6 +11,7 @@
             font-family: 'IBM Plex Sans', sans-serif;
             background-color: #f8fafc;
             font-size: 13px;
+            margin: 0;
         }
         /* Custom scrollbar */
         ::-webkit-scrollbar {
@@ -27,7 +28,7 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #94a3b8;
         }
-        /* Loading state for blank page prevention */
+        /* Loading state */
         #root:empty::before {
             content: 'Loading Curator System...';
             display: flex;
@@ -36,8 +37,43 @@
             height: 100vh;
             color: #64748b;
             font-weight: 500;
+            background: #f8fafc;
+        }
+        /* Error Display */
+        #error-display {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            background: #fef2f2;
+            border: 1px solid #fee2e2;
+            padding: 16px;
+            border-radius: 8px;
+            color: #991b1b;
+            z-index: 9999;
+            font-family: monospace;
+            white-space: pre-wrap;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
         }
     </style>
+    <script>
+        // Diagnostic error handler
+        window.addEventListener('error', function(event) {
+            const display = document.getElementById('error-display');
+            if (display) {
+                display.style.display = 'block';
+                display.textContent = 'System Error: ' + (event.error ? event.error.message : event.message) + '\n\nNote: GitHub Pages might block .tsx files if not transpiled. Check your build process.';
+            }
+        });
+        window.addEventListener('unhandledrejection', function(event) {
+            const display = document.getElementById('error-display');
+            if (display) {
+                display.style.display = 'block';
+                display.textContent = 'Promise Rejection: ' + event.reason + '\n\nThis usually happens if a module fails to load from the server.';
+            }
+        });
+    </script>
 <script type="importmap">
 {
   "imports": {
@@ -52,7 +88,11 @@
 </script>
 </head>
 <body>
+    <div id="error-display"></div>
     <div id="root"></div>
-    <script type="module" src="./index.tsx"></script>
+    <script type="module">
+        // Ensure index.tsx is loaded relative to the current path
+        import "./index.tsx";
+    </script>
 </body>
 </html>
