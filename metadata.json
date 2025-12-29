@@ -1,5 +1,5 @@
 {
-  "name": "Curator Management System",
+  "name": "dubs 2",
   "description": "A high-performance dealership and QA management platform for tracking orders, organizational groups, and shopper quality assurance data with real-time synchronization capabilities.",
   "requestFramePermissions": [
     "camera"
