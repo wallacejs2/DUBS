@@ -6,10 +6,10 @@ import {
   OrderStatus, ShopperStatus, ShopperPriority 
 } from './types';
 
-// Mock DB implementation using LocalStorage
-class BoltDB extends EventTarget {
-  private static instance: BoltDB;
-  private storageKey = 'curator_bolt_db';
+// Pure LocalStorage implementation for a seamless offline-first experience
+class CuratorLocalDB extends EventTarget {
+  private static instance: CuratorLocalDB;
+  private storageKey = 'curator_management_v1';
 
   private data: {
     dealerships: Dealership[];
@@ -38,8 +38,8 @@ class BoltDB extends EventTarget {
   }
 
   static getInstance() {
-    if (!BoltDB.instance) BoltDB.instance = new BoltDB();
-    return BoltDB.instance;
+    if (!CuratorLocalDB.instance) CuratorLocalDB.instance = new CuratorLocalDB();
+    return CuratorLocalDB.instance;
   }
 
   private load() {
@@ -48,7 +48,7 @@ class BoltDB extends EventTarget {
       try {
         this.data = JSON.parse(saved);
       } catch (e) {
-        console.error("Failed to parse BoltDB data", e);
+        console.error("Failed to parse LocalDB data", e);
       }
     }
   }
@@ -59,83 +59,109 @@ class BoltDB extends EventTarget {
   }
 
   private seed() {
-    const groupId = 'group-1';
+    const groupId = crypto.randomUUID();
     this.data.enterpriseGroups = [{
       id: groupId,
       name: 'Penske Automotive Group',
-      description: 'Global automotive retailer',
+      description: 'A leading international transportation services company.',
       created_at: new Date().toISOString()
     }];
 
-    const dealerId = 'dealer-1';
+    const dealerId = crypto.randomUUID();
     this.data.dealerships = [{
       id: dealerId,
       name: 'Penske Toyota of Cerritos',
       enterprise_group_id: groupId,
       status: DealershipStatus.LIVE,
       crm_provider: CRMProvider.CDK,
-      contract_value: 5000,
+      contract_value: 125000,
       purchase_date: '2023-01-15',
-      address_line1: '12345 Cerritos Blvd',
+      go_live_date: '2023-02-01',
+      address_line1: '12255 South St',
       city: 'Cerritos',
       state: 'CA',
       zip_code: '90703',
+      cif_number: 'CIF-9921',
+      era_system_id: 'ERA-X82',
+      pp_sys_id: 'PP-100',
+      store_number: '442',
+      branch_number: '12',
+      bu_id: 'BU-WEST',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     }];
 
     this.data.websiteLinks = [{
-      id: 'link-1',
+      id: crypto.randomUUID(),
       dealership_id: dealerId,
-      primary_url: 'https://www.pensketoyotacerritos.com'
+      primary_url: 'https://www.pensketoyotacerritos.com',
+      client_id: 'PENSKE-77'
     }];
 
     this.data.contacts = [{
-      id: 'contact-1',
+      id: crypto.randomUUID(),
       dealership_id: dealerId,
-      sales_contact_name: 'John Sales',
-      enrollment_contact_name: 'Jane Enroll',
-      assigned_specialist_name: 'Steve Expert',
-      poc_name: 'Dealer Manager',
-      poc_phone: '555-0199',
-      poc_email: 'manager@pensketoyota.com'
+      sales_contact_name: 'Robert Miller',
+      enrollment_contact_name: 'Sarah Chen',
+      assigned_specialist_name: 'Jordan Smith',
+      poc_name: 'Mike Johnson',
+      poc_phone: '562-555-0123',
+      poc_email: 'mjohnson@penske.com'
     }];
 
     this.data.orders = [{
-      id: 'order-1',
+      id: crypto.randomUUID(),
       dealership_id: dealerId,
-      order_number: 'ORD-1001',
-      product_name: 'Managed SEO',
+      order_number: 'ORD-5521',
+      product_name: 'Managed SEO & SEM',
       product_code: ProductCode.P15392Managed,
-      amount: 1200,
+      amount: 4500,
       order_date: new Date().toISOString(),
       status: OrderStatus.COMPLETED
     }];
 
     this.data.shoppers = [{
-      id: 'shopper-1',
-      first_name: 'Alex',
+      id: crypto.randomUUID(),
+      first_name: 'Michael',
       last_name: 'Tester',
-      email: 'alex@qa.com',
-      phone: '555-9988',
+      email: 'm.tester@qa-curator.io',
+      phone: '310-555-9012',
       status: ShopperStatus.ACTIVE,
       priority: ShopperPriority.HIGH,
-      username: 'alexqa',
-      password: 'password123',
+      username: 'mtester_qa',
+      password: 'SafePassword123!',
       created_at: new Date().toISOString()
     }];
 
     this.save();
   }
 
-  // API Methods
+  // Enterprise Groups
   getEnterpriseGroups() { return [...this.data.enterpriseGroups]; }
-  getDealerships() { return [...this.data.dealerships]; }
-  getShoppers() { return [...this.data.shoppers]; }
-  getOrders(dealerId?: string) { 
-    return dealerId ? this.data.orders.filter(o => o.dealership_id === dealerId) : [...this.data.orders]; 
+  upsertEnterpriseGroup(group: Partial<EnterpriseGroup>) {
+    const id = group.id || crypto.randomUUID();
+    const existingIndex = this.data.enterpriseGroups.findIndex(g => g.id === id);
+    const newGroup = {
+      ...this.data.enterpriseGroups[existingIndex],
+      ...group,
+      id,
+      created_at: existingIndex >= 0 ? this.data.enterpriseGroups[existingIndex].created_at : new Date().toISOString()
+    } as EnterpriseGroup;
+    if (existingIndex >= 0) this.data.enterpriseGroups[existingIndex] = newGroup;
+    else this.data.enterpriseGroups.push(newGroup);
+    this.save();
+    return id;
+  }
+  deleteEnterpriseGroup(id: string) {
+    this.data.enterpriseGroups = this.data.enterpriseGroups.filter(g => g.id !== id);
+    this.data.dealerships = this.data.dealerships.map(d => 
+      d.enterprise_group_id === id ? { ...d, enterprise_group_id: undefined } : d
+    );
+    this.save();
   }
 
+  // Dealerships
+  getDealerships() { return [...this.data.dealerships]; }
   getDealershipWithRelations(id: string): DealershipWithRelations | null {
     const dealer = this.data.dealerships.find(d => d.id === id);
     if (!dealer) return null;
@@ -186,19 +212,23 @@ class BoltDB extends EventTarget {
       this.data.dealerships.push(dealershipBase);
     }
 
-    // Handle relations
+    // Website Links
     if (payload.website_links) {
       this.data.websiteLinks = this.data.websiteLinks.filter(l => l.dealership_id !== id);
       payload.website_links.forEach(link => {
-        this.data.websiteLinks.push({ ...link, id: link.id || crypto.randomUUID(), dealership_id: id });
+        if (link.primary_url) {
+          this.data.websiteLinks.push({ ...link, id: link.id || crypto.randomUUID(), dealership_id: id });
+        }
       });
     }
 
+    // Contacts
     if (payload.contacts) {
       this.data.contacts = this.data.contacts.filter(c => c.dealership_id !== id);
       this.data.contacts.push({ ...payload.contacts, id: payload.contacts.id || crypto.randomUUID(), dealership_id: id });
     }
 
+    // Reynolds Solution
     if (payload.reynolds_solution) {
       this.data.reynoldsSolutions = this.data.reynoldsSolutions.filter(r => r.dealership_id !== id);
       this.data.reynoldsSolutions.push({ ...payload.reynolds_solution, id: payload.reynolds_solution.id || crypto.randomUUID(), dealership_id: id });
@@ -217,34 +247,35 @@ class BoltDB extends EventTarget {
     this.save();
   }
 
-  upsertEnterpriseGroup(group: Partial<EnterpriseGroup>) {
-    const id = group.id || crypto.randomUUID();
-    const existingIndex = this.data.enterpriseGroups.findIndex(g => g.id === id);
-    const newGroup = {
+  // Orders
+  getOrders(dealerId?: string) { 
+    return dealerId ? this.data.orders.filter(o => o.dealership_id === dealerId) : [...this.data.orders]; 
+  }
+  upsertOrder(order: Partial<Order>) {
+    const id = order.id || crypto.randomUUID();
+    const existingIndex = this.data.orders.findIndex(o => o.id === id);
+    const newOrder = {
+      ...this.data.orders[existingIndex],
+      ...order,
       id,
-      name: group.name || 'New Group',
-      description: group.description || '',
-      created_at: existingIndex >= 0 ? this.data.enterpriseGroups[existingIndex].created_at : new Date().toISOString()
-    };
-    if (existingIndex >= 0) this.data.enterpriseGroups[existingIndex] = newGroup;
-    else this.data.enterpriseGroups.push(newGroup);
+    } as Order;
+    if (existingIndex >= 0) this.data.orders[existingIndex] = newOrder;
+    else this.data.orders.push(newOrder);
     this.save();
     return id;
   }
-
-  deleteEnterpriseGroup(id: string) {
-    this.data.enterpriseGroups = this.data.enterpriseGroups.filter(g => g.id !== id);
-    // Unset group from dealerships
-    this.data.dealerships = this.data.dealerships.map(d => 
-      d.enterprise_group_id === id ? { ...d, enterprise_group_id: undefined } : d
-    );
+  deleteOrder(id: string) {
+    this.data.orders = this.data.orders.filter(o => o.id !== id);
     this.save();
   }
 
+  // Shoppers
+  getShoppers() { return [...this.data.shoppers]; }
   upsertShopper(shopper: Partial<Shopper>) {
     const id = shopper.id || crypto.randomUUID();
     const existingIndex = this.data.shoppers.findIndex(s => s.id === id);
     const newShopper = {
+      ...this.data.shoppers[existingIndex],
       ...shopper,
       id,
       created_at: existingIndex >= 0 ? this.data.shoppers[existingIndex].created_at : new Date().toISOString()
@@ -254,29 +285,10 @@ class BoltDB extends EventTarget {
     this.save();
     return id;
   }
-
   deleteShopper(id: string) {
     this.data.shoppers = this.data.shoppers.filter(s => s.id !== id);
     this.save();
   }
-
-  upsertOrder(order: Partial<Order>) {
-    const id = order.id || crypto.randomUUID();
-    const existingIndex = this.data.orders.findIndex(o => o.id === id);
-    const newOrder = {
-      ...order,
-      id,
-    } as Order;
-    if (existingIndex >= 0) this.data.orders[existingIndex] = newOrder;
-    else this.data.orders.push(newOrder);
-    this.save();
-    return id;
-  }
-
-  deleteOrder(id: string) {
-    this.data.orders = this.data.orders.filter(o => o.id !== id);
-    this.save();
-  }
 }
 
-export const db = BoltDB.getInstance();
+export const db = CuratorLocalDB.getInstance();
