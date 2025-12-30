@@ -22,7 +22,12 @@ const statusColors: Record<DealershipStatus, string> = {
 const DealershipCard: React.FC<DealershipCardProps> = ({ dealership, groupName, isManaged, onClick }) => {
   const formatDate = (dateString?: string) => {
     if (!dateString) return '---';
-    return new Date(dateString).toLocaleDateString();
+    // Fix: Parse YYYY-MM-DD explicitly to avoid timezone offset issues (e.g. showing previous day)
+    const datePart = dateString.split('T')[0];
+    const [year, month, day] = datePart.split('-').map(Number);
+    
+    // Create local date (month is 0-indexed)
+    return new Date(year, month - 1, day).toLocaleDateString('en-US');
   };
 
   return (
