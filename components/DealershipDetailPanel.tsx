@@ -245,7 +245,12 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
 
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return '---';
-    return new Date(dateStr).toLocaleDateString('en-US', {
+    // Fix: Parse YYYY-MM-DD explicitly to avoid timezone offset issues (e.g. showing previous day)
+    const datePart = dateStr.split('T')[0];
+    const [year, month, day] = datePart.split('-').map(Number);
+    
+    // Create local date (month is 0-indexed)
+    return new Date(year, month - 1, day).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'

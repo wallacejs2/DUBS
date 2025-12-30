@@ -13,6 +13,15 @@ interface EnterpriseGroupDetailPanelProps {
   onViewDealer: (id: string) => void;
 }
 
+const statusColors: Record<DealershipStatus, string> = {
+  [DealershipStatus.DMT_PENDING]: 'bg-slate-100 text-slate-600 border-slate-200',
+  [DealershipStatus.DMT_APPROVED]: 'bg-blue-50 text-blue-700 border-blue-200',
+  [DealershipStatus.HOLD]: 'bg-orange-50 text-orange-700 border-orange-200',
+  [DealershipStatus.ONBOARDING]: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+  [DealershipStatus.LIVE]: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  [DealershipStatus.CANCELLED]: 'bg-red-50 text-red-700 border-red-200',
+};
+
 const Label = ({ children }: { children?: React.ReactNode }) => (
   <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">
     {children}
@@ -220,7 +229,7 @@ const EnterpriseGroupDetailPanel: React.FC<EnterpriseGroupDetailPanelProps> = ({
                           </div>
                         </div>
                         <div className="flex items-center gap-4">
-                          <span className={`px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest rounded-md bg-slate-50 text-slate-600 border border-slate-100`}>
+                          <span className={`px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest rounded-md border ${statusColors[dealer.status]}`}>
                             {dealer.status}
                           </span>
                           <ArrowRight size={16} className="text-slate-200 group-hover:text-indigo-600 transition-colors" />
