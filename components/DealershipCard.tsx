@@ -1,5 +1,4 @@
 
-
 import React from 'react';
 import { Dealership, DealershipStatus } from '../types';
 
@@ -79,10 +78,17 @@ const DealershipCard: React.FC<DealershipCardProps> = ({ dealership, groupName, 
              </div>
              <div className="w-px h-3 bg-slate-200 hidden sm:block"></div>
 
-             <div className="flex items-center gap-1.5" title="Go-Live Date">
-               <span className="text-slate-400">LIVE:</span>
-               <span className="text-slate-700">{formatDate(dealership.go_live_date)}</span>
-             </div>
+             {dealership.status === DealershipStatus.CANCELLED ? (
+               <div className="flex items-center gap-1.5" title="Termination Date">
+                 <span className="text-red-400 font-bold">TERM:</span>
+                 <span className="text-slate-700">{formatDate(dealership.term_date)}</span>
+               </div>
+             ) : (
+               <div className="flex items-center gap-1.5" title="Go-Live Date">
+                 <span className="text-slate-400">LIVE:</span>
+                 <span className="text-slate-700">{formatDate(dealership.go_live_date)}</span>
+               </div>
+             )}
           </div>
         </div>
 
