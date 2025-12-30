@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect } from 'react';
 import { 
   X, Trash2, Edit3, Save, RefreshCw, Plus, Minus, Check, ArrowLeft
@@ -31,6 +30,7 @@ const statusColors: Record<DealershipStatus, string> = {
   [DealershipStatus.HOLD]: 'bg-orange-50 text-orange-700 border-orange-200',
   [DealershipStatus.ONBOARDING]: 'bg-indigo-50 text-indigo-700 border-indigo-200',
   [DealershipStatus.LIVE]: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  [DealershipStatus.LEGACY]: 'bg-yellow-50 text-yellow-700 border-yellow-200',
   [DealershipStatus.CANCELLED]: 'bg-red-50 text-red-700 border-red-200',
 };
 
@@ -262,6 +262,10 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
     return dateStr.split('T')[0];
   };
 
+  const isLockedStatus = (status: DealershipStatus) => {
+     return [DealershipStatus.DMT_PENDING, DealershipStatus.DMT_APPROVED, DealershipStatus.HOLD].includes(status);
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]" onClick={isEditing ? undefined : onClose}></div>
@@ -342,9 +346,15 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                <div>
                   <Label>Go-Live Date</Label>
                   {isEditing ? (
-                     <Input type="date" value={formatDateInput(formData.go_live_date)} onChange={(v) => updateField('go_live_date', v)} />
+                     isLockedStatus(formData.status) ? (
+                        <div className="w-full px-2 py-1 text-[12px] border border-slate-100 bg-slate-50 text-slate-400 rounded-lg italic cursor-not-allowed">
+                          Pending Status
+                        </div>
+                     ) : (
+                        <Input type="date" value={formatDateInput(formData.go_live_date)} onChange={(v) => updateField('go_live_date', v)} />
+                     )
                   ) : (
-                     <DataValue value={formatDate(dealership.go_live_date)} />
+                     <DataValue value={isLockedStatus(dealership.status) ? 'Pending' : formatDate(dealership.go_live_date)} />
                   )}
                </div>
                <div>

@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo } from 'react';
 import { Building2, DollarSign, Calendar, Filter, X } from 'lucide-react';
 import { useDealerships, useOrders } from '../hooks';
@@ -108,6 +109,13 @@ const DashboardPage: React.FC = () => {
         label: 'Live', 
         statuses: [DealershipStatus.LIVE], 
         color: 'text-emerald-600', 
+        bg: 'bg-white',
+        border: 'border-slate-200' 
+    },
+    { 
+        label: 'Legacy', 
+        statuses: [DealershipStatus.LEGACY], 
+        color: 'text-yellow-600', 
         bg: 'bg-white',
         border: 'border-slate-200' 
     },

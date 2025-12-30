@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { Dealership, DealershipStatus } from '../types';
 
@@ -15,6 +16,7 @@ const statusColors: Record<DealershipStatus, string> = {
   [DealershipStatus.HOLD]: 'bg-orange-50 text-orange-700 border-orange-200',
   [DealershipStatus.ONBOARDING]: 'bg-indigo-50 text-indigo-700 border-indigo-200',
   [DealershipStatus.LIVE]: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  [DealershipStatus.LEGACY]: 'bg-yellow-50 text-yellow-700 border-yellow-200',
   [DealershipStatus.CANCELLED]: 'bg-red-50 text-red-700 border-red-200',
 };
 

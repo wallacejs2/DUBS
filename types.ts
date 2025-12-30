@@ -6,6 +6,7 @@ export enum DealershipStatus {
   HOLD = 'Hold',
   ONBOARDING = 'Onboarding',
   LIVE = 'Live',
+  LEGACY = 'Legacy',
   CANCELLED = 'Cancelled'
 }
 

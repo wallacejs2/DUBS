@@ -1,5 +1,4 @@
 
-
 import React, { useState } from 'react';
 import { X, Save, Plus, Trash2, Check, Minus } from 'lucide-react';
 import { 
@@ -192,6 +191,10 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
     onSubmit(formData);
   };
 
+  const isLockedStatus = (status?: DealershipStatus) => {
+    return [DealershipStatus.DMT_PENDING, DealershipStatus.DMT_APPROVED, DealershipStatus.HOLD].includes(status || DealershipStatus.DMT_PENDING);
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
       <div className="bg-white rounded-[1.5rem] shadow-2xl w-full max-w-5xl max-h-[95vh] flex flex-col overflow-hidden">
@@ -251,12 +254,18 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
               </div>
               <div className="space-y-1">
                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Go-Live Date</label>
-                <input 
-                  type="date"
-                  value={formData.go_live_date ? formData.go_live_date.split('T')[0] : ''} 
-                  onChange={e => updateField('go_live_date', e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 focus:ring-1 focus:ring-indigo-500 outline-none font-normal"
-                />
+                {isLockedStatus(formData.status) ? (
+                  <div className="w-full px-3 py-2 text-xs rounded-lg border border-slate-100 bg-slate-50 text-slate-400 italic">
+                    Pending Status
+                  </div>
+                ) : (
+                  <input 
+                    type="date"
+                    value={formData.go_live_date ? formData.go_live_date.split('T')[0] : ''} 
+                    onChange={e => updateField('go_live_date', e.target.value)}
+                    className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 focus:ring-1 focus:ring-indigo-500 outline-none font-normal"
+                  />
+                )}
               </div>
               <div className="space-y-1">
                  {formData.status === DealershipStatus.CANCELLED && (

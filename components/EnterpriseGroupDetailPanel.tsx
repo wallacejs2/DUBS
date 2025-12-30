@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { X, ArrowRight, Edit3, Trash2, Save, RefreshCw } from 'lucide-react';
 import { EnterpriseGroup, Dealership, DealershipStatus } from '../types';
@@ -19,6 +20,7 @@ const statusColors: Record<DealershipStatus, string> = {
   [DealershipStatus.HOLD]: 'bg-orange-50 text-orange-700 border-orange-200',
   [DealershipStatus.ONBOARDING]: 'bg-indigo-50 text-indigo-700 border-indigo-200',
   [DealershipStatus.LIVE]: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  [DealershipStatus.LEGACY]: 'bg-yellow-50 text-yellow-700 border-yellow-200',
   [DealershipStatus.CANCELLED]: 'bg-red-50 text-red-700 border-red-200',
 };
 
@@ -57,9 +59,13 @@ const EnterpriseGroupDetailPanel: React.FC<EnterpriseGroupDetailPanelProps> = ({
   };
 
   const monthlyRevenue = useMemo(() => {
-    const liveDealerIds = new Set(dealerships.filter(d => d.status === DealershipStatus.LIVE).map(d => d.id));
+    const activeDealerIds = new Set(
+      dealerships
+        .filter(d => d.status === DealershipStatus.LIVE || d.status === DealershipStatus.LEGACY)
+        .map(d => d.id)
+    );
     return orders
-      .filter(o => liveDealerIds.has(o.dealership_id))
+      .filter(o => activeDealerIds.has(o.dealership_id))
       .reduce((sum, order) => {
         const orderTotal = order.products?.reduce((pSum, p) => pSum + (Number(p.amount) || 0), 0) || 0;
         return sum + orderTotal;
@@ -192,7 +198,7 @@ const EnterpriseGroupDetailPanel: React.FC<EnterpriseGroupDetailPanelProps> = ({
                 <Label>Portfolio Health</Label>
                 <div className="text-xl font-bold text-indigo-600 tracking-tight">
                   {dealerships.length > 0 
-                    ? `${Math.round((dealerships.filter(d => d.status === DealershipStatus.LIVE).length / dealerships.length) * 100)}%` 
+                    ? `${Math.round((dealerships.filter(d => d.status === DealershipStatus.LIVE || d.status === DealershipStatus.LEGACY).length / dealerships.length) * 100)}%` 
                     : '0%'}
                 </div>
               </div>
