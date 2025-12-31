@@ -1,6 +1,9 @@
 
 
 
+
+
+
 export enum DealershipStatus {
   DMT_PENDING = 'DMT-Pending',
   DMT_APPROVED = 'DMT-Approved',
@@ -158,4 +161,8 @@ export interface Shopper {
   qa_details?: string;
   assigned_tester?: string;
   created_at: string;
+  dealership_id?: string;
+  dms_id?: string;
+  curator_id?: string;
+  curator_link?: string;
 }

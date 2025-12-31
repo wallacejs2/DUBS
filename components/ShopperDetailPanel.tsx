@@ -1,10 +1,11 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   X, Trash2, Edit3, Save, RefreshCw, 
-  User, Shield, Mail, Phone 
+  User, Shield, Mail, Phone, Building2, Check, Hash, Link, ExternalLink
 } from 'lucide-react';
-import { Shopper, ShopperStatus, ShopperPriority } from '../types';
+import { Shopper, ShopperStatus, ShopperPriority, DealershipStatus } from '../types';
+import { useDealerships, useEnterpriseGroups } from '../hooks';
 
 interface ShopperDetailPanelProps {
   shopper: Partial<Shopper>;
@@ -27,7 +28,7 @@ const priorityColors: Record<ShopperPriority, string> = {
 };
 
 const Label = ({ children, icon: Icon }: { children?: React.ReactNode, icon?: any }) => (
-  <label className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+  <label className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">
     {Icon && <Icon size={10} />}
     {children}
   </label>
@@ -45,7 +46,7 @@ const Input = ({ value, onChange, type = "text", className = "", placeholder="" 
     value={value || ''}
     onChange={(e) => onChange(e.target.value)}
     placeholder={placeholder}
-    className={`w-full px-3 py-2 text-[12px] border border-slate-200 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white font-normal transition-all ${className}`}
+    className={`w-full px-3 py-1.5 text-[12px] border border-slate-200 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white font-normal transition-all ${className}`}
   />
 );
 
@@ -53,7 +54,7 @@ const Select = ({ value, onChange, options, className = "" }: { value: any, onCh
   <select 
     value={value || ''}
     onChange={(e) => onChange(e.target.value)}
-    className={`w-full px-3 py-2 text-[12px] border border-slate-200 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white font-normal transition-all ${className}`}
+    className={`w-full px-3 py-1.5 text-[12px] border border-slate-200 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white font-normal transition-all ${className}`}
   >
     {options.map(opt => (
       <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -68,6 +69,24 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
   const [isEditing, setIsEditing] = useState(isNew);
   const [formData, setFormData] = useState<Partial<Shopper>>(shopper);
   const [fullName, setFullName] = useState('');
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  const { dealerships } = useDealerships();
+  const { groups } = useEnterpriseGroups();
+
+  const eligibleDealerships = useMemo(() => dealerships.filter(d => 
+    [DealershipStatus.LIVE, DealershipStatus.LEGACY, DealershipStatus.ONBOARDING].includes(d.status)
+  ).sort((a, b) => a.name.localeCompare(b.name)), [dealerships]);
+
+  const selectedDealership = useMemo(() => 
+    dealerships.find(d => d.id === formData.dealership_id), 
+    [dealerships, formData.dealership_id]
+  );
+
+  const selectedGroup = useMemo(() => 
+    groups.find(g => g.id === selectedDealership?.enterprise_group_id),
+    [groups, selectedDealership]
+  );
 
   useEffect(() => {
     setFormData(shopper);
@@ -111,10 +130,18 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
     }
   };
 
+  const copyToClipboard = (text: string, field: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedField(field);
+      setTimeout(() => setCopiedField(null), 2000);
+    });
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]" onClick={isEditing && isNew ? undefined : onClose}></div>
-      <div className="relative w-full max-w-2xl bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+      {/* Changed max-w-2xl to max-w-4xl to widen the panel */}
+      <div className="relative w-full max-w-4xl bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
         
         {/* Sticky Header */}
         <div className="bg-white sticky top-0 z-30 border-b border-slate-100 shadow-sm">
@@ -162,11 +189,12 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-8 bg-white custom-scrollbar">
-          <div className="space-y-8 max-w-xl mx-auto">
+        <div className="flex-1 overflow-y-auto p-6 bg-white custom-scrollbar">
+          {/* Removed max-w-xl constraint to allow full width usage */}
+          <div className="space-y-6 mx-auto">
             
             {/* Status Section */}
-            <div className="grid grid-cols-2 gap-6 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+            <div className="grid grid-cols-2 gap-4 bg-slate-50 p-3 rounded-2xl border border-slate-100">
                <div>
                   <Label icon={Shield}>Status</Label>
                   {isEditing ? (
@@ -199,8 +227,8 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
 
             {/* Contact Info */}
             <div>
-              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest mb-4 border-b border-slate-100 pb-2">Contact Details</h3>
-              <div className="grid grid-cols-2 gap-6">
+              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest mb-3 border-b border-slate-100 pb-2">Contact Details</h3>
+              <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2 sm:col-span-1">
                   <Label icon={Mail}>Email Address</Label>
                   {isEditing ? (
@@ -220,11 +248,112 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                   )}
                 </div>
               </div>
+
+              {/* New Identifiers Section */}
+              <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-slate-50">
+                 <div>
+                    <Label icon={Hash}>DMS ID</Label>
+                    {isEditing ? (
+                      <Input value={formData.dms_id} onChange={(v) => updateField('dms_id', v)} placeholder="DMS ID" />
+                    ) : (
+                      <DataValue value={formData.dms_id} mono />
+                    )}
+                 </div>
+                 <div>
+                    <Label icon={Hash}>Curator ID</Label>
+                    {isEditing ? (
+                      <Input value={formData.curator_id} onChange={(v) => updateField('curator_id', v)} placeholder="Curator ID" />
+                    ) : (
+                      <DataValue value={formData.curator_id} mono />
+                    )}
+                 </div>
+                 <div>
+                    <Label icon={Link}>Curator Link</Label>
+                    {isEditing ? (
+                      <Input value={formData.curator_link} onChange={(v) => updateField('curator_link', v)} placeholder="https://..." />
+                    ) : (
+                       <DataValue>
+                          {formData.curator_link ? (
+                            <a href={formData.curator_link} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline truncate flex items-center gap-1" title={formData.curator_link}>
+                              Open Link <ExternalLink size={10} />
+                            </a>
+                          ) : '---'}
+                       </DataValue>
+                    )}
+                 </div>
+              </div>
+            </div>
+
+            {/* Dealership Assignment */}
+            <div className="mt-5 pt-5 border-t border-slate-100">
+              <div className="flex items-center justify-between mb-3">
+                 <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest">Dealership Assignment</h3>
+                 {selectedDealership && (
+                   <div className="flex items-center gap-1">
+                      <button 
+                        onClick={() => copyToClipboard(selectedDealership.pp_sys_id || '', 'pp')}
+                        className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                        title="Copy PP Sys ID"
+                      >
+                        {copiedField === 'pp' ? <Check size={14} className="text-emerald-500" /> : <Hash size={14} />}
+                      </button>
+                      <button 
+                        onClick={() => {
+                           const combo = `${selectedDealership.pp_sys_id || ''}_${selectedDealership.store_number || ''}_${selectedDealership.branch_number || ''}`;
+                           copyToClipboard(combo, 'combo');
+                        }}
+                        className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                        title="Copy PP_Store_Branch"
+                      >
+                        {copiedField === 'combo' ? <Check size={14} className="text-emerald-500" /> : <Link size={14} />}
+                      </button>
+                   </div>
+                 )}
+              </div>
+              
+              <div className="space-y-3">
+                 <div className="w-full">
+                    <Label icon={Building2}>Assigned Dealership</Label>
+                    {isEditing ? (
+                       <select 
+                          value={formData.dealership_id || ''} 
+                          onChange={(e) => updateField('dealership_id', e.target.value)}
+                          className="w-full px-3 py-1.5 text-[12px] border border-slate-200 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white font-normal transition-all"
+                       >
+                          <option value="">-- No Dealership Assigned --</option>
+                          {eligibleDealerships.map(d => (
+                             <option key={d.id} value={d.id}>{d.name} ({d.status})</option>
+                          ))}
+                       </select>
+                    ) : (
+                       <DataValue value={selectedDealership?.name || 'Unassigned'} />
+                    )}
+                 </div>
+
+                 {selectedDealership && (
+                    <div className="grid grid-cols-3 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                       <div className="min-w-0">
+                          <Label>Enterprise Group</Label>
+                          <div className="truncate" title={selectedGroup?.name || 'Single (Independent)'}>
+                             <DataValue value={selectedGroup?.name || 'Single (Independent)'} />
+                          </div>
+                       </div>
+                       <div>
+                          <Label>PP Sys ID</Label>
+                          <DataValue mono value={selectedDealership.pp_sys_id} />
+                       </div>
+                       <div>
+                          <Label>Store / Branch</Label>
+                          <DataValue mono value={`${selectedDealership.store_number || '-'}/${selectedDealership.branch_number || '-'}`} />
+                       </div>
+                    </div>
+                 )}
+              </div>
             </div>
 
             {/* Timestamps */}
             {!isNew && (
-              <div className="pt-6 mt-6 border-t border-slate-100 flex gap-6 text-[10px] text-slate-400">
+              <div className="pt-4 mt-4 border-t border-slate-100 flex gap-6 text-[10px] text-slate-400">
                 <span>Created: {new Date(formData.created_at || '').toLocaleDateString()}</span>
                 <span>ID: {formData.id}</span>
               </div>

@@ -46,7 +46,7 @@ const DealershipCard: React.FC<DealershipCardProps> = ({ dealership, groupName, 
     const lines = [
       `--- ${dealership.name.toUpperCase()} ---`,
       `CIF: ${dealership.cif_number || ''}`,
-      `Group: ${groupName || ''}`,
+      `Group: ${groupName || 'Single'}`,
       `PPSysID: ${dealership.pp_sys_id || ''}`,
       `St/Br: ${dealership.store_number || ''}/${dealership.branch_number || ''}`
     ];
