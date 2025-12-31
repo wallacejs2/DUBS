@@ -6,6 +6,8 @@
 
 
 
+
+
 export enum DealershipStatus {
   DMT_PENDING = 'DMT-Pending',
   DMT_APPROVED = 'DMT-Approved',
@@ -115,6 +117,8 @@ export interface Dealership {
   enterprise_group_id?: string;
   status: DealershipStatus;
   crm_provider: CRMProvider;
+  website_provider?: string;
+  inventory_provider?: string;
   contract_value: number;
   purchase_date: string;
   go_live_date?: string;

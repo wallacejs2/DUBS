@@ -1,4 +1,6 @@
 
+
+
 import React, { useState, useEffect } from 'react';
 import { 
   X, Trash2, Edit3, Save, RefreshCw, Plus, Minus, Check, ArrowLeft
@@ -374,7 +376,7 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
             <h3 className="text-[11px] font-bold text-slate-800 uppercase tracking-widest mt-6">Account Details</h3>
 
             <div className="grid grid-cols-3 gap-6">
-               <div className="min-w-0">
+               <div className="min-w-0 col-span-2">
                   <Label>Enterprise Group</Label>
                   {isEditing ? (
                     <div className="flex flex-col gap-2">
@@ -409,18 +411,6 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                     </div>
                   ) : (
                      <DataValue value={dealership.enterprise_group?.name || 'Single (Independent)'} />
-                  )}
-               </div>
-               <div>
-                  <Label>CRM Provider</Label>
-                  {isEditing ? (
-                     <Select 
-                        value={formData.crm_provider}
-                        onChange={(v) => updateField('crm_provider', v)}
-                        options={Object.values(CRMProvider).map(c => ({ label: c, value: c }))}
-                     />
-                  ) : (
-                     <DataValue value={dealership.crm_provider} />
                   )}
                </div>
                <div>
@@ -472,6 +462,38 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                      />
                   ) : (
                      <DataValue value={dealership.state} />
+                  )}
+               </div>
+            </div>
+
+            {/* Providers Row */}
+            <div className="grid grid-cols-3 gap-4">
+               <div>
+                  <Label>CRM Provider</Label>
+                  {isEditing ? (
+                     <Select 
+                        value={formData.crm_provider}
+                        onChange={(v) => updateField('crm_provider', v)}
+                        options={Object.values(CRMProvider).map(c => ({ label: c, value: c }))}
+                     />
+                  ) : (
+                     <DataValue value={dealership.crm_provider} />
+                  )}
+               </div>
+               <div>
+                  <Label>Website Provider</Label>
+                  {isEditing ? (
+                    <Input value={formData.website_provider} onChange={(v) => updateField('website_provider', v)} placeholder="Provider" />
+                  ) : (
+                    <DataValue value={dealership.website_provider} />
+                  )}
+               </div>
+               <div>
+                  <Label>Inventory Provider</Label>
+                  {isEditing ? (
+                    <Input value={formData.inventory_provider} onChange={(v) => updateField('inventory_provider', v)} placeholder="Provider" />
+                  ) : (
+                    <DataValue value={dealership.inventory_provider} />
                   )}
                </div>
             </div>

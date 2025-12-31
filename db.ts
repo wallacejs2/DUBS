@@ -1,5 +1,7 @@
 
 
+
+
 import { 
   Dealership, EnterpriseGroup, Order, Shopper, 
   DealershipWithRelations, WebsiteLink, DealershipContacts, 
@@ -194,6 +196,8 @@ class CuratorLocalDB extends EventTarget {
       enterprise_group_id: payload.enterprise_group_id,
       status: payload.status || DealershipStatus.DMT_PENDING,
       crm_provider: payload.crm_provider || CRMProvider.FOCUS,
+      website_provider: payload.website_provider,
+      inventory_provider: payload.inventory_provider,
       contract_value: payload.contract_value || 0,
       purchase_date: payload.purchase_date || now,
       go_live_date: payload.go_live_date,
