@@ -263,7 +263,7 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
   };
 
   const isLockedStatus = (status: DealershipStatus) => {
-     return [DealershipStatus.DMT_PENDING, DealershipStatus.DMT_APPROVED].includes(status);
+     return [DealershipStatus.DMT_PENDING, DealershipStatus.DMT_APPROVED, DealershipStatus.HOLD].includes(status);
   };
 
   return (
