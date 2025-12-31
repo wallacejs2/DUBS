@@ -4,7 +4,7 @@ import {
   X, Trash2, Edit3, Save, RefreshCw, 
   User, Shield, Mail, Phone, Building2, Check, Hash, Link, ExternalLink, Plus
 } from 'lucide-react';
-import { Shopper, ShopperStatus, ShopperPriority, DealershipStatus, ShopperIdentity } from '../types';
+import { Shopper, ShopperStatus, ShopperPriority, DealershipStatus, ShopperIdentity, AdditionalProfile } from '../types';
 import { useDealerships, useEnterpriseGroups } from '../hooks';
 
 interface ShopperDetailPanelProps {
@@ -76,7 +76,8 @@ const IdentityManager: React.FC<IdentityManagerProps> = ({ label, identities, on
       id: crypto.randomUUID(),
       type: 'cdpID',
       value: '',
-      is_parent: identities.length === 0
+      is_parent: identities.length === 0,
+      notes: ''
     };
     onChange([...identities, newId]);
   };
@@ -145,9 +146,9 @@ const IdentityManager: React.FC<IdentityManagerProps> = ({ label, identities, on
                 )}
              </div>
              
-             <div className="flex items-center justify-between pt-1 border-t border-slate-50">
+             <div className="flex items-center justify-between pt-1 border-t border-slate-50 gap-2">
                 <div 
-                  className={`flex items-center gap-1.5 text-[9px] cursor-pointer ${id.is_parent ? 'text-indigo-600 font-bold' : 'text-slate-400 font-medium'}`}
+                  className={`flex items-center gap-1.5 text-[9px] cursor-pointer flex-shrink-0 ${id.is_parent ? 'text-indigo-600 font-bold' : 'text-slate-400 font-medium'}`}
                   onClick={isEditing ? () => updateIdentity(idx, 'is_parent', true) : undefined}
                 >
                    {isEditing ? (
@@ -159,8 +160,24 @@ const IdentityManager: React.FC<IdentityManagerProps> = ({ label, identities, on
                    )}
                    <span>{id.is_parent ? 'Parent' : 'Secondary'}</span>
                 </div>
+                
+                <div className="flex-1 min-w-0">
+                    {isEditing ? (
+                        <input 
+                            value={id.notes || ''} 
+                            onChange={(e) => updateIdentity(idx, 'notes', e.target.value)}
+                            placeholder="Add note..."
+                            className="w-full bg-transparent text-[9px] italic text-slate-600 placeholder:text-slate-300 outline-none text-right px-2"
+                        />
+                    ) : (
+                        <div className="text-[9px] italic text-slate-400 truncate text-right px-2" title={id.notes}>
+                            {id.notes}
+                        </div>
+                    )}
+                </div>
+
                 {isEditing && (
-                  <button onClick={() => handleRemove(idx)} className="text-slate-300 hover:text-red-500 transition-colors"><Trash2 size={12} /></button>
+                  <button onClick={() => handleRemove(idx)} className="text-slate-300 hover:text-red-500 transition-colors flex-shrink-0"><Trash2 size={12} /></button>
                 )}
              </div>
           </div>
@@ -254,6 +271,31 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
     });
   };
 
+  // Logic for Additional Profiles
+  const addProfile = () => {
+    const newProfile: AdditionalProfile = {
+        id: crypto.randomUUID(),
+        name: '',
+        email: '',
+        phone: '',
+        dms_id: '',
+        cdp_identities: []
+    };
+    updateField('additional_profiles', [...(formData.additional_profiles || []), newProfile]);
+  };
+
+  const removeProfile = (index: number) => {
+    const newProfiles = [...(formData.additional_profiles || [])];
+    newProfiles.splice(index, 1);
+    updateField('additional_profiles', newProfiles);
+  };
+
+  const updateProfile = (index: number, field: keyof AdditionalProfile, value: any) => {
+    const newProfiles = [...(formData.additional_profiles || [])];
+    newProfiles[index] = { ...newProfiles[index], [field]: value };
+    updateField('additional_profiles', newProfiles);
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]" onClick={isEditing && isNew ? undefined : onClose}></div>
@@ -342,68 +384,9 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                </div>
             </div>
 
-            {/* Contact Info */}
-            <div>
-              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest mb-3 border-b border-slate-100 pb-2">Contact Details</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2 sm:col-span-1">
-                  <Label icon={Mail}>Email Address</Label>
-                  {isEditing ? (
-                    <Input type="email" value={formData.email} onChange={(v) => updateField('email', v)} />
-                  ) : (
-                    <DataValue>
-                      <a href={`mailto:${formData.email}`} className="text-indigo-600 hover:underline">{formData.email}</a>
-                    </DataValue>
-                  )}
-                </div>
-                <div className="col-span-2 sm:col-span-1">
-                  <Label icon={Phone}>Phone Number</Label>
-                  {isEditing ? (
-                    <Input value={formData.phone} onChange={(v) => updateField('phone', v)} placeholder="(###) ###-####" />
-                  ) : (
-                    <DataValue value={formData.phone} />
-                  )}
-                </div>
-              </div>
-
-              {/* Identifiers Section */}
-              <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-slate-50">
-                 <div>
-                    <Label icon={Hash}>DMS ID</Label>
-                    {isEditing ? (
-                      <Input value={formData.dms_id} onChange={(v) => updateField('dms_id', v)} placeholder="DMS ID" />
-                    ) : (
-                      <DataValue value={formData.dms_id} mono />
-                    )}
-                 </div>
-                 <div>
-                    <Label icon={Hash}>Curator ID</Label>
-                    {isEditing ? (
-                      <Input value={formData.curator_id} onChange={(v) => updateField('curator_id', v)} placeholder="Curator ID" />
-                    ) : (
-                      <DataValue value={formData.curator_id} mono />
-                    )}
-                 </div>
-                 <div>
-                    <Label icon={Link}>Curator Link</Label>
-                    {isEditing ? (
-                      <Input value={formData.curator_link} onChange={(v) => updateField('curator_link', v)} placeholder="https://..." />
-                    ) : (
-                       <DataValue>
-                          {formData.curator_link ? (
-                            <a href={formData.curator_link} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline truncate flex items-center gap-1" title={formData.curator_link}>
-                              Open Link <ExternalLink size={10} />
-                            </a>
-                          ) : '---'}
-                       </DataValue>
-                    )}
-                 </div>
-              </div>
-            </div>
-
             {/* Dealership Assignment */}
-            <div className="mt-5 pt-5 border-t border-slate-100">
-              <div className="flex items-center justify-between mb-3">
+            <div className="mt-4">
+              <div className="flex items-center justify-between mb-3 border-b border-slate-100 pb-2">
                  <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest">Dealership Assignment</h3>
                  {selectedDealership && (
                    <div className="flex items-center gap-1">
@@ -468,6 +451,65 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
               </div>
             </div>
 
+            {/* Contact Info */}
+            <div className="mt-5 pt-5 border-t border-slate-100">
+              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest mb-3">Contact Details</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2 sm:col-span-1">
+                  <Label icon={Mail}>Email Address</Label>
+                  {isEditing ? (
+                    <Input type="email" value={formData.email} onChange={(v) => updateField('email', v)} />
+                  ) : (
+                    <DataValue>
+                      <a href={`mailto:${formData.email}`} className="text-indigo-600 hover:underline">{formData.email}</a>
+                    </DataValue>
+                  )}
+                </div>
+                <div className="col-span-2 sm:col-span-1">
+                  <Label icon={Phone}>Phone Number</Label>
+                  {isEditing ? (
+                    <Input value={formData.phone} onChange={(v) => updateField('phone', v)} placeholder="(###) ###-####" />
+                  ) : (
+                    <DataValue value={formData.phone} />
+                  )}
+                </div>
+              </div>
+
+              {/* Identifiers Section */}
+              <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-slate-50">
+                 <div>
+                    <Label icon={Hash}>DMS ID</Label>
+                    {isEditing ? (
+                      <Input value={formData.dms_id} onChange={(v) => updateField('dms_id', v)} placeholder="DMS ID" />
+                    ) : (
+                      <DataValue value={formData.dms_id} mono />
+                    )}
+                 </div>
+                 <div>
+                    <Label icon={Hash}>Curator ID</Label>
+                    {isEditing ? (
+                      <Input value={formData.curator_id} onChange={(v) => updateField('curator_id', v)} placeholder="Curator ID" />
+                    ) : (
+                      <DataValue value={formData.curator_id} mono />
+                    )}
+                 </div>
+                 <div>
+                    <Label icon={Link}>Curator Link</Label>
+                    {isEditing ? (
+                      <Input value={formData.curator_link} onChange={(v) => updateField('curator_link', v)} placeholder="https://..." />
+                    ) : (
+                       <DataValue>
+                          {formData.curator_link ? (
+                            <a href={formData.curator_link} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline truncate flex items-center gap-1" title={formData.curator_link}>
+                              Open Link <ExternalLink size={10} />
+                            </a>
+                          ) : '---'}
+                       </DataValue>
+                    )}
+                 </div>
+              </div>
+            </div>
+
             {/* System Identities Section */}
             <div className="mt-5 pt-5 border-t border-slate-100">
               <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest mb-3">System Identities</h3>
@@ -490,6 +532,82 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                     onChange={(ids) => updateField('curator_identities', ids)}
                     isEditing={isEditing}
                  />
+              </div>
+            </div>
+
+            {/* Additional Profiles Section */}
+            <div className="mt-5 pt-5 border-t border-slate-100">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest">Additional Profiles</h3>
+                {isEditing && (
+                    <button onClick={addProfile} className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 bg-indigo-50 px-2 py-1 rounded transition-colors border border-indigo-100">
+                        <Plus size={12} /> Add Profile
+                    </button>
+                )}
+              </div>
+              
+              <div className="space-y-4">
+                {(formData.additional_profiles || []).map((profile, idx) => (
+                    <div key={profile.id} className="bg-slate-50 border border-slate-200 rounded-xl p-3 relative">
+                        {/* Header / Remove */}
+                        {isEditing && (
+                           <button 
+                             onClick={() => removeProfile(idx)} 
+                             className="absolute top-2 right-2 text-slate-400 hover:text-red-500 bg-white p-1 rounded-full shadow-sm border border-slate-100 hover:border-red-100 transition-all z-10"
+                             title="Remove Profile"
+                           >
+                             <Trash2 size={12} />
+                           </button>
+                        )}
+                        
+                        {/* 4 Columns Input */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4 pr-6">
+                            <div>
+                                <Label>Name</Label>
+                                {isEditing ? (
+                                    <Input value={profile.name} onChange={(v) => updateProfile(idx, 'name', v)} placeholder="Name" />
+                                ) : (
+                                    <DataValue value={profile.name} />
+                                )}
+                            </div>
+                            <div>
+                                <Label>Email</Label>
+                                {isEditing ? (
+                                     <Input value={profile.email} onChange={(v) => updateProfile(idx, 'email', v)} placeholder="Email" />
+                                ) : (
+                                     <DataValue value={profile.email} />
+                                )}
+                            </div>
+                            <div>
+                                <Label>Phone</Label>
+                                {isEditing ? (
+                                     <Input value={profile.phone} onChange={(v) => updateProfile(idx, 'phone', v)} placeholder="Phone" />
+                                ) : (
+                                     <DataValue value={profile.phone} />
+                                )}
+                            </div>
+                            <div>
+                                <Label>DMS ID</Label>
+                                {isEditing ? (
+                                     <Input value={profile.dms_id} onChange={(v) => updateProfile(idx, 'dms_id', v)} placeholder="DMS ID" />
+                                ) : (
+                                     <DataValue value={profile.dms_id} mono />
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Identities */}
+                        <IdentityManager 
+                            label="CDP IDs"
+                            identities={profile.cdp_identities || []}
+                            onChange={(ids) => updateProfile(idx, 'cdp_identities', ids)}
+                            isEditing={isEditing}
+                        />
+                    </div>
+                ))}
+                {(!formData.additional_profiles || formData.additional_profiles.length === 0) && !isEditing && (
+                    <div className="text-[10px] text-slate-400 italic">No additional profiles recorded.</div>
+                )}
               </div>
             </div>
 

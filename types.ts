@@ -8,6 +8,7 @@
 
 
 
+
 export enum DealershipStatus {
   DMT_PENDING = 'DMT-Pending',
   DMT_APPROVED = 'DMT-Approved',
@@ -158,6 +159,16 @@ export interface ShopperIdentity {
   type: IdentityType;
   value: string;
   is_parent: boolean;
+  notes?: string;
+}
+
+export interface AdditionalProfile {
+  id: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  dms_id?: string;
+  cdp_identities: ShopperIdentity[];
 }
 
 export interface Shopper {
@@ -185,4 +196,7 @@ export interface Shopper {
   ucp_identities?: ShopperIdentity[];
   cdp_admin_identities?: ShopperIdentity[];
   curator_identities?: ShopperIdentity[];
+  
+  // New section
+  additional_profiles?: AdditionalProfile[];
 }
