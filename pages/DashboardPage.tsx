@@ -107,15 +107,8 @@ const DashboardPage: React.FC = () => {
   const statusGroups = [
     { 
         label: 'Live', 
-        statuses: [DealershipStatus.LIVE], 
+        statuses: [DealershipStatus.LIVE, DealershipStatus.LEGACY], 
         color: 'text-emerald-600', 
-        bg: 'bg-white',
-        border: 'border-slate-200' 
-    },
-    { 
-        label: 'Legacy', 
-        statuses: [DealershipStatus.LEGACY], 
-        color: 'text-yellow-600', 
         bg: 'bg-white',
         border: 'border-slate-200' 
     },
