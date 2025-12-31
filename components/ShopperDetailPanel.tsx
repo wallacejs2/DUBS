@@ -2,9 +2,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   X, Trash2, Edit3, Save, RefreshCw, 
-  User, Shield, Mail, Phone, Building2, Check, Hash, Link, ExternalLink
+  User, Shield, Mail, Phone, Building2, Check, Hash, Link, ExternalLink, Plus
 } from 'lucide-react';
-import { Shopper, ShopperStatus, ShopperPriority, DealershipStatus } from '../types';
+import { Shopper, ShopperStatus, ShopperPriority, DealershipStatus, ShopperIdentity } from '../types';
 import { useDealerships, useEnterpriseGroups } from '../hooks';
 
 interface ShopperDetailPanelProps {
@@ -61,6 +61,123 @@ const Select = ({ value, onChange, options, className = "" }: { value: any, onCh
     ))}
   </select>
 );
+
+// Internal Component for Managing Identities
+interface IdentityManagerProps {
+  label: string;
+  identities: ShopperIdentity[];
+  onChange: (ids: ShopperIdentity[]) => void;
+  isEditing: boolean;
+}
+
+const IdentityManager: React.FC<IdentityManagerProps> = ({ label, identities, onChange, isEditing }) => {
+  const handleAdd = () => {
+    const newId: ShopperIdentity = {
+      id: crypto.randomUUID(),
+      type: 'cdpID',
+      value: '',
+      is_parent: identities.length === 0
+    };
+    onChange([...identities, newId]);
+  };
+
+  const handleRemove = (index: number) => {
+    const newIds = [...identities];
+    newIds.splice(index, 1);
+    // If we removed the parent, make the first one parent (if exists)
+    if (identities[index].is_parent && newIds.length > 0) {
+      newIds[0].is_parent = true;
+    }
+    onChange(newIds);
+  };
+
+  const updateIdentity = (index: number, field: keyof ShopperIdentity, value: any) => {
+    const newIds = [...identities];
+    
+    if (field === 'is_parent' && value === true) {
+      // Unset others
+      newIds.forEach(id => id.is_parent = false);
+    }
+    
+    newIds[index] = { ...newIds[index], [field]: value };
+    onChange(newIds);
+  };
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+        <Hash size={10} /> {label}
+      </div>
+      
+      <div className="space-y-2 bg-slate-50/50 rounded-xl p-2 border border-slate-100">
+        {identities.length === 0 && !isEditing && (
+           <div className="text-[10px] text-slate-400 italic p-1">No IDs</div>
+        )}
+        
+        {identities.map((id, idx) => (
+          <div key={id.id || idx} className="bg-white p-2 rounded-lg border border-slate-200 shadow-sm flex flex-col gap-2">
+             <div className="flex gap-2 items-center">
+                {isEditing ? (
+                  <select 
+                    value={id.type} 
+                    onChange={(e) => updateIdentity(idx, 'type', e.target.value)}
+                    className="w-[70px] px-1 py-1 text-[10px] border border-slate-200 rounded focus:ring-1 focus:ring-indigo-500 outline-none bg-slate-50 font-bold text-slate-600"
+                  >
+                    <option value="cdpID">CDP</option>
+                    <option value="ffcdpID">FF</option>
+                  </select>
+                ) : (
+                  <span className="text-[9px] font-bold text-slate-500 bg-slate-100 border border-slate-200 px-1.5 py-1 rounded uppercase tracking-wider h-fit flex-shrink-0">
+                    {id.type === 'cdpID' ? 'CDP' : 'FF'}
+                  </span>
+                )}
+                {isEditing ? (
+                  <input 
+                    value={id.value} 
+                    onChange={(e) => updateIdentity(idx, 'value', e.target.value)} 
+                    placeholder="ID Value"
+                    className="flex-1 px-2 py-1 text-[11px] border border-slate-200 rounded focus:ring-1 focus:ring-indigo-500 outline-none font-mono min-w-0"
+                  />
+                ) : (
+                  <div className="flex-1 font-mono text-[11px] text-slate-700 pt-0.5 truncate" title={id.value}>
+                    {id.value || '---'}
+                  </div>
+                )}
+             </div>
+             
+             <div className="flex items-center justify-between pt-1 border-t border-slate-50">
+                <div 
+                  className={`flex items-center gap-1.5 text-[9px] cursor-pointer ${id.is_parent ? 'text-indigo-600 font-bold' : 'text-slate-400 font-medium'}`}
+                  onClick={isEditing ? () => updateIdentity(idx, 'is_parent', true) : undefined}
+                >
+                   {isEditing ? (
+                     <div className={`w-3 h-3 rounded-full border flex items-center justify-center ${id.is_parent ? 'border-indigo-600 bg-indigo-600' : 'border-slate-300 bg-white'}`}>
+                        {id.is_parent && <div className="w-1 h-1 bg-white rounded-full"></div>}
+                     </div>
+                   ) : (
+                     id.is_parent && <div className="w-3 h-3 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center"><Check size={8} /></div>
+                   )}
+                   <span>{id.is_parent ? 'Parent' : 'Secondary'}</span>
+                </div>
+                {isEditing && (
+                  <button onClick={() => handleRemove(idx)} className="text-slate-300 hover:text-red-500 transition-colors"><Trash2 size={12} /></button>
+                )}
+             </div>
+          </div>
+        ))}
+        
+        {isEditing && (
+          <button 
+            onClick={handleAdd}
+            className="w-full py-2 border border-dashed border-indigo-200 text-indigo-500 rounded-lg text-[10px] font-bold hover:bg-indigo-50 transition-all flex items-center justify-center gap-1"
+          >
+            <Plus size={12} /> Add ID
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
 
 const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({ 
   shopper, onClose, onUpdate, onDelete
@@ -249,7 +366,7 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                 </div>
               </div>
 
-              {/* New Identifiers Section */}
+              {/* Identifiers Section */}
               <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-slate-50">
                  <div>
                     <Label icon={Hash}>DMS ID</Label>
@@ -348,6 +465,31 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                        </div>
                     </div>
                  )}
+              </div>
+            </div>
+
+            {/* System Identities Section */}
+            <div className="mt-5 pt-5 border-t border-slate-100">
+              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest mb-3">System Identities</h3>
+              <div className="flex flex-col gap-3">
+                 <IdentityManager 
+                    label="UCP" 
+                    identities={formData.ucp_identities || []} 
+                    onChange={(ids) => updateField('ucp_identities', ids)}
+                    isEditing={isEditing}
+                 />
+                 <IdentityManager 
+                    label="CDP Admin" 
+                    identities={formData.cdp_admin_identities || []} 
+                    onChange={(ids) => updateField('cdp_admin_identities', ids)}
+                    isEditing={isEditing}
+                 />
+                 <IdentityManager 
+                    label="Curator" 
+                    identities={formData.curator_identities || []} 
+                    onChange={(ids) => updateField('curator_identities', ids)}
+                    isEditing={isEditing}
+                 />
               </div>
             </div>
 

@@ -4,6 +4,8 @@
 
 
 
+
+
 export enum DealershipStatus {
   DMT_PENDING = 'DMT-Pending',
   DMT_APPROVED = 'DMT-Approved',
@@ -145,6 +147,15 @@ export interface DealershipWithRelations extends Dealership {
   orders: Order[];
 }
 
+export type IdentityType = 'cdpID' | 'ffcdpID';
+
+export interface ShopperIdentity {
+  id: string;
+  type: IdentityType;
+  value: string;
+  is_parent: boolean;
+}
+
 export interface Shopper {
   id: string;
   first_name: string;
@@ -165,4 +176,9 @@ export interface Shopper {
   dms_id?: string;
   curator_id?: string;
   curator_link?: string;
+  
+  // Identity Sections
+  ucp_identities?: ShopperIdentity[];
+  cdp_admin_identities?: ShopperIdentity[];
+  curator_identities?: ShopperIdentity[];
 }
