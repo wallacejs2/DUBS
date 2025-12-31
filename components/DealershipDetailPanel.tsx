@@ -1,6 +1,4 @@
 
-
-
 import React, { useState, useEffect } from 'react';
 import { 
   X, Trash2, Edit3, Save, RefreshCw, Plus, Minus, Check, ArrowLeft
@@ -265,7 +263,7 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
   };
 
   const isLockedStatus = (status: DealershipStatus) => {
-     return [DealershipStatus.DMT_PENDING, DealershipStatus.DMT_APPROVED, DealershipStatus.HOLD].includes(status);
+     return [DealershipStatus.DMT_PENDING, DealershipStatus.DMT_APPROVED].includes(status);
   };
 
   return (
@@ -331,7 +329,7 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
           <div className="animate-in fade-in duration-500 space-y-6">
             
             <div className="grid grid-cols-3 gap-6">
-               <div>
+               <div className="space-y-2">
                   <Label>Status</Label>
                   {isEditing ? (
                     <Select 
@@ -343,6 +341,25 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                     <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest border ${statusColors[dealership.status]}`}>
                       {dealership.status}
                     </span>
+                  )}
+                  
+                  {/* Hold Reason Input */}
+                  {formData.status === DealershipStatus.HOLD && (
+                    <div className="animate-in fade-in slide-in-from-top-1">
+                      <Label>Hold Reason</Label>
+                      {isEditing ? (
+                        <textarea
+                          value={formData.hold_reason || ''}
+                          onChange={(e) => updateField('hold_reason', e.target.value)}
+                          className="w-full px-2 py-1.5 text-[11px] border border-orange-200 bg-orange-50 rounded-lg focus:ring-1 focus:ring-orange-500 outline-none text-slate-800 placeholder:text-orange-300 min-h-[60px]"
+                          placeholder="Reason for hold..."
+                        />
+                      ) : (
+                        <div className="w-full px-2 py-1.5 text-[11px] border border-orange-200 bg-orange-50 rounded-lg text-slate-800 italic">
+                           {formData.hold_reason || 'No reason specified'}
+                        </div>
+                      )}
+                    </div>
                   )}
                </div>
                <div>

@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { 
   X, Trash2, Edit3, Save, RefreshCw, 
   User, Shield, Mail, Phone, Building2, Check, Hash, Link, ExternalLink, Plus, Copy,
-  Circle
+  Circle, AlertTriangle
 } from 'lucide-react';
 import { Shopper, ShopperStatus, ShopperPriority, DealershipStatus, ShopperIdentity, AdditionalProfile } from '../types';
 import { useDealerships, useEnterpriseGroups } from '../hooks';
@@ -514,6 +514,27 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                     </span>
                   )}
                </div>
+            </div>
+
+            {/* Issue Section */}
+            <div className="mt-4">
+               <Label icon={AlertTriangle}>Issue / Blocker</Label>
+               {isEditing ? (
+                  <textarea 
+                    value={formData.issue || ''}
+                    onChange={(e) => updateField('issue', e.target.value)}
+                    className="w-full px-3 py-2 text-[12px] border border-orange-300 bg-orange-50 rounded-lg focus:ring-1 focus:ring-orange-500 outline-none text-slate-800 placeholder:text-orange-300 min-h-[60px]"
+                    placeholder="Describe any issues..."
+                  />
+               ) : (
+                  formData.issue ? (
+                    <div className="w-full px-3 py-2 text-[12px] border border-orange-300 bg-orange-50 rounded-lg text-slate-800">
+                      {formData.issue}
+                    </div>
+                  ) : (
+                    <div className="text-[12px] text-slate-400 italic">No issues recorded.</div>
+                  )
+               )}
             </div>
 
             {/* Dealership Assignment */}

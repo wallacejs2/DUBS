@@ -130,6 +130,9 @@ export interface Dealership {
   state: string;
   zip_code: string;
   
+  // Reason for Hold status
+  hold_reason?: string;
+  
   created_at: string;
   updated_at: string;
 }
@@ -190,4 +193,7 @@ export interface Shopper {
   
   // New section
   additional_profiles?: AdditionalProfile[];
+  
+  // Issue tracking
+  issue?: string;
 }

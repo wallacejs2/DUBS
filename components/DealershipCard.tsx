@@ -121,6 +121,14 @@ const DealershipCard: React.FC<DealershipCardProps> = ({ dealership, groupName, 
             {dealership.name}
           </h3>
 
+          {/* Hold Reason Display */}
+          {dealership.status === DealershipStatus.HOLD && dealership.hold_reason && (
+            <div className="mb-2 bg-orange-50 border border-orange-100 rounded px-2 py-1 text-[10px] text-orange-800 font-medium truncate">
+               <span className="font-bold uppercase text-orange-400 mr-1">Hold:</span>
+               {dealership.hold_reason}
+            </div>
+          )}
+
           {/* Bottom Row: Group, Store/Branch, IDs, Date */}
           <div className="flex flex-wrap items-center gap-y-1 gap-x-3 text-[10px] text-slate-500 font-medium">
              <div className="flex items-center gap-1.5" title="Enterprise Group">

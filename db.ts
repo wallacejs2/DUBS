@@ -1,7 +1,4 @@
 
-
-
-
 import { 
   Dealership, EnterpriseGroup, Order, Shopper, 
   DealershipWithRelations, WebsiteLink, DealershipContacts, 
@@ -213,6 +210,7 @@ class CuratorLocalDB extends EventTarget {
       city: payload.city || '',
       state: payload.state || '',
       zip_code: payload.zip_code || '',
+      hold_reason: payload.hold_reason,
       created_at: existingIndex >= 0 ? this.data.dealerships[existingIndex].created_at : now,
       updated_at: now
     };
