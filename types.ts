@@ -1,14 +1,4 @@
 
-
-
-
-
-
-
-
-
-
-
 export enum DealershipStatus {
   DMT_PENDING = 'DMT-Pending',
   DMT_APPROVED = 'DMT-Approved',
@@ -153,12 +143,13 @@ export interface DealershipWithRelations extends Dealership {
 }
 
 export type IdentityType = 'cdpID' | 'ffcdpID';
+export type IdentityHierarchy = 'parent' | 'child';
 
 export interface ShopperIdentity {
   id: string;
   type: IdentityType;
   value: string;
-  is_parent: boolean;
+  hierarchy?: IdentityHierarchy;
   notes?: string;
 }
 

@@ -2,7 +2,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   X, Trash2, Edit3, Save, RefreshCw, 
-  User, Shield, Mail, Phone, Building2, Check, Hash, Link, ExternalLink, Plus
+  User, Shield, Mail, Phone, Building2, Check, Hash, Link, ExternalLink, Plus, Copy,
+  Circle
 } from 'lucide-react';
 import { Shopper, ShopperStatus, ShopperPriority, DealershipStatus, ShopperIdentity, AdditionalProfile } from '../types';
 import { useDealerships, useEnterpriseGroups } from '../hooks';
@@ -76,7 +77,7 @@ const IdentityManager: React.FC<IdentityManagerProps> = ({ label, identities, on
       id: crypto.randomUUID(),
       type: 'cdpID',
       value: '',
-      is_parent: identities.length === 0,
+      hierarchy: undefined, // Default is nothing
       notes: ''
     };
     onChange([...identities, newId]);
@@ -85,22 +86,30 @@ const IdentityManager: React.FC<IdentityManagerProps> = ({ label, identities, on
   const handleRemove = (index: number) => {
     const newIds = [...identities];
     newIds.splice(index, 1);
-    // If we removed the parent, make the first one parent (if exists)
-    if (identities[index].is_parent && newIds.length > 0) {
-      newIds[0].is_parent = true;
-    }
     onChange(newIds);
   };
 
   const updateIdentity = (index: number, field: keyof ShopperIdentity, value: any) => {
     const newIds = [...identities];
-    
-    if (field === 'is_parent' && value === true) {
-      // Unset others
-      newIds.forEach(id => id.is_parent = false);
-    }
-    
     newIds[index] = { ...newIds[index], [field]: value };
+    onChange(newIds);
+  };
+
+  const toggleHierarchy = (index: number, type: 'parent' | 'child') => {
+    const newIds = [...identities];
+    const current = newIds[index].hierarchy;
+
+    if (current === type) {
+      newIds[index].hierarchy = undefined;
+    } else {
+      if (type === 'parent') {
+        // Enforce single parent
+        newIds.forEach(id => {
+           if (id.hierarchy === 'parent') id.hierarchy = undefined;
+        });
+      }
+      newIds[index].hierarchy = type;
+    }
     onChange(newIds);
   };
 
@@ -147,18 +156,36 @@ const IdentityManager: React.FC<IdentityManagerProps> = ({ label, identities, on
              </div>
              
              <div className="flex items-center justify-between pt-1 border-t border-slate-50 gap-2">
-                <div 
-                  className={`flex items-center gap-1.5 text-[9px] cursor-pointer flex-shrink-0 ${id.is_parent ? 'text-indigo-600 font-bold' : 'text-slate-400 font-medium'}`}
-                  onClick={isEditing ? () => updateIdentity(idx, 'is_parent', true) : undefined}
-                >
-                   {isEditing ? (
-                     <div className={`w-3 h-3 rounded-full border flex items-center justify-center ${id.is_parent ? 'border-indigo-600 bg-indigo-600' : 'border-slate-300 bg-white'}`}>
-                        {id.is_parent && <div className="w-1 h-1 bg-white rounded-full"></div>}
-                     </div>
-                   ) : (
-                     id.is_parent && <div className="w-3 h-3 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center"><Check size={8} /></div>
-                   )}
-                   <span>{id.is_parent ? 'Parent' : 'Secondary'}</span>
+                <div className="flex items-center gap-3">
+                    {/* Parent Toggle */}
+                    <div 
+                        className={`flex items-center gap-1.5 text-[9px] cursor-pointer flex-shrink-0 ${id.hierarchy === 'parent' ? 'text-indigo-600 font-bold' : 'text-slate-400 font-medium'}`}
+                        onClick={isEditing ? () => toggleHierarchy(idx, 'parent') : undefined}
+                    >
+                        {isEditing ? (
+                            <div className={`w-3 h-3 rounded-full border flex items-center justify-center ${id.hierarchy === 'parent' ? 'border-indigo-600 bg-indigo-600' : 'border-slate-300 bg-white'}`}>
+                                {id.hierarchy === 'parent' && <div className="w-1 h-1 bg-white rounded-full"></div>}
+                            </div>
+                        ) : (
+                            id.hierarchy === 'parent' && <div className="w-3 h-3 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center"><Check size={8} /></div>
+                        )}
+                        {(isEditing || id.hierarchy === 'parent') && <span>Parent</span>}
+                    </div>
+
+                    {/* Child Toggle */}
+                    <div 
+                        className={`flex items-center gap-1.5 text-[9px] cursor-pointer flex-shrink-0 ${id.hierarchy === 'child' ? 'text-blue-600 font-bold' : 'text-slate-400 font-medium'}`}
+                        onClick={isEditing ? () => toggleHierarchy(idx, 'child') : undefined}
+                    >
+                        {isEditing ? (
+                            <div className={`w-3 h-3 rounded-full border flex items-center justify-center ${id.hierarchy === 'child' ? 'border-blue-600 bg-blue-600' : 'border-slate-300 bg-white'}`}>
+                                {id.hierarchy === 'child' && <div className="w-1 h-1 bg-white rounded-full"></div>}
+                            </div>
+                        ) : (
+                            id.hierarchy === 'child' && <div className="w-3 h-3 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center"><Check size={8} /></div>
+                        )}
+                        {(isEditing || id.hierarchy === 'child') && <span>Child</span>}
+                    </div>
                 </div>
                 
                 <div className="flex-1 min-w-0">
@@ -271,6 +298,101 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
     });
   };
 
+  const handleCopyAll = () => {
+    const lines: string[] = [];
+    
+    // Dealership Info
+    if (selectedDealership) {
+        lines.push(selectedDealership.name.toUpperCase());
+        const pp = selectedDealership.pp_sys_id || '';
+        const store = selectedDealership.store_number || '';
+        const branch = selectedDealership.branch_number || '';
+        // Format: ppsysid_store_branch
+        lines.push(`${pp}_${store}_${branch}`);
+    }
+
+    lines.push('');
+
+    // Shopper Info
+    const name = `${formData.first_name || ''} ${formData.last_name || ''}`.trim();
+    if (name) lines.push(name.toUpperCase());
+    
+    if (formData.email) lines.push(`Email: ${formData.email}`);
+    if (formData.phone) lines.push(`Phone: ${formData.phone}`);
+    if (formData.dms_id) lines.push(`DMS ID: ${formData.dms_id}`);
+    
+    if (formData.curator_id) {
+        let curatorLine = `Curator ID: ${formData.curator_id}`;
+        if (formData.curator_link) curatorLine += ` (${formData.curator_link})`;
+        lines.push(curatorLine);
+    } else if (formData.curator_link) {
+        lines.push(`Curator Link: ${formData.curator_link}`);
+    }
+
+    lines.push('');
+
+    // System Identities
+    const formatIdentityList = (ids?: ShopperIdentity[]) => {
+        if (!ids || ids.length === 0) return [];
+        return ids.map(id => {
+            const parts: string[] = [];
+            parts.push(`[${id.type === 'cdpID' ? 'CDP' : 'FF'}]`);
+            if (id.value) parts.push(id.value);
+            if (id.hierarchy === 'parent') parts.push('(Parent)');
+            else if (id.hierarchy === 'child') parts.push('(Child)');
+            if (id.notes) parts.push(`[${id.notes}]`);
+            return `  - ${parts.join(' ')}`;
+        });
+    };
+
+    const ucpIds = formatIdentityList(formData.ucp_identities);
+    const cdpIds = formatIdentityList(formData.cdp_admin_identities);
+    const curatorIds = formatIdentityList(formData.curator_identities);
+
+    if (ucpIds.length > 0 || cdpIds.length > 0 || curatorIds.length > 0) {
+        lines.push('--- CDP IDENTITIES ---');
+        if (ucpIds.length > 0) {
+            lines.push('UCP:');
+            lines.push(...ucpIds);
+        }
+        if (cdpIds.length > 0) {
+            lines.push('CDP Admin:');
+            lines.push(...cdpIds);
+        }
+        if (curatorIds.length > 0) {
+            lines.push('Curator:');
+            lines.push(...curatorIds);
+        }
+        lines.push('');
+    }
+
+    // Additional Profiles
+    if (formData.additional_profiles && formData.additional_profiles.length > 0) {
+        lines.push('--- ADDITIONAL PROFILES ---');
+        formData.additional_profiles.forEach((p, i) => {
+            const parts: string[] = [];
+            if (p.name) parts.push(p.name);
+            if (p.email) parts.push(p.email);
+            if (p.phone) parts.push(p.phone);
+            if (p.dms_id) parts.push(p.dms_id);
+            
+            if (parts.length > 0) {
+                lines.push(`[${i+1}] ${parts.join(' | ')}`);
+            }
+
+            const profileIds = formatIdentityList(p.cdp_identities);
+            if (profileIds.length > 0) {
+                lines.push('    CDP IDs:');
+                profileIds.forEach(idLine => lines.push(`  ${idLine}`)); // Indent further
+            }
+        });
+    }
+
+    // Clean up trailing newlines and copy
+    const text = lines.join('\n').trim();
+    copyToClipboard(text, 'all');
+  };
+
   // Logic for Additional Profiles
   const addProfile = () => {
     const newProfile: AdditionalProfile = {
@@ -327,6 +449,16 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
              </div>
 
              <div className="flex items-center gap-2">
+               {!isEditing && (
+                 <button 
+                    onClick={handleCopyAll}
+                    className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                    title="Copy All Details"
+                 >
+                    {copiedField === 'all' ? <Check size={16} className="text-emerald-500" /> : <Copy size={16} />}
+                 </button>
+               )}
+               
                {isEditing ? (
                  <>
                    <button onClick={handleSave} className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-indigo-700 shadow-md shadow-indigo-100 flex items-center gap-2 transition-all">
