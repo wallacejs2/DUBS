@@ -1,5 +1,6 @@
 
 
+
 export enum DealershipStatus {
   DMT_PENDING = 'DMT-Pending',
   DMT_APPROVED = 'DMT-Approved',
@@ -41,11 +42,10 @@ export enum OrderStatus {
 }
 
 export enum ShopperStatus {
-  ACTIVE = 'active',
-  TESTING = 'testing',
-  COMPLETED = 'completed',
-  BLOCKED = 'blocked',
-  ISSUES = 'issues'
+  ACTIVE = 'Active',
+  TESTING = 'Testing',
+  REVIEW = 'Review',
+  RESOLVED = 'Resolved'
 }
 
 export enum ShopperPriority {
