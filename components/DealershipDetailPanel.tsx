@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-  X, Trash2, Edit3, Save, RefreshCw, Plus, Minus, Check, ArrowLeft
+  X, Trash2, Edit3, Save, RefreshCw, Plus, Minus, Check, ArrowLeft, FileSpreadsheet
 } from 'lucide-react';
 import { 
   DealershipWithRelations, 
@@ -75,6 +75,7 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
   const [formData, setFormData] = useState<DealershipWithRelations>(dealership);
   const [groups, setGroups] = useState(initialGroups);
   const [isAddingGroup, setIsAddingGroup] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
   
   // New Group Inline State
   const [newGroupName, setNewGroupName] = useState('');
@@ -234,6 +235,106 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
     }
   };
 
+  const handleCopyCSV = () => {
+    const d = formData;
+    const groupName = groups.find(g => g.id === d.enterprise_group_id)?.name || 'Independent';
+    const productCodes = Object.values(ProductCode);
+    
+    const flatData: any[] = [];
+    
+    // Base Info
+    const baseInfo: any = {
+         Status: d.status,
+         Hold_Reason: d.hold_reason || '',
+         CIF: d.cif_number || '',
+         Name: d.name,
+         Group: groupName,
+         Store: d.store_number || '',
+         Branch: d.branch_number || '',
+         PP_ID: d.pp_sys_id || '',
+         ERA_ID: d.era_system_id || '',
+         BU_ID: d.bu_id || '',
+         Address: d.address_line1 || '',
+         State: d.state || '',
+         CRM: d.crm_provider,
+         Sales_Contact: d.contacts?.sales_contact_name || '',
+         Enrollment_Contact: d.contacts?.enrollment_contact_name || '',
+         CSM: d.contacts?.assigned_specialist_name || '',
+         POC_Name: d.contacts?.poc_name || '',
+         POC_Email: d.contacts?.poc_email || '',
+         POC_Phone: d.contacts?.poc_phone || '',
+         Go_Live_Date: d.go_live_date || '',
+         Term_Date: d.term_date || '',
+    };
+
+    // Website Links (Max 4)
+    const links = d.website_links || [];
+    for (let i = 0; i < 4; i++) {
+        const link = links[i];
+        baseInfo[`clientID${i+1}`] = link ? link.client_id || '' : '';
+        baseInfo[`websiteLink${i+1}`] = link ? link.primary_url || '' : '';
+    }
+
+    // Orders
+    if (d.orders && d.orders.length > 0) {
+        // Sort orders by date
+        const sortedOrders = [...d.orders].sort((a,b) => (a.received_date || '').localeCompare(b.received_date || ''));
+        
+        sortedOrders.forEach(o => {
+            const row: any = {
+                ...baseInfo,
+                Received_Date: o.received_date,
+                Order_Number: o.order_number,
+            };
+            
+            productCodes.forEach(code => row[code] = '');
+            
+            if (o.products && o.products.length > 0) {
+                o.products.forEach(p => {
+                    if (productCodes.includes(p.product_code)) {
+                        row[p.product_code] = p.amount;
+                    }
+                });
+            }
+            flatData.push(row);
+        });
+    } else {
+        const row: any = {
+            ...baseInfo,
+            Received_Date: '',
+            Order_Number: '',
+        };
+        productCodes.forEach(code => row[code] = '');
+        flatData.push(row);
+    }
+
+    // Columns
+    const columns = [
+      'Status', 'Hold_Reason', 'CIF', 'Name', 'Group', 'Store', 'Branch', 
+      'PP_ID', 'ERA_ID', 'BU_ID', 'Address', 'State', 'CRM', 
+      'Sales_Contact', 'Enrollment_Contact', 'CSM', 'POC_Name', 'POC_Email', 'POC_Phone', 
+      'Received_Date', 'Order_Number', 'Go_Live_Date', 'Term_Date',
+      ...productCodes,
+      'clientID1', 'websiteLink1', 'clientID2', 'websiteLink2', 
+      'clientID3', 'websiteLink3', 'clientID4', 'websiteLink4'
+    ];
+
+    // CSV String (Header Removed)
+    const csvContent = flatData.map(row => columns.map(col => {
+          const val = row[col];
+          const stringVal = String(val === undefined || val === null ? '' : val);
+          if (stringVal.includes(',') || stringVal.includes('"') || stringVal.includes('\n')) {
+              return `"${stringVal.replace(/"/g, '""')}"`;
+          }
+          return stringVal;
+      }).join(',')).join('\n');
+
+    navigator.clipboard.writeText(csvContent).then(() => {
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    });
+  };
+
   const formatPhone = (val: string) => {
     const cleaned = ('' + val).replace(/\D/g, '');
     const match = cleaned.match(/^(\d{3})(\d{3})(\d{4})$/);
@@ -245,11 +346,8 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
 
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return '---';
-    // Fix: Parse YYYY-MM-DD explicitly to avoid timezone offset issues (e.g. showing previous day)
     const datePart = dateStr.split('T')[0];
     const [year, month, day] = datePart.split('-').map(Number);
-    
-    // Create local date (month is 0-indexed)
     return new Date(year, month - 1, day).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
@@ -291,9 +389,18 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                    <button onClick={handleCancel} className="p-1.5 text-slate-400 hover:bg-slate-100 rounded-lg"><RefreshCw size={16} /></button>
                  </>
                ) : (
-                 <button onClick={() => setIsEditing(true)} className="px-3 py-1.5 border border-slate-200 text-slate-600 rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-slate-50 flex items-center gap-1">
-                    <Edit3 size={14} /> Edit
-                 </button>
+                 <>
+                   <button 
+                     onClick={handleCopyCSV} 
+                     className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg mr-1" 
+                     title="Copy CSV Row"
+                   >
+                     {isCopied ? <Check size={16} className="text-emerald-500"/> : <FileSpreadsheet size={16} />}
+                   </button>
+                   <button onClick={() => setIsEditing(true)} className="px-3 py-1.5 border border-slate-200 text-slate-600 rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-slate-50 flex items-center gap-1">
+                      <Edit3 size={14} /> Edit
+                   </button>
+                 </>
                )}
                <button onClick={onDelete} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg"><Trash2 size={16} /></button>
                <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg"><X size={20} /></button>

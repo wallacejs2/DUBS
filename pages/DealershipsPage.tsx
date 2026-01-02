@@ -3,6 +3,7 @@ import React, { useState, useMemo } from 'react';
 import { Plus, FileSpreadsheet } from 'lucide-react';
 import { useDealerships, useEnterpriseGroups, useOrders } from '../hooks';
 import { DealershipWithRelations, DealershipStatus, ProductCode } from '../types';
+import { db } from '../db';
 import DealershipCard from '../components/DealershipCard';
 import DealershipForm from '../components/DealershipForm';
 import DealershipDetailPanel from '../components/DealershipDetailPanel';
@@ -42,6 +43,160 @@ const DealershipsPage: React.FC = () => {
     );
   };
 
+  const handleExportCSV = () => {
+    // Get all data regardless of filters
+    const allDealerships = db.getDealerships();
+    const allGroups = db.getEnterpriseGroups();
+    
+    // Flatten data for CSV
+    const flatData: any[] = [];
+    const productCodes = Object.values(ProductCode); // Get all product codes for columns
+
+    allDealerships.forEach(d => {
+      const fullD = db.getDealershipWithRelations(d.id);
+      if (!fullD) return;
+      
+      const groupName = allGroups.find(g => g.id === fullD.enterprise_group_id)?.name || 'Independent';
+      
+      // Base Dealership Info
+      const baseInfo: any = {
+         Status: fullD.status,
+         Hold_Reason: fullD.hold_reason || '',
+         CIF: fullD.cif_number || '',
+         Name: fullD.name,
+         Group: groupName,
+         Store: fullD.store_number || '',
+         Branch: fullD.branch_number || '',
+         PP_ID: fullD.pp_sys_id || '',
+         ERA_ID: fullD.era_system_id || '',
+         BU_ID: fullD.bu_id || '',
+         Address: fullD.address_line1 || '',
+         State: fullD.state || '',
+         CRM: fullD.crm_provider,
+         Sales_Contact: fullD.contacts?.sales_contact_name || '',
+         Enrollment_Contact: fullD.contacts?.enrollment_contact_name || '',
+         CSM: fullD.contacts?.assigned_specialist_name || '',
+         POC_Name: fullD.contacts?.poc_name || '',
+         POC_Email: fullD.contacts?.poc_email || '',
+         POC_Phone: fullD.contacts?.poc_phone || '',
+         Go_Live_Date: fullD.go_live_date || '',
+         Term_Date: fullD.term_date || '',
+      };
+
+      // Add Website Links (Max 4 as requested columns imply multiple sets)
+      const links = fullD.website_links || [];
+      for (let i = 0; i < 4; i++) {
+          const link = links[i];
+          baseInfo[`clientID${i+1}`] = link ? link.client_id || '' : '';
+          baseInfo[`websiteLink${i+1}`] = link ? link.primary_url || '' : '';
+      }
+
+      if (fullD.orders && fullD.orders.length > 0) {
+          fullD.orders.forEach(o => {
+              const row = {
+                  ...baseInfo,
+                  Received_Date: o.received_date,
+                  Order_Number: o.order_number,
+                  SortDate: o.received_date || '9999-99-99'
+              };
+
+              // Initialize all product columns to empty
+              productCodes.forEach(code => row[code] = '');
+
+              // Fill product amounts if they exist in this order
+              if (o.products && o.products.length > 0) {
+                  o.products.forEach(p => {
+                      if (productCodes.includes(p.product_code)) {
+                          row[p.product_code] = p.amount;
+                      }
+                  });
+              }
+              
+              flatData.push(row);
+          });
+      } else {
+          // Dealership without orders - create one row so dealership info is exported
+          const row = {
+              ...baseInfo,
+              Received_Date: '',
+              Order_Number: '',
+              SortDate: '9999-99-99' // Put at the end
+          };
+          // Initialize product columns
+          productCodes.forEach(code => row[code] = '');
+          
+          flatData.push(row);
+      }
+    });
+
+    // Sort by Received Date (Oldest to Newest)
+    flatData.sort((a, b) => {
+      const dateA = a.SortDate;
+      const dateB = b.SortDate;
+      if (dateA === dateB) {
+          return a.Name.localeCompare(b.Name);
+      }
+      return dateA.localeCompare(dateB);
+    });
+
+    // Define Header Order explicitly based on requirements
+    const columns = [
+      'Status', 
+      'Hold_Reason', 
+      'CIF', 
+      'Name', 
+      'Group', 
+      'Store', 
+      'Branch', 
+      'PP_ID', 
+      'ERA_ID', 
+      'BU_ID', 
+      'Address', 
+      'State', 
+      'CRM', 
+      'Sales_Contact', 
+      'Enrollment_Contact', 
+      'CSM', 
+      'POC_Name', 
+      'POC_Email', 
+      'POC_Phone', 
+      'Received_Date', 
+      'Order_Number', 
+      'Go_Live_Date', 
+      'Term_Date',
+      ...productCodes,
+      'clientID1', 'websiteLink1',
+      'clientID2', 'websiteLink2',
+      'clientID3', 'websiteLink3',
+      'clientID4', 'websiteLink4'
+    ];
+
+    const csvContent = [
+      columns.join(','),
+      ...flatData.map(row => columns.map(col => {
+          const val = row[col];
+          const stringVal = String(val === undefined || val === null ? '' : val);
+          if (stringVal.includes(',') || stringVal.includes('"') || stringVal.includes('\n')) {
+              return `"${stringVal.replace(/"/g, '""')}"`;
+          }
+          return stringVal;
+      }).join(','))
+    ].join('\n');
+
+    // Download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `dealerships_export_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
   return (
     <div className="animate-in fade-in duration-700">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
@@ -50,7 +205,10 @@ const DealershipsPage: React.FC = () => {
           <p className="text-xs text-slate-500 mt-0.5">Manage and track your curator dealership network.</p>
         </div>
         <div className="flex items-center gap-2">
-          <button className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-slate-600 font-bold text-[11px] hover:bg-slate-50 shadow-sm transition-all">
+          <button 
+            onClick={handleExportCSV}
+            className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-slate-600 font-bold text-[11px] hover:bg-slate-50 shadow-sm transition-all"
+          >
             <FileSpreadsheet size={14} /> Export CSV
           </button>
           <button 
