@@ -409,6 +409,16 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
     copyToClipboard(text, 'all');
   };
 
+  const formatPhone = (val: string) => {
+    if (!val) return '';
+    const cleaned = ('' + val).replace(/\D/g, '');
+    const match = cleaned.match(/^(\d{3})(\d{3})(\d{4})$/);
+    if (match) {
+      return '(' + match[1] + ') ' + match[2] + '-' + match[3];
+    }
+    return val;
+  };
+
   // Logic for Additional Profiles
   const addProfile = () => {
     const newProfile: AdditionalProfile = {
@@ -639,7 +649,14 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                 <div className="col-span-2 sm:col-span-1">
                   <Label icon={Phone}>Phone Number</Label>
                   {isEditing ? (
-                    <Input value={formData.phone} onChange={(v) => updateField('phone', v)} placeholder="(###) ###-####" />
+                    <input 
+                      type="text"
+                      value={formData.phone || ''}
+                      onChange={(e) => updateField('phone', e.target.value)}
+                      onBlur={(e) => updateField('phone', formatPhone(e.target.value))}
+                      placeholder="(###) ###-####"
+                      className="w-full px-3 py-1.5 text-[12px] border border-slate-200 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white font-normal transition-all"
+                    />
                   ) : (
                     <DataValue value={formData.phone} />
                   )}
@@ -774,7 +791,14 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                             <div>
                                 <Label>Phone</Label>
                                 {isProfilesEditing ? (
-                                     <Input value={profile.phone} onChange={(v) => updateProfile(idx, 'phone', v)} placeholder="Phone" />
+                                     <input 
+                                      type="text"
+                                      value={profile.phone || ''}
+                                      onChange={(e) => updateProfile(idx, 'phone', e.target.value)}
+                                      onBlur={(e) => updateProfile(idx, 'phone', formatPhone(e.target.value))}
+                                      placeholder="(###) ###-####"
+                                      className="w-full px-3 py-1.5 text-[12px] border border-slate-200 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white font-normal transition-all"
+                                    />
                                 ) : (
                                      <DataValue value={profile.phone} />
                                 )}
