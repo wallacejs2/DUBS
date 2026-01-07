@@ -1,4 +1,5 @@
 
+
 export enum DealershipStatus {
   DMT_PENDING = 'DMT-Pending',
   DMT_APPROVED = 'DMT-Approved',
@@ -162,6 +163,8 @@ export interface AdditionalProfile {
   email?: string;
   phone?: string;
   dms_id?: string;
+  curator_link?: string;
+  issue?: string;
   cdp_identities: ShopperIdentity[];
 }
 

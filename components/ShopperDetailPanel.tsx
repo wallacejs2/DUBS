@@ -228,6 +228,7 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
 }) => {
   const isNew = !shopper.id;
   const [isEditing, setIsEditing] = useState(isNew);
+  const [quickEdit, setQuickEdit] = useState({ identities: false, profiles: false });
   const [formData, setFormData] = useState<Partial<Shopper>>(shopper);
   const [fullName, setFullName] = useState('');
   const [copiedField, setCopiedField] = useState<string | null>(null);
@@ -248,6 +249,20 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
     groups.find(g => g.id === selectedDealership?.enterprise_group_id),
     [groups, selectedDealership]
   );
+
+  const toggleQuickEdit = (section: 'identities' | 'profiles') => {
+    if (quickEdit[section]) {
+      // Save changes
+      onUpdate(formData);
+      setQuickEdit(prev => ({ ...prev, [section]: false }));
+    } else {
+      // Enable edit mode
+      setQuickEdit(prev => ({ ...prev, [section]: true }));
+    }
+  };
+
+  const isIdentitiesEditing = isEditing || quickEdit.identities;
+  const isProfilesEditing = isEditing || quickEdit.profiles;
 
   useEffect(() => {
     setFormData(shopper);
@@ -374,7 +389,8 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
             if (p.name) parts.push(p.name);
             if (p.email) parts.push(p.email);
             if (p.phone) parts.push(p.phone);
-            if (p.dms_id) parts.push(p.dms_id);
+            if (p.curator_link) parts.push(`Link: ${p.curator_link}`);
+            if (p.issue) parts.push(`[Issue: ${p.issue}]`);
             
             if (parts.length > 0) {
                 lines.push(`[${i+1}] ${parts.join(' | ')}`);
@@ -401,6 +417,8 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
         email: '',
         phone: '',
         dms_id: '',
+        curator_link: '',
+        issue: '',
         cdp_identities: []
     };
     updateField('additional_profiles', [...(formData.additional_profiles || []), newProfile]);
@@ -665,25 +683,36 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
 
             {/* System Identities Section */}
             <div className="mt-5 pt-5 border-t border-slate-100">
-              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest mb-3">System Identities</h3>
+              <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest">System Identities</h3>
+                  {!isEditing && (
+                      <button 
+                          onClick={() => toggleQuickEdit('identities')}
+                          className={`p-1.5 rounded-lg transition-all ${quickEdit.identities ? 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100' : 'text-slate-400 hover:text-indigo-600 hover:bg-indigo-50'}`}
+                          title={quickEdit.identities ? "Save Identities" : "Quick Edit Identities"}
+                      >
+                          {quickEdit.identities ? <Check size={14} /> : <Edit3 size={14} />}
+                      </button>
+                  )}
+              </div>
               <div className="flex flex-col gap-3">
                  <IdentityManager 
                     label="UCP" 
                     identities={formData.ucp_identities || []} 
                     onChange={(ids) => updateField('ucp_identities', ids)}
-                    isEditing={isEditing}
+                    isEditing={isIdentitiesEditing}
                  />
                  <IdentityManager 
                     label="CDP Admin" 
                     identities={formData.cdp_admin_identities || []} 
                     onChange={(ids) => updateField('cdp_admin_identities', ids)}
-                    isEditing={isEditing}
+                    isEditing={isIdentitiesEditing}
                  />
                  <IdentityManager 
                     label="Curator" 
                     identities={formData.curator_identities || []} 
                     onChange={(ids) => updateField('curator_identities', ids)}
-                    isEditing={isEditing}
+                    isEditing={isIdentitiesEditing}
                  />
               </div>
             </div>
@@ -692,18 +721,29 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
             <div className="mt-5 pt-5 border-t border-slate-100">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest">Additional Profiles</h3>
-                {isEditing && (
-                    <button onClick={addProfile} className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 bg-indigo-50 px-2 py-1 rounded transition-colors border border-indigo-100">
-                        <Plus size={12} /> Add Profile
-                    </button>
-                )}
+                <div className="flex items-center gap-2">
+                    {!isEditing && (
+                        <button 
+                            onClick={() => toggleQuickEdit('profiles')}
+                            className={`p-1.5 rounded-lg transition-all ${quickEdit.profiles ? 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100' : 'text-slate-400 hover:text-indigo-600 hover:bg-indigo-50'}`}
+                            title={quickEdit.profiles ? "Save Profiles" : "Quick Edit Profiles"}
+                        >
+                            {quickEdit.profiles ? <Check size={14} /> : <Edit3 size={14} />}
+                        </button>
+                    )}
+                    {isProfilesEditing && (
+                        <button onClick={addProfile} className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 bg-indigo-50 px-2 py-1 rounded transition-colors border border-indigo-100">
+                            <Plus size={12} /> Add Profile
+                        </button>
+                    )}
+                </div>
               </div>
               
               <div className="space-y-4">
                 {(formData.additional_profiles || []).map((profile, idx) => (
                     <div key={profile.id} className="bg-slate-50 border border-slate-200 rounded-xl p-3 relative">
                         {/* Header / Remove */}
-                        {isEditing && (
+                        {isProfilesEditing && (
                            <button 
                              onClick={() => removeProfile(idx)} 
                              className="absolute top-2 right-2 text-slate-400 hover:text-red-500 bg-white p-1 rounded-full shadow-sm border border-slate-100 hover:border-red-100 transition-all z-10"
@@ -717,7 +757,7 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4 pr-6">
                             <div>
                                 <Label>Name</Label>
-                                {isEditing ? (
+                                {isProfilesEditing ? (
                                     <Input value={profile.name} onChange={(v) => updateProfile(idx, 'name', v)} placeholder="Name" />
                                 ) : (
                                     <DataValue value={profile.name} />
@@ -725,7 +765,7 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                             </div>
                             <div>
                                 <Label>Email</Label>
-                                {isEditing ? (
+                                {isProfilesEditing ? (
                                      <Input value={profile.email} onChange={(v) => updateProfile(idx, 'email', v)} placeholder="Email" />
                                 ) : (
                                      <DataValue value={profile.email} />
@@ -733,20 +773,43 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                             </div>
                             <div>
                                 <Label>Phone</Label>
-                                {isEditing ? (
+                                {isProfilesEditing ? (
                                      <Input value={profile.phone} onChange={(v) => updateProfile(idx, 'phone', v)} placeholder="Phone" />
                                 ) : (
                                      <DataValue value={profile.phone} />
                                 )}
                             </div>
                             <div>
-                                <Label>DMS ID</Label>
-                                {isEditing ? (
-                                     <Input value={profile.dms_id} onChange={(v) => updateProfile(idx, 'dms_id', v)} placeholder="DMS ID" />
+                                <Label>Curator Link</Label>
+                                {isProfilesEditing ? (
+                                     <Input value={profile.curator_link} onChange={(v) => updateProfile(idx, 'curator_link', v)} placeholder="https://..." />
                                 ) : (
-                                     <DataValue value={profile.dms_id} mono />
+                                     <DataValue>
+                                        {profile.curator_link ? (
+                                          <a href={profile.curator_link} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline truncate flex items-center gap-1" title={profile.curator_link}>
+                                            Link <ExternalLink size={10} />
+                                          </a>
+                                        ) : '---'}
+                                     </DataValue>
                                 )}
                             </div>
+                        </div>
+
+                        {/* Issue Field */}
+                        <div className="mb-4 pr-6">
+                            <Label icon={AlertTriangle}>Issue / Blocker</Label>
+                            {isProfilesEditing ? (
+                                <textarea
+                                    value={profile.issue || ''}
+                                    onChange={(e) => updateProfile(idx, 'issue', e.target.value)}
+                                    className="w-full px-3 py-2 text-[12px] border border-orange-300 bg-orange-50 rounded-lg focus:ring-1 focus:ring-orange-500 outline-none text-slate-800 placeholder:text-orange-300 min-h-[40px]"
+                                    placeholder="Describe issue for this profile..."
+                                />
+                            ) : (
+                                <div className="w-full px-3 py-2 text-[12px] border border-orange-300 bg-orange-50 rounded-lg text-slate-800">
+                                    {profile.issue || 'No issues recorded.'}
+                                </div>
+                            )}
                         </div>
 
                         {/* Identities */}
@@ -754,11 +817,11 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                             label="CDP IDs"
                             identities={profile.cdp_identities || []}
                             onChange={(ids) => updateProfile(idx, 'cdp_identities', ids)}
-                            isEditing={isEditing}
+                            isEditing={isProfilesEditing}
                         />
                     </div>
                 ))}
-                {(!formData.additional_profiles || formData.additional_profiles.length === 0) && !isEditing && (
+                {(!formData.additional_profiles || formData.additional_profiles.length === 0) && !isProfilesEditing && (
                     <div className="text-[10px] text-slate-400 italic">No additional profiles recorded.</div>
                 )}
               </div>
