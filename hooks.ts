@@ -1,4 +1,6 @@
 
+
+
 import { useState, useEffect, useCallback } from 'react';
 import { db } from './db.ts';
 import { 
@@ -56,8 +58,13 @@ export function useDealerships(filters?: { search?: string; status?: string; gro
       data = data.filter(d => d.enterprise_group_id === filters.group);
     }
 
-    // Sort alphabetically
-    data.sort((a, b) => a.name.localeCompare(b.name));
+    // Sort: Favorites first, then alphabetical
+    data.sort((a, b) => {
+      const aFav = !!a.is_favorite;
+      const bFav = !!b.is_favorite;
+      if (aFav !== bFav) return aFav ? -1 : 1;
+      return a.name.localeCompare(b.name);
+    });
 
     setDealerships(data);
     setLoading(false);
@@ -74,7 +81,8 @@ export function useDealerships(filters?: { search?: string; status?: string; gro
     loading,
     upsert: (d: Partial<DealershipWithRelations>) => db.upsertDealership(d),
     remove: (id: string) => db.deleteDealership(id),
-    getDetails: (id: string) => db.getDealershipWithRelations(id)
+    getDetails: (id: string) => db.getDealershipWithRelations(id),
+    toggleFavorite: (id: string) => db.toggleDealershipFavorite(id)
   };
 }
 

@@ -1,4 +1,6 @@
 
+
+
 import React, { useState, useMemo } from 'react';
 import { Plus, FileSpreadsheet } from 'lucide-react';
 import { useDealerships, useEnterpriseGroups, useOrders } from '../hooks';
@@ -13,7 +15,7 @@ const DealershipsPage: React.FC = () => {
   const [filters, setFilters] = useState({ search: '', status: '', group: '' });
   
   // Data for List (Filtered)
-  const { dealerships, loading, upsert, remove, getDetails } = useDealerships(filters);
+  const { dealerships, loading, upsert, remove, getDetails, toggleFavorite } = useDealerships(filters);
   const { groups } = useEnterpriseGroups();
   const { orders } = useOrders();
   
@@ -263,6 +265,7 @@ const DealershipsPage: React.FC = () => {
               groupName={groups.find(g => g.id === dealer.enterprise_group_id)?.name}
               isManaged={checkIsManaged(dealer.id)}
               onClick={() => setSelectedDealerId(dealer.id)}
+              onToggleFavorite={() => toggleFavorite(dealer.id)}
             />
           ))}
         </div>
@@ -284,6 +287,7 @@ const DealershipsPage: React.FC = () => {
           onClose={() => setSelectedDealerId(null)}
           onUpdate={(data) => upsert(data)}
           onDelete={handleDelete}
+          onToggleFavorite={() => toggleFavorite(selectedDealerId)}
         />
       )}
     </div>

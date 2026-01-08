@@ -1,7 +1,9 @@
 
+
+
 import React, { useState, useEffect } from 'react';
 import { 
-  X, Trash2, Edit3, Save, RefreshCw, Plus, Minus, Check, ArrowLeft, FileSpreadsheet
+  X, Trash2, Edit3, Save, RefreshCw, Plus, Minus, Check, ArrowLeft, FileSpreadsheet, Star
 } from 'lucide-react';
 import { 
   DealershipWithRelations, 
@@ -16,6 +18,7 @@ interface DealershipDetailPanelProps {
   onUpdate: (data: Partial<DealershipWithRelations>) => void;
   onDelete: () => void;
   onBack?: () => void;
+  onToggleFavorite?: () => void;
 }
 
 const STATES = [
@@ -69,7 +72,7 @@ const Select = ({ value, onChange, options, className = "" }: { value: any, onCh
 );
 
 const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({ 
-  dealership, groups: initialGroups, onClose, onUpdate, onDelete, onBack
+  dealership, groups: initialGroups, onClose, onUpdate, onDelete, onBack, onToggleFavorite
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<DealershipWithRelations>(dealership);
@@ -390,6 +393,15 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                  </>
                ) : (
                  <>
+                   {onToggleFavorite && (
+                      <button 
+                        onClick={onToggleFavorite}
+                        className={`p-1.5 rounded-lg mr-1 transition-all ${dealership.is_favorite ? 'text-amber-400 hover:text-amber-500 bg-amber-50' : 'text-slate-300 hover:text-amber-400 hover:bg-slate-50'}`}
+                        title={dealership.is_favorite ? "Unfavorite" : "Favorite"}
+                      >
+                         <Star size={16} fill={dealership.is_favorite ? "currentColor" : "none"} />
+                      </button>
+                   )}
                    <button 
                      onClick={handleCopyCSV} 
                      className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg mr-1" 

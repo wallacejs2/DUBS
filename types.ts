@@ -1,5 +1,6 @@
 
 
+
 export enum DealershipStatus {
   DMT_PENDING = 'DMT-Pending',
   DMT_APPROVED = 'DMT-Approved',
@@ -134,6 +135,9 @@ export interface Dealership {
   // Reason for Hold status
   hold_reason?: string;
   
+  // Favorites
+  is_favorite?: boolean;
+
   created_at: string;
   updated_at: string;
 }

@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { X, ArrowRight, Edit3, Trash2, Save, RefreshCw } from 'lucide-react';
 import { EnterpriseGroup, Dealership, DealershipStatus } from '../types';
@@ -218,30 +217,54 @@ const EnterpriseGroupDetailPanel: React.FC<EnterpriseGroupDetailPanelProps> = ({
                   </div>
                 ) : (
                   <div className="flex flex-col gap-2">
-                    {dealerships.map((dealer) => (
+                    {dealerships.map((dealer) => {
+                      const dealerOrders = orders.filter(o => o.dealership_id === dealer.id);
+                      const hasProducts = dealerOrders.some(o => o.products && o.products.length > 0);
+
+                      return (
                       <div 
                         key={dealer.id} 
-                        className="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-xl hover:border-indigo-200 hover:shadow-sm transition-all cursor-pointer group"
+                        className="flex flex-col p-4 bg-white border border-slate-100 rounded-xl hover:border-indigo-200 hover:shadow-sm transition-all cursor-pointer group"
                         onClick={() => onViewDealer(dealer.id)}
                       >
-                        <div className="min-w-0">
-                          <p className="text-[12px] font-bold text-slate-800 truncate tracking-tight group-hover:text-indigo-700">{dealer.name}</p>
-                          <div className="flex items-center gap-2 mt-0.5">
-                             <span className="text-[10px] font-mono text-slate-400">{dealer.cif_number || 'NO CIF'}</span>
-                             <span className="text-[10px] text-slate-400">•</span>
-                             <p className="text-[10px] text-slate-500 font-mono tracking-tighter">
-                               {dealer.store_number || '--'} / {dealer.branch_number || '--'}
-                             </p>
-                          </div>
+                        <div className="flex items-center justify-between">
+                            <div className="min-w-0">
+                                <p className="text-[12px] font-bold text-slate-800 truncate tracking-tight group-hover:text-indigo-700">{dealer.name}</p>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                    <span className="text-[10px] font-mono text-slate-400">{dealer.cif_number || 'NO CIF'}</span>
+                                    <span className="text-[10px] text-slate-400">•</span>
+                                    <p className="text-[10px] text-slate-500 font-mono tracking-tighter">
+                                    {dealer.store_number || '--'} / {dealer.branch_number || '--'}
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <span className={`px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest rounded-md border ${statusColors[dealer.status]}`}>
+                                    {dealer.status}
+                                </span>
+                                <ArrowRight size={16} className="text-slate-200 group-hover:text-indigo-600 transition-colors" />
+                            </div>
                         </div>
-                        <div className="flex items-center gap-4">
-                          <span className={`px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest rounded-md border ${statusColors[dealer.status]}`}>
-                            {dealer.status}
-                          </span>
-                          <ArrowRight size={16} className="text-slate-200 group-hover:text-indigo-600 transition-colors" />
-                        </div>
+
+                        {hasProducts && (
+                            <div className="mt-3 pt-3 border-t border-slate-50">
+                                <div className="space-y-1.5">
+                                    {dealerOrders.map(order => (
+                                        order.products?.map(p => (
+                                            <div key={p.id} className="flex justify-between items-center text-[10px]">
+                                                <span className="text-slate-600 font-medium flex items-center gap-1.5">
+                                                    <span className="w-1 h-1 rounded-full bg-indigo-300"></span>
+                                                    {p.product_code}
+                                                </span>
+                                                <span className="font-mono text-slate-400">${Number(p.amount).toLocaleString()}</span>
+                                            </div>
+                                        ))
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                       </div>
-                    ))}
+                    )})}
                   </div>
                 )}
               </div>

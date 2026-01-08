@@ -1,4 +1,6 @@
 
+
+
 import { 
   Dealership, EnterpriseGroup, Order, Shopper, 
   DealershipWithRelations, WebsiteLink, DealershipContacts, 
@@ -89,6 +91,7 @@ class CuratorLocalDB extends EventTarget {
       store_number: '442',
       branch_number: '12',
       bu_id: 'BU-WEST',
+      is_favorite: true,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     }];
@@ -211,6 +214,7 @@ class CuratorLocalDB extends EventTarget {
       state: payload.state || '',
       zip_code: payload.zip_code || '',
       hold_reason: payload.hold_reason,
+      is_favorite: payload.is_favorite !== undefined ? payload.is_favorite : (existingIndex >= 0 ? this.data.dealerships[existingIndex].is_favorite : false),
       created_at: existingIndex >= 0 ? this.data.dealerships[existingIndex].created_at : now,
       updated_at: now
     };
@@ -258,6 +262,14 @@ class CuratorLocalDB extends EventTarget {
 
     this.save();
     return id;
+  }
+
+  toggleDealershipFavorite(id: string) {
+    const dealer = this.data.dealerships.find(d => d.id === id);
+    if (dealer) {
+      dealer.is_favorite = !dealer.is_favorite;
+      this.save();
+    }
   }
 
   deleteDealership(id: string) {

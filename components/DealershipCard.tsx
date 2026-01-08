@@ -1,6 +1,8 @@
 
+
+
 import React, { useState } from 'react';
-import { Copy, Check, Hash, Link } from 'lucide-react';
+import { Copy, Check, Hash, Link, Star } from 'lucide-react';
 import { Dealership, DealershipStatus } from '../types';
 
 interface DealershipCardProps {
@@ -8,6 +10,7 @@ interface DealershipCardProps {
   groupName?: string;
   isManaged?: boolean;
   onClick: () => void;
+  onToggleFavorite?: (e: React.MouseEvent) => void;
 }
 
 const statusColors: Record<DealershipStatus, string> = {
@@ -20,7 +23,7 @@ const statusColors: Record<DealershipStatus, string> = {
   [DealershipStatus.CANCELLED]: 'bg-red-50 text-red-700 border-red-200',
 };
 
-const DealershipCard: React.FC<DealershipCardProps> = ({ dealership, groupName, isManaged, onClick }) => {
+const DealershipCard: React.FC<DealershipCardProps> = ({ dealership, groupName, isManaged, onClick, onToggleFavorite }) => {
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
   const formatDate = (dateString?: string) => {
@@ -70,7 +73,7 @@ const DealershipCard: React.FC<DealershipCardProps> = ({ dealership, groupName, 
   return (
     <div 
       onClick={onClick}
-      className="group bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md hover:border-indigo-300 transition-all duration-200 cursor-pointer overflow-hidden"
+      className="group bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md hover:border-indigo-300 transition-all duration-200 cursor-pointer overflow-hidden relative"
     >
       <div className="p-4 flex items-center justify-between gap-4">
         <div className="flex-1 min-w-0">
@@ -116,10 +119,24 @@ const DealershipCard: React.FC<DealershipCardProps> = ({ dealership, groupName, 
             </div>
           </div>
 
-          {/* Middle Row: Name */}
-          <h3 className="text-base font-extrabold text-slate-800 truncate mb-1.5 leading-tight group-hover:text-indigo-700 transition-colors">
-            {dealership.name}
-          </h3>
+          {/* Middle Row: Name and Favorite */}
+          <div className="flex items-center gap-2">
+            {onToggleFavorite && (
+              <button 
+                onClick={(e) => {
+                   e.stopPropagation();
+                   onToggleFavorite(e);
+                }}
+                className={`transition-colors ${dealership.is_favorite ? 'text-amber-400 hover:text-amber-500' : 'text-slate-300 hover:text-amber-400'}`}
+                title={dealership.is_favorite ? "Unfavorite" : "Mark as Favorite"}
+              >
+                 <Star size={16} fill={dealership.is_favorite ? "currentColor" : "none"} />
+              </button>
+            )}
+            <h3 className="text-base font-extrabold text-slate-800 truncate mb-1.5 leading-tight group-hover:text-indigo-700 transition-colors">
+              {dealership.name}
+            </h3>
+          </div>
 
           {/* Hold Reason Display */}
           {dealership.status === DealershipStatus.HOLD && dealership.hold_reason && (
@@ -133,7 +150,7 @@ const DealershipCard: React.FC<DealershipCardProps> = ({ dealership, groupName, 
           <div className="flex flex-wrap items-center gap-y-1 gap-x-3 text-[10px] text-slate-500 font-medium">
              <div className="flex items-center gap-1.5" title="Enterprise Group">
                <span className="text-slate-400">GRP:</span>
-               <span className="text-slate-700 font-semibold truncate max-w-[150px]">{groupName || 'Independent'}</span>
+               <span className="text-slate-700 font-semibold truncate max-w-[150px]">{groupName || 'Single'}</span>
              </div>
              <div className="w-px h-3 bg-slate-200 hidden sm:block"></div>
              
