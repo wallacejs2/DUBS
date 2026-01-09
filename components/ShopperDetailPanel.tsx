@@ -22,12 +22,6 @@ const statusColors: Record<ShopperStatus, string> = {
   [ShopperStatus.RESOLVED]: 'bg-emerald-50 text-emerald-700 border-emerald-100',
 };
 
-const priorityColors: Record<ShopperPriority, string> = {
-  [ShopperPriority.HIGH]: 'bg-rose-50 text-rose-600 border-rose-100',
-  [ShopperPriority.MEDIUM]: 'bg-amber-50 text-amber-600 border-amber-100',
-  [ShopperPriority.LOW]: 'bg-emerald-50 text-emerald-600 border-emerald-100',
-};
-
 const Label = ({ children, icon: Icon }: { children?: React.ReactNode, icon?: any }) => (
   <label className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">
     {Icon && <Icon size={10} />}
@@ -65,20 +59,22 @@ const Select = ({ value, onChange, options, className = "" }: { value: any, onCh
 
 // Internal Component for Managing Identities
 interface IdentityManagerProps {
-  label: string;
-  identities: ShopperIdentity[];
-  onChange: (ids: ShopperIdentity[]) => void;
+  label?: string;
+  identities: (ShopperIdentity & { system?: 'ucp' | 'cdp_admin' | 'curator' })[];
+  onChange: (ids: any[]) => void;
   isEditing: boolean;
+  showSystem?: boolean;
 }
 
-const IdentityManager: React.FC<IdentityManagerProps> = ({ label, identities, onChange, isEditing }) => {
+const IdentityManager: React.FC<IdentityManagerProps> = ({ label, identities, onChange, isEditing, showSystem = false }) => {
   const handleAdd = () => {
-    const newId: ShopperIdentity = {
+    const newId = {
       id: crypto.randomUUID(),
-      type: 'cdpID',
+      type: 'cdpID' as const,
       value: '',
       hierarchy: undefined, // Default is nothing
-      notes: ''
+      notes: '',
+      ...(showSystem ? { system: 'ucp' as const } : {})
     };
     onChange([...identities, newId]);
   };
@@ -89,7 +85,7 @@ const IdentityManager: React.FC<IdentityManagerProps> = ({ label, identities, on
     onChange(newIds);
   };
 
-  const updateIdentity = (index: number, field: keyof ShopperIdentity, value: any) => {
+  const updateIdentity = (index: number, field: string, value: any) => {
     const newIds = [...identities];
     newIds[index] = { ...newIds[index], [field]: value };
     onChange(newIds);
@@ -103,9 +99,14 @@ const IdentityManager: React.FC<IdentityManagerProps> = ({ label, identities, on
       newIds[index].hierarchy = undefined;
     } else {
       if (type === 'parent') {
-        // Enforce single parent
+        // Enforce single parent within the same system context.
+        const currentSystem = newIds[index].system;
         newIds.forEach(id => {
-           if (id.hierarchy === 'parent') id.hierarchy = undefined;
+           if (showSystem) {
+             if (id.system === currentSystem && id.hierarchy === 'parent') id.hierarchy = undefined;
+           } else {
+             if (id.hierarchy === 'parent') id.hierarchy = undefined;
+           }
         });
       }
       newIds[index].hierarchy = type;
@@ -115,9 +116,11 @@ const IdentityManager: React.FC<IdentityManagerProps> = ({ label, identities, on
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-        <Hash size={10} /> {label}
-      </div>
+      {label && (
+        <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+          <Hash size={10} /> {label}
+        </div>
+      )}
       
       <div className="space-y-2 bg-slate-50/50 rounded-xl p-2 border border-slate-100">
         {identities.length === 0 && !isEditing && (
@@ -127,6 +130,30 @@ const IdentityManager: React.FC<IdentityManagerProps> = ({ label, identities, on
         {identities.map((id, idx) => (
           <div key={id.id || idx} className="bg-white p-2 rounded-lg border border-slate-200 shadow-sm flex flex-col gap-2">
              <div className="flex gap-2 items-center">
+                {/* System Dropdown (Optional) */}
+                {showSystem && (
+                  isEditing ? (
+                    <select 
+                      value={id.system} 
+                      onChange={(e) => updateIdentity(idx, 'system', e.target.value)}
+                      className="w-[90px] px-1 py-1 text-[10px] border border-slate-200 rounded focus:ring-1 focus:ring-indigo-500 outline-none bg-slate-50 font-bold text-slate-700"
+                    >
+                      <option value="ucp">UCP</option>
+                      <option value="cdp_admin">CDP Admin</option>
+                      <option value="curator">Curator</option>
+                    </select>
+                  ) : (
+                    <span className={`text-[9px] font-bold border px-1.5 py-1 rounded uppercase tracking-wider h-fit flex-shrink-0 ${
+                      id.system === 'ucp' ? 'bg-indigo-50 text-indigo-700 border-indigo-100' :
+                      id.system === 'cdp_admin' ? 'bg-blue-50 text-blue-700 border-blue-100' :
+                      'bg-purple-50 text-purple-700 border-purple-100'
+                    }`}>
+                      {id.system === 'cdp_admin' ? 'CDP ADMIN' : id.system?.toUpperCase()}
+                    </span>
+                  )
+                )}
+
+                {/* Type Dropdown */}
                 {isEditing ? (
                   <select 
                     value={id.type} 
@@ -141,6 +168,8 @@ const IdentityManager: React.FC<IdentityManagerProps> = ({ label, identities, on
                     {id.type === 'cdpID' ? 'CDP' : 'FF'}
                   </span>
                 )}
+
+                {/* Value Input */}
                 {isEditing ? (
                   <input 
                     value={id.value} 
@@ -290,6 +319,29 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
 
   const updateField = (field: keyof Shopper, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  // Unified System Identity Handling
+  const combinedSystemIdentities = useMemo(() => {
+    return [
+      ...(formData.ucp_identities || []).map(i => ({...i, system: 'ucp' as const})),
+      ...(formData.cdp_admin_identities || []).map(i => ({...i, system: 'cdp_admin' as const})),
+      ...(formData.curator_identities || []).map(i => ({...i, system: 'curator' as const})),
+    ];
+  }, [formData.ucp_identities, formData.cdp_admin_identities, formData.curator_identities]);
+
+  const handleSystemIdentitiesUpdate = (newIds: (ShopperIdentity & { system: 'ucp' | 'cdp_admin' | 'curator' })[]) => {
+      // Split back into buckets based on 'system' property
+      const ucp = newIds.filter(i => i.system === 'ucp').map(({system, ...i}) => i);
+      const cdp = newIds.filter(i => i.system === 'cdp_admin').map(({system, ...i}) => i);
+      const curator = newIds.filter(i => i.system === 'curator').map(({system, ...i}) => i);
+      
+      setFormData(prev => ({
+        ...prev,
+        ucp_identities: ucp,
+        cdp_admin_identities: cdp,
+        curator_identities: curator
+      }));
   };
 
   const handleNameChange = (val: string) => {
@@ -512,8 +564,8 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
           {/* Removed max-w-xl constraint to allow full width usage */}
           <div className="space-y-6 mx-auto">
             
-            {/* Status Section */}
-            <div className="grid grid-cols-2 gap-4 bg-slate-50 p-3 rounded-2xl border border-slate-100">
+            {/* Status Section (Audit Priority removed) */}
+            <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
                <div>
                   <Label icon={Shield}>Status</Label>
                   {isEditing ? (
@@ -525,20 +577,6 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                   ) : (
                     <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border ${statusColors[formData.status || ShopperStatus.ACTIVE]}`}>
                       {formData.status}
-                    </span>
-                  )}
-               </div>
-               <div>
-                  <Label icon={Shield}>Audit Priority</Label>
-                  {isEditing ? (
-                    <Select 
-                       value={formData.priority}
-                       onChange={(v) => updateField('priority', v)}
-                       options={Object.values(ShopperPriority).map(p => ({ label: p, value: p }))}
-                    />
-                  ) : (
-                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border ${priorityColors[formData.priority || ShopperPriority.MEDIUM]}`}>
-                      {formData.priority}
                     </span>
                   )}
                </div>
@@ -714,22 +752,10 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
               </div>
               <div className="flex flex-col gap-3">
                  <IdentityManager 
-                    label="UCP" 
-                    identities={formData.ucp_identities || []} 
-                    onChange={(ids) => updateField('ucp_identities', ids)}
+                    identities={combinedSystemIdentities} 
+                    onChange={handleSystemIdentitiesUpdate}
                     isEditing={isIdentitiesEditing}
-                 />
-                 <IdentityManager 
-                    label="CDP Admin" 
-                    identities={formData.cdp_admin_identities || []} 
-                    onChange={(ids) => updateField('cdp_admin_identities', ids)}
-                    isEditing={isIdentitiesEditing}
-                 />
-                 <IdentityManager 
-                    label="Curator" 
-                    identities={formData.curator_identities || []} 
-                    onChange={(ids) => updateField('curator_identities', ids)}
-                    isEditing={isIdentitiesEditing}
+                    showSystem={true}
                  />
               </div>
             </div>

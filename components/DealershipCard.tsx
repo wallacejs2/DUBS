@@ -1,6 +1,4 @@
 
-
-
 import React, { useState } from 'react';
 import { Copy, Check, Hash, Link, Star } from 'lucide-react';
 import { Dealership, DealershipStatus } from '../types';
@@ -9,6 +7,9 @@ interface DealershipCardProps {
   dealership: Dealership;
   groupName?: string;
   isManaged?: boolean;
+  hasClientId?: boolean;
+  hasAddlWeb?: boolean;
+  hasZeroPrice?: boolean;
   onClick: () => void;
   onToggleFavorite?: (e: React.MouseEvent) => void;
 }
@@ -23,7 +24,10 @@ const statusColors: Record<DealershipStatus, string> = {
   [DealershipStatus.CANCELLED]: 'bg-red-50 text-red-700 border-red-200',
 };
 
-const DealershipCard: React.FC<DealershipCardProps> = ({ dealership, groupName, isManaged, onClick, onToggleFavorite }) => {
+const DealershipCard: React.FC<DealershipCardProps> = ({ 
+  dealership, groupName, isManaged, hasClientId = true, hasAddlWeb, hasZeroPrice,
+  onClick, onToggleFavorite 
+}) => {
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
   const formatDate = (dateString?: string) => {
@@ -83,12 +87,30 @@ const DealershipCard: React.FC<DealershipCardProps> = ({ dealership, groupName, 
               <span className="text-[10px] font-mono font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
                 {dealership.cif_number || 'NO CIF'}
               </span>
+              
+              {!hasClientId && (
+                <span className="text-[10px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                  NO ID
+                </span>
+              )}
+
+              {hasZeroPrice && (
+                <span className="text-[10px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                  $0
+                </span>
+              )}
+
               <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded uppercase tracking-wider">
                 {dealership.crm_provider}
               </span>
               {isManaged && (
                 <span className="text-[10px] font-bold text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded uppercase tracking-wider">
                   Managed
+                </span>
+              )}
+              {hasAddlWeb && (
+                <span className="text-[10px] font-bold text-cyan-600 bg-cyan-50 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                  ADDL. WEB
                 </span>
               )}
             </div>

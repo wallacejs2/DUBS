@@ -1,6 +1,4 @@
 
-
-
 import React, { useState, useMemo } from 'react';
 import { Plus, FileSpreadsheet } from 'lucide-react';
 import { useDealerships, useEnterpriseGroups, useOrders } from '../hooks';
@@ -42,6 +40,20 @@ const DealershipsPage: React.FC = () => {
     return orders.some(o => 
       o.dealership_id === dealerId && 
       o.products.some(p => p.product_code === ProductCode.P15392_MANAGED)
+    );
+  };
+
+  const checkHasAddlWeb = (dealerId: string) => {
+    return orders.some(o => 
+      o.dealership_id === dealerId && 
+      o.products.some(p => p.product_code === ProductCode.P15435_ADDL_WEB)
+    );
+  };
+
+  const checkHasZeroPrice = (dealerId: string) => {
+    return orders.some(o => 
+      o.dealership_id === dealerId && 
+      o.products.some(p => !p.amount)
     );
   };
 
@@ -258,16 +270,25 @@ const DealershipsPage: React.FC = () => {
         </div>
       ) : (
         <div className="flex flex-col gap-3">
-          {dealerships.map(dealer => (
-            <DealershipCard 
-              key={dealer.id} 
-              dealership={dealer} 
-              groupName={groups.find(g => g.id === dealer.enterprise_group_id)?.name}
-              isManaged={checkIsManaged(dealer.id)}
-              onClick={() => setSelectedDealerId(dealer.id)}
-              onToggleFavorite={() => toggleFavorite(dealer.id)}
-            />
-          ))}
+          {dealerships.map(dealer => {
+            const details = getDetails(dealer.id);
+            // Check for valid client ID in any website link
+            const hasClientId = details?.website_links?.some(l => l.client_id && l.client_id.trim().length > 0) ?? false;
+            
+            return (
+              <DealershipCard 
+                key={dealer.id} 
+                dealership={dealer} 
+                groupName={groups.find(g => g.id === dealer.enterprise_group_id)?.name}
+                isManaged={checkIsManaged(dealer.id)}
+                hasClientId={hasClientId}
+                hasAddlWeb={checkHasAddlWeb(dealer.id)}
+                hasZeroPrice={checkHasZeroPrice(dealer.id)}
+                onClick={() => setSelectedDealerId(dealer.id)}
+                onToggleFavorite={() => toggleFavorite(dealer.id)}
+              />
+            );
+          })}
         </div>
       )}
 

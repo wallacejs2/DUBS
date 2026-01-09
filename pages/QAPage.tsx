@@ -1,4 +1,6 @@
 
+
+
 import React, { useState, useMemo } from 'react';
 import { Plus, User, Mail, Phone, Search, Trash2, Edit3 } from 'lucide-react';
 import { useShoppers } from '../hooks';
@@ -12,6 +14,7 @@ const QAPage: React.FC = () => {
   
   const [selectedShopperId, setSelectedShopperId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [copiedEmailId, setCopiedEmailId] = useState<string | null>(null);
 
   const activeShopper = useMemo(() => {
     if (isCreating) {
@@ -50,6 +53,13 @@ const QAPage: React.FC = () => {
   const handleRowClick = (id: string) => {
     setSelectedShopperId(id);
     setIsCreating(false);
+  };
+
+  const handleCopyEmail = (e: React.MouseEvent, id: string, email: string) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(email);
+    setCopiedEmailId(id);
+    setTimeout(() => setCopiedEmailId(null), 1500);
   };
 
   return (
@@ -105,6 +115,7 @@ const QAPage: React.FC = () => {
               <tr>
                 <th className="px-6 py-4 text-[9px] font-bold text-slate-400 uppercase tracking-widest">Tester</th>
                 <th className="px-6 py-4 text-[9px] font-bold text-slate-400 uppercase tracking-widest">Contact Details</th>
+                <th className="px-6 py-4 text-[9px] font-bold text-slate-400 uppercase tracking-widest">Issues</th>
                 <th className="px-6 py-4 text-[9px] font-bold text-slate-400 uppercase tracking-widest">Status</th>
                 <th className="px-6 py-4 text-[9px] font-bold text-slate-400 uppercase tracking-widest text-right">Actions</th>
               </tr>
@@ -128,9 +139,15 @@ const QAPage: React.FC = () => {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-6">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <Mail size={12} className="text-slate-400 flex-shrink-0" />
-                        <span className="text-[11px] text-slate-600 truncate">{shopper.email}</span>
+                      <div 
+                        className="flex items-center gap-1.5 min-w-0 cursor-pointer group/email"
+                        onClick={(e) => handleCopyEmail(e, shopper.id, shopper.email)}
+                        title="Click to copy email"
+                      >
+                        <Mail size={12} className="text-slate-400 flex-shrink-0 group-hover/email:text-indigo-500 transition-colors" />
+                        <span className={`text-[11px] truncate transition-colors ${copiedEmailId === shopper.id ? 'text-emerald-600 font-bold' : 'text-slate-600 group-hover/email:text-indigo-600'}`}>
+                          {copiedEmailId === shopper.id ? 'Copied!' : shopper.email}
+                        </span>
                       </div>
                       <div className="flex items-center gap-1.5 min-w-0">
                         <Phone size={12} className="text-slate-400 flex-shrink-0" />
@@ -139,12 +156,18 @@ const QAPage: React.FC = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4">
+                     {shopper.issue ? (
+                        <div className="max-w-[150px] text-[10px] text-orange-800 bg-orange-50 border border-orange-100 px-2 py-1 rounded-md truncate font-medium" title={shopper.issue}>
+                           {shopper.issue}
+                        </div>
+                     ) : (
+                        <span className="text-[10px] text-slate-300 italic">None</span>
+                     )}
+                  </td>
+                  <td className="px-6 py-4">
                     <div className="flex flex-col gap-1 items-start">
                       <span className={`px-1.5 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-widest ${statusColors[shopper.status]}`}>
                         {shopper.status}
-                      </span>
-                      <span className={`px-1.5 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-widest border ${priorityColors[shopper.priority]}`}>
-                        {shopper.priority}
                       </span>
                     </div>
                   </td>
