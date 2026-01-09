@@ -1,6 +1,4 @@
 
-
-
 import React, { useState, useMemo } from 'react';
 import { Plus, User, Mail, Phone, Search, Trash2, Edit3 } from 'lucide-react';
 import { useShoppers } from '../hooks';
@@ -115,7 +113,6 @@ const QAPage: React.FC = () => {
               <tr>
                 <th className="px-6 py-4 text-[9px] font-bold text-slate-400 uppercase tracking-widest">Tester</th>
                 <th className="px-6 py-4 text-[9px] font-bold text-slate-400 uppercase tracking-widest">Contact Details</th>
-                <th className="px-6 py-4 text-[9px] font-bold text-slate-400 uppercase tracking-widest">Issues</th>
                 <th className="px-6 py-4 text-[9px] font-bold text-slate-400 uppercase tracking-widest">Status</th>
                 <th className="px-6 py-4 text-[9px] font-bold text-slate-400 uppercase tracking-widest text-right">Actions</th>
               </tr>
@@ -132,8 +129,13 @@ const QAPage: React.FC = () => {
                       <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-[10px] group-hover:bg-indigo-600 group-hover:text-white transition-all flex-shrink-0">
                         {shopper.first_name.charAt(0)}{shopper.last_name.charAt(0)}
                       </div>
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex flex-col items-start gap-1">
                         <p className="text-[11px] font-bold text-slate-800 leading-tight truncate">{shopper.first_name} {shopper.last_name}</p>
+                        {shopper.issue && (
+                            <div className="text-[10px] text-orange-700 bg-orange-50 border border-orange-100 px-1.5 py-0.5 rounded-md font-medium whitespace-normal break-words max-w-sm" title={shopper.issue}>
+                                {shopper.issue}
+                            </div>
+                        )}
                       </div>
                     </div>
                   </td>
@@ -154,15 +156,6 @@ const QAPage: React.FC = () => {
                         <span className="text-[11px] text-slate-600 font-mono truncate">{shopper.phone || '---'}</span>
                       </div>
                     </div>
-                  </td>
-                  <td className="px-6 py-4">
-                     {shopper.issue ? (
-                        <div className="max-w-[150px] text-[10px] text-orange-800 bg-orange-50 border border-orange-100 px-2 py-1 rounded-md truncate font-medium" title={shopper.issue}>
-                           {shopper.issue}
-                        </div>
-                     ) : (
-                        <span className="text-[10px] text-slate-300 italic">None</span>
-                     )}
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex flex-col gap-1 items-start">
