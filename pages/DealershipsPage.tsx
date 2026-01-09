@@ -10,7 +10,7 @@ import DealershipDetailPanel from '../components/DealershipDetailPanel';
 import FilterBar from '../components/FilterBar';
 
 const DealershipsPage: React.FC = () => {
-  const [filters, setFilters] = useState({ search: '', status: '', group: '' });
+  const [filters, setFilters] = useState({ search: '', status: '', group: '', issue: '', managed: '', addl_web: '' });
   
   // Data for List (Filtered)
   const { dealerships, loading, upsert, remove, getDetails, toggleFavorite } = useDealerships(filters);
@@ -249,9 +249,30 @@ const DealershipsPage: React.FC = () => {
             value: filters.group,
             onChange: (v) => setFilters({ ...filters, group: v }),
             options: groups.map(g => ({ label: g.name, value: g.id }))
+          },
+          {
+             label: 'Managed',
+             value: filters.managed,
+             onChange: (v) => setFilters({ ...filters, managed: v }),
+             options: [{ label: 'Yes', value: 'yes' }]
+          },
+          {
+            label: 'Addl. Web',
+            value: filters.addl_web,
+            onChange: (v) => setFilters({ ...filters, addl_web: v }),
+            options: [{ label: 'Yes', value: 'yes' }]
+          },
+          {
+            label: 'Issues',
+            value: filters.issue,
+            onChange: (v) => setFilters({ ...filters, issue: v }),
+            options: [
+              { label: 'No Client ID', value: 'no_id' },
+              { label: '$0 Price', value: 'zero_price' }
+            ]
           }
         ]}
-        onClear={() => setFilters({ search: '', status: '', group: '' })}
+        onClear={() => setFilters({ search: '', status: '', group: '', issue: '', managed: '', addl_web: '' })}
       />
 
       {loading ? (

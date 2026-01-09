@@ -1,11 +1,9 @@
 
-
-
 import { useState, useEffect, useCallback } from 'react';
 import { db } from './db.ts';
 import { 
   Dealership, DealershipWithRelations, EnterpriseGroup, 
-  Shopper, Order 
+  Shopper, Order, ProductCode 
 } from './types.ts';
 
 export function useEnterpriseGroups() {
@@ -41,7 +39,7 @@ export function useEnterpriseGroups() {
   };
 }
 
-export function useDealerships(filters?: { search?: string; status?: string; group?: string }) {
+export function useDealerships(filters?: { search?: string; status?: string; group?: string; issue?: string; managed?: string; addl_web?: string }) {
   const [dealerships, setDealerships] = useState<Dealership[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -56,6 +54,35 @@ export function useDealerships(filters?: { search?: string; status?: string; gro
     }
     if (filters?.group) {
       data = data.filter(d => d.enterprise_group_id === filters.group);
+    }
+    if (filters?.managed === 'yes') {
+      data = data.filter(d => {
+         const details = db.getDealershipWithRelations(d.id);
+         return details?.orders?.some(o => o.products?.some(p => p.product_code === ProductCode.P15392_MANAGED));
+      });
+    }
+    if (filters?.addl_web === 'yes') {
+      data = data.filter(d => {
+         const details = db.getDealershipWithRelations(d.id);
+         return details?.orders?.some(o => o.products?.some(p => p.product_code === ProductCode.P15435_ADDL_WEB));
+      });
+    }
+    if (filters?.issue) {
+      data = data.filter(d => {
+        const details = db.getDealershipWithRelations(d.id);
+        if (!details) return false;
+        
+        if (filters.issue === 'no_id') {
+           const hasClientId = details.website_links?.some(l => l.client_id && l.client_id.trim().length > 0) ?? false;
+           return !hasClientId;
+        }
+
+        if (filters.issue === 'zero_price') {
+           return details.orders?.some(o => o.products?.some(p => !p.amount));
+        }
+        
+        return true;
+      });
     }
 
     // Sort: Favorites first, then alphabetical
