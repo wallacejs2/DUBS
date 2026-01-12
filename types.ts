@@ -3,6 +3,12 @@
 
 
 
+
+
+
+
+
+
 export enum DealershipStatus {
   DMT_PENDING = 'DMT-Pending',
   DMT_APPROVED = 'DMT-Approved',
@@ -207,14 +213,25 @@ export interface Shopper {
   issue?: string;
 }
 
+export interface PMR {
+  id: string;
+  number: string;
+  link: string;
+}
+
 export interface NewFeature {
   id: string;
   title: string;
+  quarterly_release?: string;
+  type?: 'New' | 'Updated';
+  status?: 'Pending' | 'Launched';
   platform?: string;
+  navigation?: string;
   location?: string;
   launch_date?: string;
-  pmr_number?: string;
-  pmr_link?: string;
+  pmrs?: PMR[];
+  pmr_number?: string; // Legacy
+  pmr_link?: string;   // Legacy
   support_material_link?: string;
   description?: string;
   created_at: string;

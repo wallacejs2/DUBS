@@ -6,8 +6,14 @@ import { NewFeature } from '../types';
 import FilterBar from '../components/FilterBar';
 import NewFeatureDetailPanel from '../components/NewFeatureDetailPanel';
 
+const platformColors: Record<string, string> = {
+  'UCP': 'bg-blue-50 text-blue-700 border-blue-100',
+  'Curator': 'bg-purple-50 text-purple-700 border-purple-100',
+  'FOCUS': 'bg-orange-50 text-orange-700 border-orange-100',
+};
+
 const NewFeaturesPage: React.FC = () => {
-  const [filters, setFilters] = useState({ search: '' });
+  const [filters, setFilters] = useState({ search: '', quarter: '', year: '', type: '' });
   const { features, loading, upsert, remove } = useNewFeatures(filters);
   
   const [selectedFeatureId, setSelectedFeatureId] = useState<string | null>(null);
@@ -19,7 +25,10 @@ const NewFeaturesPage: React.FC = () => {
       return {
         title: '',
         description: '',
-        created_at: new Date().toISOString()
+        type: 'New',
+        status: 'Pending',
+        created_at: new Date().toISOString(),
+        pmrs: []
       } as Partial<NewFeature>;
     }
     if (selectedFeatureId) {
@@ -36,29 +45,52 @@ const NewFeaturesPage: React.FC = () => {
   const handleCopyFeature = (e: React.MouseEvent, feature: NewFeature) => {
     e.stopPropagation();
     
+    // Header: TYPE: TITLE
+    const titleLine = feature.type 
+        ? `${feature.type.toUpperCase()}: ${feature.title.toUpperCase()}`
+        : feature.title.toUpperCase();
+
     const lines = [
-      feature.title.toUpperCase(),
+      titleLine,
       "----------------------------------------"
     ];
 
-    if (feature.platform) lines.push(`Platform: ${feature.platform}`);
-    if (feature.location) lines.push(`Location: ${feature.location}`);
-    if (feature.launch_date) lines.push(`Launch Date: ${feature.launch_date}`);
+    // Meta Line: Status | Release | Date
+    const metaParts = [];
+    if (feature.status) metaParts.push(feature.status);
+    if (feature.quarterly_release) metaParts.push(feature.quarterly_release);
+    if (feature.launch_date) metaParts.push(feature.launch_date);
     
-    if (feature.pmr_number || feature.pmr_link) {
-        lines.push('');
-        if (feature.pmr_number) lines.push(`PMR #: ${feature.pmr_number}`);
-        if (feature.pmr_link) lines.push(`PMR Link: ${feature.pmr_link}`);
+    if (metaParts.length > 0) {
+        lines.push(metaParts.join(' | '));
     }
 
+    // Context Fields
+    if (feature.platform) lines.push(`Platform: ${feature.platform}`);
+    if (feature.location) lines.push(`Location: ${feature.location}`);
+    if (feature.navigation) lines.push(`Navigation: ${feature.navigation}`);
+    
+    // PMRs
+    const displayPMRs = feature.pmrs && feature.pmrs.length > 0 
+        ? feature.pmrs 
+        : (feature.pmr_number ? [{ id: 'legacy', number: feature.pmr_number, link: feature.pmr_link || '' }] : []);
+
+    if (displayPMRs.length > 0) {
+        const pmrStrings = displayPMRs.map(pmr => {
+            if (pmr.link) return `${pmr.number} (${pmr.link})`;
+            return pmr.number;
+        });
+        lines.push(`PMR #: ${pmrStrings.join(' | ')}`);
+    }
+
+    // Support Docs
     if (feature.support_material_link) {
        lines.push(`Support Docs: ${feature.support_material_link}`);
     }
 
+    // Description
     if (feature.description) {
-        lines.push('');
-        lines.push('Description:');
-        lines.push(feature.description);
+        lines.push(`Description: ${feature.description}`);
     }
 
     const text = lines.join('\n');
@@ -67,6 +99,26 @@ const NewFeaturesPage: React.FC = () => {
         setTimeout(() => setCopiedFeatureId(null), 2000);
     });
   };
+
+  const quarters = [
+    { label: 'Q1', value: 'Q1' },
+    { label: 'Q2', value: 'Q2' },
+    { label: 'Q3', value: 'Q3' },
+    { label: 'Q4', value: 'Q4' },
+  ];
+
+  const years = [
+    { label: '2024', value: '2024' },
+    { label: '2025', value: '2025' },
+    { label: '2026', value: '2026' },
+    { label: '2027', value: '2027' },
+    { label: '2028', value: '2028' },
+  ];
+
+  const types = [
+    { label: 'New', value: 'New' },
+    { label: 'Updated', value: 'Updated' },
+  ];
 
   return (
     <div className="animate-in fade-in duration-700">
@@ -87,6 +139,27 @@ const NewFeaturesPage: React.FC = () => {
         searchValue={filters.search}
         onSearchChange={(v) => setFilters({...filters, search: v})}
         searchPlaceholder="Search features, PMRs, descriptions..."
+        filters={[
+          {
+            label: 'Type',
+            value: filters.type,
+            onChange: (v) => setFilters({ ...filters, type: v }),
+            options: types
+          },
+          {
+            label: 'Quarter',
+            value: filters.quarter,
+            onChange: (v) => setFilters({ ...filters, quarter: v }),
+            options: quarters
+          },
+          {
+            label: 'Year',
+            value: filters.year,
+            onChange: (v) => setFilters({ ...filters, year: v }),
+            options: years
+          }
+        ]}
+        onClear={() => setFilters({ search: '', quarter: '', year: '', type: '' })}
       />
 
       {loading ? (
@@ -103,7 +176,13 @@ const NewFeaturesPage: React.FC = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-3">
-           {features.map(feature => (
+           {features.map(feature => {
+              // Normalize PMRs for display
+              const displayPMRs = feature.pmrs && feature.pmrs.length > 0 
+                  ? feature.pmrs 
+                  : (feature.pmr_number ? [{ id: 'legacy', number: feature.pmr_number, link: feature.pmr_link || '' }] : []);
+
+              return (
               <div 
                 key={feature.id}
                 onClick={() => handleRowClick(feature.id)}
@@ -114,27 +193,54 @@ const NewFeaturesPage: React.FC = () => {
                        <Sparkles size={20} />
                     </div>
                     <div className="min-w-0 flex-1">
-                       <h3 className="text-sm font-bold text-slate-800 group-hover:text-indigo-600 transition-colors leading-tight mb-1">{feature.title}</h3>
+                       <div className="flex items-center gap-2 mb-1">
+                         {feature.type && (
+                           <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wide border ${
+                             feature.type === 'New' 
+                               ? 'bg-emerald-50 text-emerald-700 border-emerald-100' 
+                               : 'bg-blue-50 text-blue-700 border-blue-100'
+                           }`}>
+                             {feature.type}
+                           </span>
+                         )}
+                         <h3 className="text-sm font-bold text-slate-800 group-hover:text-indigo-600 transition-colors leading-tight">{feature.title}</h3>
+                         {feature.launch_date && (
+                            <span className={new Date(feature.launch_date) < new Date() ? "text-[10px] text-emerald-600 font-bold" : "text-[10px] text-slate-400 font-medium"}>
+                                {feature.launch_date}
+                            </span>
+                         )}
+                       </div>
                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500">
-                          {feature.pmr_number && (
-                            <span className="font-mono bg-slate-100 px-1.5 rounded text-slate-600">{feature.pmr_number}</span>
+                          {feature.status && (
+                             <span className={`font-bold px-1.5 rounded-md ${
+                               feature.status === 'Launched' 
+                                 ? 'text-emerald-700 bg-emerald-50' 
+                                 : 'text-purple-700 bg-purple-50'
+                             }`}>
+                               {feature.status}
+                             </span>
+                          )}
+                          {feature.quarterly_release && (
+                             <span className="font-bold text-indigo-700 bg-indigo-50 px-1.5 rounded-md">{feature.quarterly_release}</span>
+                          )}
+                          {displayPMRs.length > 0 && (
+                            <div className="flex gap-1">
+                                {displayPMRs.slice(0, 2).map((pmr, idx) => (
+                                    <span key={idx} className="font-mono bg-slate-100 px-1.5 rounded text-slate-600">{pmr.number}</span>
+                                ))}
+                                {displayPMRs.length > 2 && <span className="font-mono bg-slate-100 px-1.5 rounded text-slate-600">+{displayPMRs.length - 2}</span>}
+                            </div>
                           )}
                           {feature.platform && (
-                            <span>{feature.platform}</span>
+                            <span className={`px-1.5 rounded-md font-bold ${platformColors[feature.platform] || 'bg-slate-100 text-slate-600'}`}>
+                                {feature.platform}
+                            </span>
                           )}
                           {feature.location && (
                             <>
                               <span className="text-slate-300">•</span>
                               <span>{feature.location}</span>
                             </>
-                          )}
-                          {feature.launch_date && (
-                             <>
-                               <span className="text-slate-300">•</span>
-                               <span className={new Date(feature.launch_date) < new Date() ? "text-emerald-600 font-medium" : "text-slate-500"}>
-                                 {feature.launch_date}
-                               </span>
-                             </>
                           )}
                        </div>
                        {feature.description && (
@@ -152,9 +258,9 @@ const NewFeaturesPage: React.FC = () => {
                       {copiedFeatureId === feature.id ? <Check size={16} className="text-emerald-500" /> : <Copy size={16} />}
                     </button>
 
-                    {feature.pmr_link && (
+                    {displayPMRs.length > 0 && displayPMRs[0].link && (
                       <a 
-                        href={feature.pmr_link} 
+                        href={displayPMRs[0].link} 
                         target="_blank" 
                         rel="noopener noreferrer" 
                         onClick={(e) => e.stopPropagation()}
@@ -178,7 +284,7 @@ const NewFeaturesPage: React.FC = () => {
                     </button>
                  </div>
               </div>
-           ))}
+           )})}
         </div>
       )}
 

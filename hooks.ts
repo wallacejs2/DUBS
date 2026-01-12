@@ -170,12 +170,13 @@ export function useShoppers(filters?: { search?: string; status?: string; priori
   };
 }
 
-export function useNewFeatures(filters?: { search?: string }) {
+export function useNewFeatures(filters?: { search?: string; quarter?: string; year?: string; type?: string; status?: string }) {
   const [features, setFeatures] = useState<NewFeature[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetch = useCallback(() => {
     let data = db.getNewFeatures();
+    
     if (filters?.search) {
       const s = filters.search.toLowerCase();
       data = data.filter(f => 
@@ -184,6 +185,23 @@ export function useNewFeatures(filters?: { search?: string }) {
         (f.pmr_number && f.pmr_number.toLowerCase().includes(s))
       );
     }
+
+    if (filters?.quarter) {
+      data = data.filter(f => f.quarterly_release && f.quarterly_release.includes(filters.quarter));
+    }
+
+    if (filters?.year) {
+      data = data.filter(f => f.quarterly_release && f.quarterly_release.includes(filters.year));
+    }
+
+    if (filters?.type) {
+      data = data.filter(f => f.type === filters.type);
+    }
+
+    if (filters?.status) {
+      data = data.filter(f => f.status === filters.status);
+    }
+
     // Sort by launch_date desc (newest to oldest), fallback to created_at
     data.sort((a, b) => {
       const dateA = a.launch_date ? new Date(a.launch_date).getTime() : 0;

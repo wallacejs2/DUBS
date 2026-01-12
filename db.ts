@@ -3,6 +3,12 @@
 
 
 
+
+
+
+
+
+
 import { 
   Dealership, EnterpriseGroup, Order, Shopper, NewFeature,
   DealershipWithRelations, WebsiteLink, DealershipContacts, 
@@ -155,11 +161,16 @@ class CuratorLocalDB extends EventTarget {
     this.data.newFeatures = [{
       id: crypto.randomUUID(),
       title: 'Enhanced VIN Decoding',
-      platform: 'Inventory Module',
+      quarterly_release: 'Q1 2025',
+      type: 'New',
+      status: 'Pending',
+      platform: 'Curator',
+      navigation: 'Inventory > Settings > Decoding',
       location: 'Global',
       launch_date: '2025-03-15',
-      pmr_number: 'PMR-2025-001',
-      pmr_link: 'https://jira.company.com/browse/PMR-001',
+      pmrs: [
+        { id: crypto.randomUUID(), number: 'PMR-2025-001', link: 'https://jira.company.com/browse/PMR-001' }
+      ],
       support_material_link: 'https://docs.company.com/vin-decoding',
       description: 'Upgrading the core VIN decoding engine to support 2026 EV models and improved option code parsing.',
       created_at: new Date().toISOString()
