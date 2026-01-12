@@ -184,8 +184,15 @@ export function useNewFeatures(filters?: { search?: string }) {
         (f.pmr_number && f.pmr_number.toLowerCase().includes(s))
       );
     }
-    // Sort by creation date desc
-    data.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    // Sort by launch_date desc (newest to oldest), fallback to created_at
+    data.sort((a, b) => {
+      const dateA = a.launch_date ? new Date(a.launch_date).getTime() : 0;
+      const dateB = b.launch_date ? new Date(b.launch_date).getTime() : 0;
+      
+      if (dateA !== dateB) return dateB - dateA;
+      
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
     
     setFeatures(data);
     setLoading(false);
