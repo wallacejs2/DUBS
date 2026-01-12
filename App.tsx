@@ -2,14 +2,15 @@
 import React, { useState } from 'react';
 import { 
   Building2, Users, ClipboardCheck, LayoutDashboard, 
-  Menu, Search 
+  Menu, Search, Sparkles 
 } from 'lucide-react';
 import DealershipsPage from './pages/DealershipsPage.tsx';
 import EnterpriseGroupsPage from './pages/EnterpriseGroupsPage.tsx';
 import QAPage from './pages/QAPage.tsx';
 import DashboardPage from './pages/DashboardPage.tsx';
+import NewFeaturesPage from './pages/NewFeaturesPage.tsx';
 
-type NavPage = 'dealerships' | 'groups' | 'qa' | 'dashboard';
+type NavPage = 'dealerships' | 'groups' | 'qa' | 'dashboard' | 'features';
 
 const App: React.FC = () => {
   const [activePage, setActivePage] = useState<NavPage>('dashboard');
@@ -20,6 +21,7 @@ const App: React.FC = () => {
     { id: 'dealerships', label: 'Dealerships', icon: Building2 },
     { id: 'groups', label: 'Enterprise Groups', icon: Users },
     { id: 'qa', label: 'QA Shoppers', icon: ClipboardCheck },
+    { id: 'features', label: 'New Features', icon: Sparkles },
   ];
 
   const renderPage = () => {
@@ -27,6 +29,7 @@ const App: React.FC = () => {
       case 'dealerships': return <DealershipsPage />;
       case 'groups': return <EnterpriseGroupsPage />;
       case 'qa': return <QAPage />;
+      case 'features': return <NewFeaturesPage />;
       case 'dashboard': return <DashboardPage />;
       default: return <DashboardPage />;
     }

@@ -1,8 +1,10 @@
 
 
 
+
+
 import { 
-  Dealership, EnterpriseGroup, Order, Shopper, 
+  Dealership, EnterpriseGroup, Order, Shopper, NewFeature,
   DealershipWithRelations, WebsiteLink, DealershipContacts, 
   ReynoldsSolution, DealershipStatus, CRMProvider, ProductCode, 
   OrderStatus, ShopperStatus, ShopperPriority 
@@ -21,6 +23,7 @@ class CuratorLocalDB extends EventTarget {
     reynoldsSolutions: ReynoldsSolution[];
     orders: Order[];
     shoppers: Shopper[];
+    newFeatures: NewFeature[];
   } = {
     dealerships: [],
     enterpriseGroups: [],
@@ -28,7 +31,8 @@ class CuratorLocalDB extends EventTarget {
     contacts: [],
     reynoldsSolutions: [],
     orders: [],
-    shoppers: []
+    shoppers: [],
+    newFeatures: []
   };
 
   private constructor() {
@@ -48,7 +52,13 @@ class CuratorLocalDB extends EventTarget {
     const saved = localStorage.getItem(this.storageKey);
     if (saved) {
       try {
-        this.data = JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        this.data = {
+          ...this.data,
+          ...parsed,
+          // Ensure new fields exist if loading from old DB structure
+          newFeatures: parsed.newFeatures || [] 
+        };
       } catch (e) {
         console.error("Failed to parse LocalDB data", e);
       }
@@ -139,6 +149,19 @@ class CuratorLocalDB extends EventTarget {
       priority: ShopperPriority.HIGH,
       username: 'mtester_qa',
       password: 'SafePassword123!',
+      created_at: new Date().toISOString()
+    }];
+
+    this.data.newFeatures = [{
+      id: crypto.randomUUID(),
+      title: 'Enhanced VIN Decoding',
+      platform: 'Inventory Module',
+      location: 'Global',
+      launch_date: '2025-03-15',
+      pmr_number: 'PMR-2025-001',
+      pmr_link: 'https://jira.company.com/browse/PMR-001',
+      support_material_link: 'https://docs.company.com/vin-decoding',
+      description: 'Upgrading the core VIN decoding engine to support 2026 EV models and improved option code parsing.',
       created_at: new Date().toISOString()
     }];
 
@@ -321,6 +344,27 @@ class CuratorLocalDB extends EventTarget {
   }
   deleteShopper(id: string) {
     this.data.shoppers = this.data.shoppers.filter(s => s.id !== id);
+    this.save();
+  }
+
+  // New Features
+  getNewFeatures() { return [...this.data.newFeatures]; }
+  upsertNewFeature(feature: Partial<NewFeature>) {
+    const id = feature.id || crypto.randomUUID();
+    const existingIndex = this.data.newFeatures.findIndex(f => f.id === id);
+    const newFeature = {
+      ...this.data.newFeatures[existingIndex],
+      ...feature,
+      id,
+      created_at: existingIndex >= 0 ? this.data.newFeatures[existingIndex].created_at : new Date().toISOString()
+    } as NewFeature;
+    if (existingIndex >= 0) this.data.newFeatures[existingIndex] = newFeature;
+    else this.data.newFeatures.push(newFeature);
+    this.save();
+    return id;
+  }
+  deleteNewFeature(id: string) {
+    this.data.newFeatures = this.data.newFeatures.filter(f => f.id !== id);
     this.save();
   }
 }

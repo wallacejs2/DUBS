@@ -1,6 +1,8 @@
 
 
 
+
+
 export enum DealershipStatus {
   DMT_PENDING = 'DMT-Pending',
   DMT_APPROVED = 'DMT-Approved',
@@ -203,4 +205,17 @@ export interface Shopper {
   
   // Issue tracking
   issue?: string;
+}
+
+export interface NewFeature {
+  id: string;
+  title: string;
+  platform?: string;
+  location?: string;
+  launch_date?: string;
+  pmr_number?: string;
+  pmr_link?: string;
+  support_material_link?: string;
+  description?: string;
+  created_at: string;
 }

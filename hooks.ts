@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { db } from './db.ts';
 import { 
   Dealership, DealershipWithRelations, EnterpriseGroup, 
-  Shopper, Order, ProductCode 
+  Shopper, Order, ProductCode, NewFeature
 } from './types.ts';
 
 export function useEnterpriseGroups() {
@@ -167,5 +167,40 @@ export function useShoppers(filters?: { search?: string; status?: string; priori
     loading,
     upsert: (s: Partial<Shopper>) => db.upsertShopper(s),
     remove: (id: string) => db.deleteShopper(id)
+  };
+}
+
+export function useNewFeatures(filters?: { search?: string }) {
+  const [features, setFeatures] = useState<NewFeature[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetch = useCallback(() => {
+    let data = db.getNewFeatures();
+    if (filters?.search) {
+      const s = filters.search.toLowerCase();
+      data = data.filter(f => 
+        f.title.toLowerCase().includes(s) || 
+        (f.description && f.description.toLowerCase().includes(s)) ||
+        (f.pmr_number && f.pmr_number.toLowerCase().includes(s))
+      );
+    }
+    // Sort by creation date desc
+    data.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    
+    setFeatures(data);
+    setLoading(false);
+  }, [filters]);
+
+  useEffect(() => {
+    fetch();
+    db.addEventListener('change', fetch);
+    return () => db.removeEventListener('change', fetch);
+  }, [fetch]);
+
+  return {
+    features,
+    loading,
+    upsert: (f: Partial<NewFeature>) => db.upsertNewFeature(f),
+    remove: (id: string) => db.deleteNewFeature(id)
   };
 }
