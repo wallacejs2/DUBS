@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
-import { Plus, Sparkles, Search, Trash2, Edit3, ExternalLink } from 'lucide-react';
+import { Plus, Sparkles, Search, Trash2, Edit3, ExternalLink, Copy, Check } from 'lucide-react';
 import { useNewFeatures } from '../hooks';
 import { NewFeature } from '../types';
 import FilterBar from '../components/FilterBar';
@@ -12,6 +12,7 @@ const NewFeaturesPage: React.FC = () => {
   
   const [selectedFeatureId, setSelectedFeatureId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [copiedFeatureId, setCopiedFeatureId] = useState<string | null>(null);
 
   const activeFeature = useMemo(() => {
     if (isCreating) {
@@ -30,6 +31,41 @@ const NewFeaturesPage: React.FC = () => {
   const handleRowClick = (id: string) => {
     setSelectedFeatureId(id);
     setIsCreating(false);
+  };
+
+  const handleCopyFeature = (e: React.MouseEvent, feature: NewFeature) => {
+    e.stopPropagation();
+    
+    const lines = [
+      feature.title.toUpperCase(),
+      "----------------------------------------"
+    ];
+
+    if (feature.platform) lines.push(`Platform: ${feature.platform}`);
+    if (feature.location) lines.push(`Location: ${feature.location}`);
+    if (feature.launch_date) lines.push(`Launch Date: ${feature.launch_date}`);
+    
+    if (feature.pmr_number || feature.pmr_link) {
+        lines.push('');
+        if (feature.pmr_number) lines.push(`PMR #: ${feature.pmr_number}`);
+        if (feature.pmr_link) lines.push(`PMR Link: ${feature.pmr_link}`);
+    }
+
+    if (feature.support_material_link) {
+       lines.push(`Support Docs: ${feature.support_material_link}`);
+    }
+
+    if (feature.description) {
+        lines.push('');
+        lines.push('Description:');
+        lines.push(feature.description);
+    }
+
+    const text = lines.join('\n');
+    navigator.clipboard.writeText(text).then(() => {
+        setCopiedFeatureId(feature.id);
+        setTimeout(() => setCopiedFeatureId(null), 2000);
+    });
   };
 
   return (
@@ -108,6 +144,14 @@ const NewFeaturesPage: React.FC = () => {
                  </div>
 
                  <div className="flex items-center gap-1 self-end sm:self-center">
+                    <button 
+                      onClick={(e) => handleCopyFeature(e, feature)}
+                      className="p-2 text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                      title="Copy details to clipboard"
+                    >
+                      {copiedFeatureId === feature.id ? <Check size={16} className="text-emerald-500" /> : <Copy size={16} />}
+                    </button>
+
                     {feature.pmr_link && (
                       <a 
                         href={feature.pmr_link} 
