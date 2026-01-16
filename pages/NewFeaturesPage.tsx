@@ -7,9 +7,9 @@ import FilterBar from '../components/FilterBar';
 import NewFeatureDetailPanel from '../components/NewFeatureDetailPanel';
 
 const platformColors: Record<string, string> = {
-  'UCP': 'bg-blue-50 text-blue-700 border-blue-100',
-  'Curator': 'bg-purple-50 text-purple-700 border-purple-100',
-  'FOCUS': 'bg-orange-50 text-orange-700 border-orange-100',
+  'UCP': 'bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800',
+  'Curator': 'bg-purple-50 text-purple-700 border-purple-100 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800',
+  'FOCUS': 'bg-orange-50 text-orange-700 border-orange-100 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800',
 };
 
 const NewFeaturesPage: React.FC = () => {
@@ -124,8 +124,8 @@ const NewFeaturesPage: React.FC = () => {
     <div className="animate-in fade-in duration-700">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight">New Features</h1>
-          <p className="text-xs text-slate-500 mt-0.5">Track upcoming platform features, PMRs, and release schedules.</p>
+          <h1 className="text-2xl font-extrabold text-slate-800 dark:text-slate-100 tracking-tight">New Features</h1>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Track upcoming platform features, PMRs, and release schedules.</p>
         </div>
         <button 
           onClick={() => { setSelectedFeatureId(null); setIsCreating(true); }}
@@ -164,15 +164,15 @@ const NewFeaturesPage: React.FC = () => {
 
       {loading ? (
         <div className="space-y-3">
-          {[1,2,3,4].map(i => <div key={i} className="h-20 bg-white rounded-xl border border-slate-100 animate-pulse"></div>)}
+          {[1,2,3,4].map(i => <div key={i} className="h-20 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 animate-pulse"></div>)}
         </div>
       ) : features.length === 0 ? (
-        <div className="bg-white rounded-[2rem] p-12 text-center border border-slate-100 border-dashed">
-          <div className="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-4 text-indigo-400">
+        <div className="bg-white dark:bg-slate-900 rounded-[2rem] p-12 text-center border border-slate-100 dark:border-slate-800 border-dashed transition-colors">
+          <div className="w-16 h-16 bg-indigo-50 dark:bg-indigo-900/30 rounded-full flex items-center justify-center mx-auto mb-4 text-indigo-400">
             <Sparkles size={32} />
           </div>
-          <h3 className="text-xl font-bold text-slate-800">No Features Tracked</h3>
-          <p className="text-xs text-slate-500 mt-1">Start by adding a new feature request or roadmap item.</p>
+          <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100">No Features Tracked</h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Start by adding a new feature request or roadmap item.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-3">
@@ -186,10 +186,10 @@ const NewFeaturesPage: React.FC = () => {
               <div 
                 key={feature.id}
                 onClick={() => handleRowClick(feature.id)}
-                className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all cursor-pointer group flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
+                className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-indigo-200 dark:hover:border-indigo-700 transition-all cursor-pointer group flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
               >
                  <div className="flex items-start gap-4 flex-1 min-w-0">
-                    <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 flex-shrink-0 group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                    <div className="w-10 h-10 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 flex-shrink-0 group-hover:bg-indigo-600 group-hover:text-white transition-all">
                        <Sparkles size={20} />
                     </div>
                     <div className="min-w-0 flex-1">
@@ -197,54 +197,54 @@ const NewFeaturesPage: React.FC = () => {
                          {feature.type && (
                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wide border ${
                              feature.type === 'New' 
-                               ? 'bg-emerald-50 text-emerald-700 border-emerald-100' 
-                               : 'bg-blue-50 text-blue-700 border-blue-100'
+                               ? 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800' 
+                               : 'bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800'
                            }`}>
                              {feature.type}
                            </span>
                          )}
-                         <h3 className="text-sm font-bold text-slate-800 group-hover:text-indigo-600 transition-colors leading-tight">{feature.title}</h3>
+                         <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors leading-tight">{feature.title}</h3>
                          {feature.launch_date && (
-                            <span className={new Date(feature.launch_date) < new Date() ? "text-[10px] text-emerald-600 font-bold" : "text-[10px] text-slate-400 font-medium"}>
+                            <span className={new Date(feature.launch_date) < new Date() ? "text-[10px] text-emerald-600 dark:text-emerald-400 font-bold" : "text-[10px] text-slate-400 dark:text-slate-500 font-medium"}>
                                 {feature.launch_date}
                             </span>
                          )}
                        </div>
-                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500">
+                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500 dark:text-slate-400">
                           {feature.status && (
                              <span className={`font-bold px-1.5 rounded-md ${
                                feature.status === 'Launched' 
-                                 ? 'text-emerald-700 bg-emerald-50' 
-                                 : 'text-purple-700 bg-purple-50'
+                                 ? 'text-emerald-700 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-300' 
+                                 : 'text-purple-700 bg-purple-50 dark:bg-purple-900/30 dark:text-purple-300'
                              }`}>
                                {feature.status}
                              </span>
                           )}
                           {feature.quarterly_release && (
-                             <span className="font-bold text-indigo-700 bg-indigo-50 px-1.5 rounded-md">{feature.quarterly_release}</span>
+                             <span className="font-bold text-indigo-700 bg-indigo-50 dark:bg-indigo-900/30 dark:text-indigo-300 px-1.5 rounded-md">{feature.quarterly_release}</span>
                           )}
                           {displayPMRs.length > 0 && (
                             <div className="flex gap-1">
                                 {displayPMRs.slice(0, 2).map((pmr, idx) => (
-                                    <span key={idx} className="font-mono bg-slate-100 px-1.5 rounded text-slate-600">{pmr.number}</span>
+                                    <span key={idx} className="font-mono bg-slate-100 dark:bg-slate-800 px-1.5 rounded text-slate-600 dark:text-slate-300">{pmr.number}</span>
                                 ))}
-                                {displayPMRs.length > 2 && <span className="font-mono bg-slate-100 px-1.5 rounded text-slate-600">+{displayPMRs.length - 2}</span>}
+                                {displayPMRs.length > 2 && <span className="font-mono bg-slate-100 dark:bg-slate-800 px-1.5 rounded text-slate-600 dark:text-slate-300">+{displayPMRs.length - 2}</span>}
                             </div>
                           )}
                           {feature.platform && (
-                            <span className={`px-1.5 rounded-md font-bold ${platformColors[feature.platform] || 'bg-slate-100 text-slate-600'}`}>
+                            <span className={`px-1.5 rounded-md font-bold ${platformColors[feature.platform] || 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'}`}>
                                 {feature.platform}
                             </span>
                           )}
                           {feature.location && (
                             <>
-                              <span className="text-slate-300">•</span>
+                              <span className="text-slate-300 dark:text-slate-600">•</span>
                               <span>{feature.location}</span>
                             </>
                           )}
                        </div>
                        {feature.description && (
-                          <p className="text-[11px] text-slate-400 mt-1 line-clamp-1">{feature.description}</p>
+                          <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1 line-clamp-1">{feature.description}</p>
                        )}
                     </div>
                  </div>
@@ -252,7 +252,7 @@ const NewFeaturesPage: React.FC = () => {
                  <div className="flex items-center gap-1 self-end sm:self-center">
                     <button 
                       onClick={(e) => handleCopyFeature(e, feature)}
-                      className="p-2 text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                      className="p-2 text-slate-300 dark:text-slate-600 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 rounded-lg transition-all"
                       title="Copy details to clipboard"
                     >
                       {copiedFeatureId === feature.id ? <Check size={16} className="text-emerald-500" /> : <Copy size={16} />}
@@ -264,7 +264,7 @@ const NewFeaturesPage: React.FC = () => {
                         target="_blank" 
                         rel="noopener noreferrer" 
                         onClick={(e) => e.stopPropagation()}
-                        className="p-2 text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                        className="p-2 text-slate-300 dark:text-slate-600 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 rounded-lg transition-all"
                         title="Open PMR Link"
                       >
                          <ExternalLink size={16} />
@@ -272,13 +272,13 @@ const NewFeaturesPage: React.FC = () => {
                     )}
                     <button 
                       onClick={(e) => { e.stopPropagation(); handleRowClick(feature.id); }}
-                      className="p-2 text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                      className="p-2 text-slate-300 dark:text-slate-600 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 rounded-lg transition-all"
                     >
                       <Edit3 size={16} />
                     </button>
                     <button 
                       onClick={(e) => { e.stopPropagation(); if(window.confirm('Delete feature?')) remove(feature.id); }}
-                      className="p-2 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                      className="p-2 text-slate-300 dark:text-slate-600 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-all"
                     >
                       <Trash2 size={16} />
                     </button>

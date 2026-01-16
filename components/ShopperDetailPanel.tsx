@@ -16,21 +16,21 @@ interface ShopperDetailPanelProps {
 }
 
 const statusColors: Record<ShopperStatus, string> = {
-  [ShopperStatus.ACTIVE]: 'bg-indigo-50 text-indigo-700 border-indigo-100',
-  [ShopperStatus.TESTING]: 'bg-blue-50 text-blue-700 border-blue-100',
-  [ShopperStatus.REVIEW]: 'bg-amber-50 text-amber-700 border-amber-100',
-  [ShopperStatus.RESOLVED]: 'bg-emerald-50 text-emerald-700 border-emerald-100',
+  [ShopperStatus.ACTIVE]: 'bg-indigo-50 text-indigo-700 border-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800',
+  [ShopperStatus.TESTING]: 'bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800',
+  [ShopperStatus.REVIEW]: 'bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800',
+  [ShopperStatus.RESOLVED]: 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800',
 };
 
 const Label = ({ children, icon: Icon }: { children?: React.ReactNode, icon?: any }) => (
-  <label className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+  <label className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">
     {Icon && <Icon size={10} />}
     {children}
   </label>
 );
 
 const DataValue = ({ value, mono = false, children }: { value?: any, mono?: boolean, children?: React.ReactNode }) => (
-  <div className={`text-[12px] font-normal text-slate-700 leading-tight min-h-[1.5em] flex items-center ${mono ? 'font-mono' : ''}`}>
+  <div className={`text-[12px] font-normal text-slate-700 dark:text-slate-300 leading-tight min-h-[1.5em] flex items-center ${mono ? 'font-mono' : ''}`}>
     {children || value || '---'}
   </div>
 );
@@ -41,7 +41,7 @@ const Input = ({ value, onChange, type = "text", className = "", placeholder="" 
     value={value || ''}
     onChange={(e) => onChange(e.target.value)}
     placeholder={placeholder}
-    className={`w-full px-3 py-1.5 text-[12px] border border-slate-200 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white font-normal transition-all ${className}`}
+    className={`w-full px-3 py-1.5 text-[12px] border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-normal transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 ${className}`}
   />
 );
 
@@ -49,7 +49,7 @@ const Select = ({ value, onChange, options, className = "" }: { value: any, onCh
   <select 
     value={value || ''}
     onChange={(e) => onChange(e.target.value)}
-    className={`w-full px-3 py-1.5 text-[12px] border border-slate-200 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white font-normal transition-all ${className}`}
+    className={`w-full px-3 py-1.5 text-[12px] border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-normal transition-all ${className}`}
   >
     {options.map(opt => (
       <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -117,18 +117,18 @@ const IdentityManager: React.FC<IdentityManagerProps> = ({ label, identities, on
   return (
     <div className="flex flex-col gap-2">
       {label && (
-        <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+        <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">
           <Hash size={10} /> {label}
         </div>
       )}
       
-      <div className="space-y-2 bg-slate-50/50 rounded-xl p-2 border border-slate-100">
+      <div className="space-y-2 bg-slate-50/50 dark:bg-slate-800/50 rounded-xl p-2 border border-slate-100 dark:border-slate-800">
         {identities.length === 0 && !isEditing && (
-           <div className="text-[10px] text-slate-400 italic p-1">No IDs</div>
+           <div className="text-[10px] text-slate-400 dark:text-slate-500 italic p-1">No IDs</div>
         )}
         
         {identities.map((id, idx) => (
-          <div key={id.id || idx} className="bg-white p-2 rounded-lg border border-slate-200 shadow-sm flex flex-col gap-2">
+          <div key={id.id || idx} className="bg-white dark:bg-slate-800 p-2 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col gap-2">
              <div className="flex gap-2 items-center">
                 {/* System Dropdown (Optional) */}
                 {showSystem && (
@@ -136,7 +136,7 @@ const IdentityManager: React.FC<IdentityManagerProps> = ({ label, identities, on
                     <select 
                       value={id.system} 
                       onChange={(e) => updateIdentity(idx, 'system', e.target.value)}
-                      className="w-[90px] px-1 py-1 text-[10px] border border-slate-200 rounded focus:ring-1 focus:ring-indigo-500 outline-none bg-slate-50 font-bold text-slate-700"
+                      className="w-[90px] px-1 py-1 text-[10px] border border-slate-200 dark:border-slate-700 rounded focus:ring-1 focus:ring-indigo-500 outline-none bg-slate-50 dark:bg-slate-700 font-bold text-slate-700 dark:text-slate-200"
                     >
                       <option value="ucp">UCP</option>
                       <option value="cdp_admin">CDP Admin</option>
@@ -144,9 +144,9 @@ const IdentityManager: React.FC<IdentityManagerProps> = ({ label, identities, on
                     </select>
                   ) : (
                     <span className={`text-[9px] font-bold border px-1.5 py-1 rounded uppercase tracking-wider h-fit flex-shrink-0 ${
-                      id.system === 'ucp' ? 'bg-indigo-50 text-indigo-700 border-indigo-100' :
-                      id.system === 'cdp_admin' ? 'bg-blue-50 text-blue-700 border-blue-100' :
-                      'bg-purple-50 text-purple-700 border-purple-100'
+                      id.system === 'ucp' ? 'bg-indigo-50 text-indigo-700 border-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800' :
+                      id.system === 'cdp_admin' ? 'bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800' :
+                      'bg-purple-50 text-purple-700 border-purple-100 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800'
                     }`}>
                       {id.system === 'cdp_admin' ? 'CDP ADMIN' : id.system?.toUpperCase()}
                     </span>
@@ -158,13 +158,13 @@ const IdentityManager: React.FC<IdentityManagerProps> = ({ label, identities, on
                   <select 
                     value={id.type} 
                     onChange={(e) => updateIdentity(idx, 'type', e.target.value)}
-                    className="w-[70px] px-1 py-1 text-[10px] border border-slate-200 rounded focus:ring-1 focus:ring-indigo-500 outline-none bg-slate-50 font-bold text-slate-600"
+                    className="w-[70px] px-1 py-1 text-[10px] border border-slate-200 dark:border-slate-700 rounded focus:ring-1 focus:ring-indigo-500 outline-none bg-slate-50 dark:bg-slate-700 font-bold text-slate-600 dark:text-slate-300"
                   >
                     <option value="cdpID">CDP</option>
                     <option value="ffcdpID">FF</option>
                   </select>
                 ) : (
-                  <span className="text-[9px] font-bold text-slate-500 bg-slate-100 border border-slate-200 px-1.5 py-1 rounded uppercase tracking-wider h-fit flex-shrink-0">
+                  <span className="text-[9px] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 px-1.5 py-1 rounded uppercase tracking-wider h-fit flex-shrink-0">
                     {id.type === 'cdpID' ? 'CDP' : 'FF'}
                   </span>
                 )}
@@ -175,43 +175,43 @@ const IdentityManager: React.FC<IdentityManagerProps> = ({ label, identities, on
                     value={id.value} 
                     onChange={(e) => updateIdentity(idx, 'value', e.target.value)} 
                     placeholder="ID Value"
-                    className="flex-1 px-2 py-1 text-[11px] border border-slate-200 rounded focus:ring-1 focus:ring-indigo-500 outline-none font-mono min-w-0"
+                    className="flex-1 px-2 py-1 text-[11px] border border-slate-200 dark:border-slate-700 rounded focus:ring-1 focus:ring-indigo-500 outline-none font-mono min-w-0 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
                   />
                 ) : (
-                  <div className="flex-1 font-mono text-[11px] text-slate-700 pt-0.5 truncate" title={id.value}>
+                  <div className="flex-1 font-mono text-[11px] text-slate-700 dark:text-slate-300 pt-0.5 truncate" title={id.value}>
                     {id.value || '---'}
                   </div>
                 )}
              </div>
              
-             <div className="flex items-center justify-between pt-1 border-t border-slate-50 gap-2">
+             <div className="flex items-center justify-between pt-1 border-t border-slate-50 dark:border-slate-700/50 gap-2">
                 <div className="flex items-center gap-3">
                     {/* Parent Toggle */}
                     <div 
-                        className={`flex items-center gap-1.5 text-[9px] cursor-pointer flex-shrink-0 ${id.hierarchy === 'parent' ? 'text-indigo-600 font-bold' : 'text-slate-400 font-medium'}`}
+                        className={`flex items-center gap-1.5 text-[9px] cursor-pointer flex-shrink-0 ${id.hierarchy === 'parent' ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'text-slate-400 dark:text-slate-500 font-medium'}`}
                         onClick={isEditing ? () => toggleHierarchy(idx, 'parent') : undefined}
                     >
                         {isEditing ? (
-                            <div className={`w-3 h-3 rounded-full border flex items-center justify-center ${id.hierarchy === 'parent' ? 'border-indigo-600 bg-indigo-600' : 'border-slate-300 bg-white'}`}>
+                            <div className={`w-3 h-3 rounded-full border flex items-center justify-center ${id.hierarchy === 'parent' ? 'border-indigo-600 bg-indigo-600 dark:border-indigo-500 dark:bg-indigo-500' : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900'}`}>
                                 {id.hierarchy === 'parent' && <div className="w-1 h-1 bg-white rounded-full"></div>}
                             </div>
                         ) : (
-                            id.hierarchy === 'parent' && <div className="w-3 h-3 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center"><Check size={8} /></div>
+                            id.hierarchy === 'parent' && <div className="w-3 h-3 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center"><Check size={8} /></div>
                         )}
                         {(isEditing || id.hierarchy === 'parent') && <span>Parent</span>}
                     </div>
 
                     {/* Child Toggle */}
                     <div 
-                        className={`flex items-center gap-1.5 text-[9px] cursor-pointer flex-shrink-0 ${id.hierarchy === 'child' ? 'text-blue-600 font-bold' : 'text-slate-400 font-medium'}`}
+                        className={`flex items-center gap-1.5 text-[9px] cursor-pointer flex-shrink-0 ${id.hierarchy === 'child' ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-400 dark:text-slate-500 font-medium'}`}
                         onClick={isEditing ? () => toggleHierarchy(idx, 'child') : undefined}
                     >
                         {isEditing ? (
-                            <div className={`w-3 h-3 rounded-full border flex items-center justify-center ${id.hierarchy === 'child' ? 'border-blue-600 bg-blue-600' : 'border-slate-300 bg-white'}`}>
+                            <div className={`w-3 h-3 rounded-full border flex items-center justify-center ${id.hierarchy === 'child' ? 'border-blue-600 bg-blue-600 dark:border-blue-500 dark:bg-blue-500' : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900'}`}>
                                 {id.hierarchy === 'child' && <div className="w-1 h-1 bg-white rounded-full"></div>}
                             </div>
                         ) : (
-                            id.hierarchy === 'child' && <div className="w-3 h-3 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center"><Check size={8} /></div>
+                            id.hierarchy === 'child' && <div className="w-3 h-3 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center"><Check size={8} /></div>
                         )}
                         {(isEditing || id.hierarchy === 'child') && <span>Child</span>}
                     </div>
@@ -223,17 +223,17 @@ const IdentityManager: React.FC<IdentityManagerProps> = ({ label, identities, on
                             value={id.notes || ''} 
                             onChange={(e) => updateIdentity(idx, 'notes', e.target.value)}
                             placeholder="Add note..."
-                            className="w-full bg-transparent text-[9px] italic text-slate-600 placeholder:text-slate-300 outline-none text-right px-2"
+                            className="w-full bg-transparent text-[9px] italic text-slate-600 dark:text-slate-400 placeholder:text-slate-300 dark:placeholder:text-slate-600 outline-none text-right px-2"
                         />
                     ) : (
-                        <div className="text-[9px] italic text-slate-400 truncate text-right px-2" title={id.notes}>
+                        <div className="text-[9px] italic text-slate-400 dark:text-slate-500 truncate text-right px-2" title={id.notes}>
                             {id.notes}
                         </div>
                     )}
                 </div>
 
                 {isEditing && (
-                  <button onClick={() => handleRemove(idx)} className="text-slate-300 hover:text-red-500 transition-colors flex-shrink-0"><Trash2 size={12} /></button>
+                  <button onClick={() => handleRemove(idx)} className="text-slate-300 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 transition-colors flex-shrink-0"><Trash2 size={12} /></button>
                 )}
              </div>
           </div>
@@ -242,7 +242,7 @@ const IdentityManager: React.FC<IdentityManagerProps> = ({ label, identities, on
         {isEditing && (
           <button 
             onClick={handleAdd}
-            className="w-full py-2 border border-dashed border-indigo-200 text-indigo-500 rounded-lg text-[10px] font-bold hover:bg-indigo-50 transition-all flex items-center justify-center gap-1"
+            className="w-full py-2 border border-dashed border-indigo-200 dark:border-indigo-800 text-indigo-500 dark:text-indigo-400 rounded-lg text-[10px] font-bold hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-all flex items-center justify-center gap-1"
           >
             <Plus size={12} /> Add ID
           </button>
@@ -502,10 +502,10 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]" onClick={isEditing && isNew ? undefined : onClose}></div>
       {/* Changed max-w-2xl to max-w-4xl to widen the panel */}
-      <div className="relative w-full max-w-4xl bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+      <div className="relative w-full max-w-4xl bg-white dark:bg-slate-900 h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300 transition-colors">
         
         {/* Sticky Header */}
-        <div className="bg-white sticky top-0 z-30 border-b border-slate-100 shadow-sm">
+        <div className="bg-white dark:bg-slate-900 sticky top-0 z-30 border-b border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
           <div className="p-4 flex justify-between items-center gap-4">
              <div className="flex items-center gap-3">
                <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg shadow-sm ${isNew ? 'bg-indigo-100 text-indigo-600' : 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white'}`}>
@@ -522,9 +522,9 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                      />
                    </div>
                  ) : (
-                   <h2 className="text-xl font-bold text-slate-900 tracking-tight">{formData.first_name} {formData.last_name}</h2>
+                   <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">{formData.first_name} {formData.last_name}</h2>
                  )}
-                 {!isEditing && <p className="text-xs text-slate-500 font-medium">{formData.email}</p>}
+                 {!isEditing && <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">{formData.email}</p>}
                </div>
              </div>
 
@@ -532,7 +532,7 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                {!isEditing && (
                  <button 
                     onClick={handleCopyAll}
-                    className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                    className="p-2 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-all"
                     title="Copy All Details"
                  >
                     {copiedField === 'all' ? <Check size={16} className="text-emerald-500" /> : <Copy size={16} />}
@@ -544,28 +544,28 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                    <button onClick={handleSave} className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-indigo-700 shadow-md shadow-indigo-100 flex items-center gap-2 transition-all">
                      <Save size={14} /> Save
                    </button>
-                   <button onClick={handleCancel} className="p-2 text-slate-400 hover:bg-slate-100 rounded-lg transition-all"><RefreshCw size={16} /></button>
+                   <button onClick={handleCancel} className="p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all"><RefreshCw size={16} /></button>
                  </>
                ) : (
-                 <button onClick={() => setIsEditing(true)} className="px-3 py-2 border border-slate-200 text-slate-600 rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-slate-50 flex items-center gap-2 transition-all">
+                 <button onClick={() => setIsEditing(true)} className="px-3 py-2 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 transition-all">
                     <Edit3 size={14} /> Edit
                  </button>
                )}
                {!isNew && (
-                 <button onClick={onDelete} className="p-2 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"><Trash2 size={18} /></button>
+                 <button onClick={onDelete} className="p-2 text-slate-300 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-all"><Trash2 size={18} /></button>
                )}
-               <button onClick={onClose} className="p-2 text-slate-300 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-all"><X size={20} /></button>
+               <button onClick={onClose} className="p-2 text-slate-300 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all"><X size={20} /></button>
              </div>
           </div>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 bg-white custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-6 bg-white dark:bg-slate-900 custom-scrollbar transition-colors">
           {/* Removed max-w-xl constraint to allow full width usage */}
           <div className="space-y-6 mx-auto">
             
             {/* Status Section (Audit Priority removed) */}
-            <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
+            <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-2xl border border-slate-100 dark:border-slate-800">
                <div>
                   <Label icon={Shield}>Status</Label>
                   {isEditing ? (
@@ -589,29 +589,29 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                   <textarea 
                     value={formData.issue || ''}
                     onChange={(e) => updateField('issue', e.target.value)}
-                    className="w-full px-3 py-2 text-[12px] border border-orange-300 bg-orange-50 rounded-lg focus:ring-1 focus:ring-orange-500 outline-none text-slate-800 placeholder:text-orange-300 min-h-[60px]"
+                    className="w-full px-3 py-2 text-[12px] border border-orange-300 bg-orange-50 dark:bg-orange-900/20 dark:border-orange-900 rounded-lg focus:ring-1 focus:ring-orange-500 outline-none text-slate-800 dark:text-orange-100 placeholder:text-orange-300 min-h-[60px]"
                     placeholder="Describe any issues..."
                   />
                ) : (
                   formData.issue ? (
-                    <div className="w-full px-3 py-2 text-[12px] border border-orange-300 bg-orange-50 rounded-lg text-slate-800">
+                    <div className="w-full px-3 py-2 text-[12px] border border-orange-300 bg-orange-50 dark:bg-orange-900/20 dark:border-orange-900 rounded-lg text-slate-800 dark:text-orange-100">
                       {formData.issue}
                     </div>
                   ) : (
-                    <div className="text-[12px] text-slate-400 italic">No issues recorded.</div>
+                    <div className="text-[12px] text-slate-400 dark:text-slate-500 italic">No issues recorded.</div>
                   )
                )}
             </div>
 
             {/* Dealership Assignment */}
             <div className="mt-4">
-              <div className="flex items-center justify-between mb-3 border-b border-slate-100 pb-2">
-                 <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest">Dealership Assignment</h3>
+              <div className="flex items-center justify-between mb-3 border-b border-slate-100 dark:border-slate-800 pb-2">
+                 <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-widest">Dealership Assignment</h3>
                  {selectedDealership && (
                    <div className="flex items-center gap-1">
                       <button 
                         onClick={() => copyToClipboard(selectedDealership.pp_sys_id || '', 'pp')}
-                        className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                        className="p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-all"
                         title="Copy PP Sys ID"
                       >
                         {copiedField === 'pp' ? <Check size={14} className="text-emerald-500" /> : <Hash size={14} />}
@@ -621,7 +621,7 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                            const combo = `${selectedDealership.pp_sys_id || ''}_${selectedDealership.store_number || ''}_${selectedDealership.branch_number || ''}`;
                            copyToClipboard(combo, 'combo');
                         }}
-                        className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                        className="p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-all"
                         title="Copy PP_Store_Branch"
                       >
                         {copiedField === 'combo' ? <Check size={14} className="text-emerald-500" /> : <Link size={14} />}
@@ -637,7 +637,7 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                        <select 
                           value={formData.dealership_id || ''} 
                           onChange={(e) => updateField('dealership_id', e.target.value)}
-                          className="w-full px-3 py-1.5 text-[12px] border border-slate-200 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white font-normal transition-all"
+                          className="w-full px-3 py-1.5 text-[12px] border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-normal transition-all"
                        >
                           <option value="">-- No Dealership Assigned --</option>
                           {eligibleDealerships.map(d => (
@@ -650,7 +650,7 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                  </div>
 
                  {selectedDealership && (
-                    <div className="grid grid-cols-3 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                    <div className="grid grid-cols-3 gap-3 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
                        <div className="min-w-0">
                           <Label>Enterprise Group</Label>
                           <div className="truncate" title={selectedGroup?.name || 'Single (Independent)'}>
@@ -671,8 +671,8 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
             </div>
 
             {/* Contact Info */}
-            <div className="mt-5 pt-5 border-t border-slate-100">
-              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest mb-3">Contact Details</h3>
+            <div className="mt-5 pt-5 border-t border-slate-100 dark:border-slate-800">
+              <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-widest mb-3">Contact Details</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2 sm:col-span-1">
                   <Label icon={Mail}>Email Address</Label>
@@ -680,7 +680,7 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                     <Input type="email" value={formData.email} onChange={(v) => updateField('email', v)} />
                   ) : (
                     <DataValue>
-                      <a href={`mailto:${formData.email}`} className="text-indigo-600 hover:underline">{formData.email}</a>
+                      <a href={`mailto:${formData.email}`} className="text-indigo-600 dark:text-indigo-400 hover:underline">{formData.email}</a>
                     </DataValue>
                   )}
                 </div>
@@ -693,7 +693,7 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                       onChange={(e) => updateField('phone', e.target.value)}
                       onBlur={(e) => updateField('phone', formatPhone(e.target.value))}
                       placeholder="(###) ###-####"
-                      className="w-full px-3 py-1.5 text-[12px] border border-slate-200 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white font-normal transition-all"
+                      className="w-full px-3 py-1.5 text-[12px] border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-normal transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600"
                     />
                   ) : (
                     <DataValue value={formData.phone} />
@@ -702,7 +702,7 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
               </div>
 
               {/* Identifiers Section */}
-              <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-slate-50">
+              <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-slate-50 dark:border-slate-800/50">
                  <div>
                     <Label icon={Hash}>DMS ID</Label>
                     {isEditing ? (
@@ -726,7 +726,7 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                     ) : (
                        <DataValue>
                           {formData.curator_link ? (
-                            <a href={formData.curator_link} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline truncate flex items-center gap-1" title={formData.curator_link}>
+                            <a href={formData.curator_link} target="_blank" rel="noopener noreferrer" className="text-indigo-600 dark:text-indigo-400 hover:underline truncate flex items-center gap-1" title={formData.curator_link}>
                               Open Link <ExternalLink size={10} />
                             </a>
                           ) : '---'}
@@ -737,13 +737,13 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
             </div>
 
             {/* System Identities Section */}
-            <div className="mt-5 pt-5 border-t border-slate-100">
+            <div className="mt-5 pt-5 border-t border-slate-100 dark:border-slate-800">
               <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest">System Identities</h3>
+                  <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-widest">System Identities</h3>
                   {!isEditing && (
                       <button 
                           onClick={() => toggleQuickEdit('identities')}
-                          className={`p-1.5 rounded-lg transition-all ${quickEdit.identities ? 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100' : 'text-slate-400 hover:text-indigo-600 hover:bg-indigo-50'}`}
+                          className={`p-1.5 rounded-lg transition-all ${quickEdit.identities ? 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-400' : 'text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30'}`}
                           title={quickEdit.identities ? "Save Identities" : "Quick Edit Identities"}
                       >
                           {quickEdit.identities ? <Check size={14} /> : <Edit3 size={14} />}
@@ -761,21 +761,21 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
             </div>
 
             {/* Additional Profiles Section */}
-            <div className="mt-5 pt-5 border-t border-slate-100">
+            <div className="mt-5 pt-5 border-t border-slate-100 dark:border-slate-800">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest">Additional Profiles</h3>
+                <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-widest">Additional Profiles</h3>
                 <div className="flex items-center gap-2">
                     {!isEditing && (
                         <button 
                             onClick={() => toggleQuickEdit('profiles')}
-                            className={`p-1.5 rounded-lg transition-all ${quickEdit.profiles ? 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100' : 'text-slate-400 hover:text-indigo-600 hover:bg-indigo-50'}`}
+                            className={`p-1.5 rounded-lg transition-all ${quickEdit.profiles ? 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-400' : 'text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30'}`}
                             title={quickEdit.profiles ? "Save Profiles" : "Quick Edit Profiles"}
                         >
                             {quickEdit.profiles ? <Check size={14} /> : <Edit3 size={14} />}
                         </button>
                     )}
                     {isProfilesEditing && (
-                        <button onClick={addProfile} className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 bg-indigo-50 px-2 py-1 rounded transition-colors border border-indigo-100">
+                        <button onClick={addProfile} className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 flex items-center gap-1 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-1 rounded transition-colors border border-indigo-100 dark:border-indigo-800">
                             <Plus size={12} /> Add Profile
                         </button>
                     )}
@@ -784,12 +784,12 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
               
               <div className="space-y-4">
                 {(formData.additional_profiles || []).map((profile, idx) => (
-                    <div key={profile.id} className="bg-slate-50 border border-slate-200 rounded-xl p-3 relative">
+                    <div key={profile.id} className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl p-3 relative">
                         {/* Header / Remove */}
                         {isProfilesEditing && (
                            <button 
                              onClick={() => removeProfile(idx)} 
-                             className="absolute top-2 right-2 text-slate-400 hover:text-red-500 bg-white p-1 rounded-full shadow-sm border border-slate-100 hover:border-red-100 transition-all z-10"
+                             className="absolute top-2 right-2 text-slate-400 hover:text-red-500 bg-white dark:bg-slate-700 p-1 rounded-full shadow-sm border border-slate-100 dark:border-slate-600 hover:border-red-100 dark:hover:border-red-900 transition-all z-10"
                              title="Remove Profile"
                            >
                              <Trash2 size={12} />
@@ -823,7 +823,7 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                                       onChange={(e) => updateProfile(idx, 'phone', e.target.value)}
                                       onBlur={(e) => updateProfile(idx, 'phone', formatPhone(e.target.value))}
                                       placeholder="(###) ###-####"
-                                      className="w-full px-3 py-1.5 text-[12px] border border-slate-200 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white font-normal transition-all"
+                                      className="w-full px-3 py-1.5 text-[12px] border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-normal transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600"
                                     />
                                 ) : (
                                      <DataValue value={profile.phone} />
@@ -836,7 +836,7 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                                 ) : (
                                      <DataValue>
                                         {profile.curator_link ? (
-                                          <a href={profile.curator_link} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline truncate flex items-center gap-1" title={profile.curator_link}>
+                                          <a href={profile.curator_link} target="_blank" rel="noopener noreferrer" className="text-indigo-600 dark:text-indigo-400 hover:underline truncate flex items-center gap-1" title={profile.curator_link}>
                                             Link <ExternalLink size={10} />
                                           </a>
                                         ) : '---'}
@@ -852,11 +852,11 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                                 <textarea
                                     value={profile.issue || ''}
                                     onChange={(e) => updateProfile(idx, 'issue', e.target.value)}
-                                    className="w-full px-3 py-2 text-[12px] border border-orange-300 bg-orange-50 rounded-lg focus:ring-1 focus:ring-orange-500 outline-none text-slate-800 placeholder:text-orange-300 min-h-[40px]"
+                                    className="w-full px-3 py-2 text-[12px] border border-orange-300 bg-orange-50 dark:bg-orange-900/20 dark:border-orange-900 rounded-lg focus:ring-1 focus:ring-orange-500 outline-none text-slate-800 dark:text-orange-100 placeholder:text-orange-300 min-h-[40px]"
                                     placeholder="Describe issue for this profile..."
                                 />
                             ) : (
-                                <div className="w-full px-3 py-2 text-[12px] border border-orange-300 bg-orange-50 rounded-lg text-slate-800">
+                                <div className="w-full px-3 py-2 text-[12px] border border-orange-300 bg-orange-50 dark:bg-orange-900/20 dark:border-orange-900 rounded-lg text-slate-800 dark:text-orange-100">
                                     {profile.issue || 'No issues recorded.'}
                                 </div>
                             )}
@@ -872,14 +872,14 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                     </div>
                 ))}
                 {(!formData.additional_profiles || formData.additional_profiles.length === 0) && !isProfilesEditing && (
-                    <div className="text-[10px] text-slate-400 italic">No additional profiles recorded.</div>
+                    <div className="text-[10px] text-slate-400 dark:text-slate-500 italic">No additional profiles recorded.</div>
                 )}
               </div>
             </div>
 
             {/* Timestamps */}
             {!isNew && (
-              <div className="pt-4 mt-4 border-t border-slate-100 flex gap-6 text-[10px] text-slate-400">
+              <div className="pt-4 mt-4 border-t border-slate-100 dark:border-slate-800 flex gap-6 text-[10px] text-slate-400 dark:text-slate-500">
                 <span>Created: {new Date(formData.created_at || '').toLocaleDateString()}</span>
                 <span>ID: {formData.id}</span>
               </div>

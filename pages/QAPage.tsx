@@ -36,16 +36,16 @@ const QAPage: React.FC = () => {
   }, [isCreating, selectedShopperId, shoppers]);
 
   const priorityColors: Record<ShopperPriority, string> = {
-    [ShopperPriority.HIGH]: 'bg-rose-50 text-rose-600 border-rose-100',
-    [ShopperPriority.MEDIUM]: 'bg-amber-50 text-amber-600 border-amber-100',
-    [ShopperPriority.LOW]: 'bg-emerald-50 text-emerald-600 border-emerald-100',
+    [ShopperPriority.HIGH]: 'bg-rose-50 text-rose-600 border-rose-100 dark:bg-rose-900/30 dark:text-rose-300 dark:border-rose-800',
+    [ShopperPriority.MEDIUM]: 'bg-amber-50 text-amber-600 border-amber-100 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800',
+    [ShopperPriority.LOW]: 'bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800',
   };
 
   const statusColors: Record<ShopperStatus, string> = {
-    [ShopperStatus.ACTIVE]: 'bg-indigo-50 text-indigo-700',
-    [ShopperStatus.TESTING]: 'bg-blue-50 text-blue-700',
-    [ShopperStatus.REVIEW]: 'bg-amber-50 text-amber-700',
-    [ShopperStatus.RESOLVED]: 'bg-emerald-50 text-emerald-700',
+    [ShopperStatus.ACTIVE]: 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300',
+    [ShopperStatus.TESTING]: 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+    [ShopperStatus.REVIEW]: 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+    [ShopperStatus.RESOLVED]: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
   };
 
   const handleRowClick = (id: string) => {
@@ -64,8 +64,8 @@ const QAPage: React.FC = () => {
     <div className="animate-in fade-in duration-700">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight">QA Shoppers</h1>
-          <p className="text-xs text-slate-500 mt-0.5">Manage testers and audit accounts for system verification.</p>
+          <h1 className="text-2xl font-extrabold text-slate-800 dark:text-slate-100 tracking-tight">QA Shoppers</h1>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Manage testers and audit accounts for system verification.</p>
         </div>
         <button 
           onClick={() => { setSelectedShopperId(null); setIsCreating(true); }}
@@ -96,43 +96,43 @@ const QAPage: React.FC = () => {
 
       {loading ? (
         <div className="space-y-3">
-          {[1,2,3,4].map(i => <div key={i} className="h-16 bg-white rounded-xl border border-slate-100 animate-pulse"></div>)}
+          {[1,2,3,4].map(i => <div key={i} className="h-16 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 animate-pulse"></div>)}
         </div>
       ) : shoppers.length === 0 ? (
-        <div className="bg-white rounded-[2rem] p-12 text-center border border-slate-100 border-dashed">
-          <div className="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-4 text-indigo-400">
+        <div className="bg-white dark:bg-slate-900 rounded-[2rem] p-12 text-center border border-slate-100 dark:border-slate-800 border-dashed transition-colors">
+          <div className="w-16 h-16 bg-indigo-50 dark:bg-indigo-900/30 rounded-full flex items-center justify-center mx-auto mb-4 text-indigo-400">
             <User size={32} />
           </div>
-          <h3 className="text-xl font-bold text-slate-800">No Shoppers Registered</h3>
-          <p className="text-xs text-slate-500 mt-1">Begin by adding your first quality assurance tester to the system.</p>
+          <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100">No Shoppers Registered</h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Begin by adding your first quality assurance tester to the system.</p>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm transition-colors">
           <table className="w-full text-left">
-            <thead className="bg-slate-50 border-b border-slate-200">
+            <thead className="bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
               <tr>
-                <th className="px-6 py-4 text-[9px] font-bold text-slate-400 uppercase tracking-widest">Tester</th>
-                <th className="px-6 py-4 text-[9px] font-bold text-slate-400 uppercase tracking-widest">Contact Details</th>
-                <th className="px-6 py-4 text-[9px] font-bold text-slate-400 uppercase tracking-widest">Status</th>
-                <th className="px-6 py-4 text-[9px] font-bold text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                <th className="px-6 py-4 text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Tester</th>
+                <th className="px-6 py-4 text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Contact Details</th>
+                <th className="px-6 py-4 text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Status</th>
+                <th className="px-6 py-4 text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {shoppers.map(shopper => (
                 <tr 
                   key={shopper.id} 
-                  className="hover:bg-slate-50/80 transition-all group cursor-pointer"
+                  className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-all group cursor-pointer"
                   onClick={() => handleRowClick(shopper.id)}
                 >
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-[10px] group-hover:bg-indigo-600 group-hover:text-white transition-all flex-shrink-0">
+                      <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-[10px] group-hover:bg-indigo-600 group-hover:text-white transition-all flex-shrink-0">
                         {shopper.first_name.charAt(0)}{shopper.last_name.charAt(0)}
                       </div>
                       <div className="min-w-0 flex flex-col items-start gap-1">
-                        <p className="text-[11px] font-bold text-slate-800 leading-tight truncate">{shopper.first_name} {shopper.last_name}</p>
+                        <p className="text-[11px] font-bold text-slate-800 dark:text-slate-200 leading-tight truncate">{shopper.first_name} {shopper.last_name}</p>
                         {shopper.issue && (
-                            <div className="text-[10px] text-orange-700 bg-orange-50 border border-orange-100 px-1.5 py-0.5 rounded-md font-medium whitespace-normal break-words max-w-sm" title={shopper.issue}>
+                            <div className="text-[10px] text-orange-700 dark:text-orange-300 bg-orange-50 dark:bg-orange-900/30 border border-orange-100 dark:border-orange-800 px-1.5 py-0.5 rounded-md font-medium whitespace-normal break-words max-w-sm" title={shopper.issue}>
                                 {shopper.issue}
                             </div>
                         )}
@@ -146,14 +146,14 @@ const QAPage: React.FC = () => {
                         onClick={(e) => handleCopyEmail(e, shopper.id, shopper.email)}
                         title="Click to copy email"
                       >
-                        <Mail size={12} className="text-slate-400 flex-shrink-0 group-hover/email:text-indigo-500 transition-colors" />
-                        <span className={`text-[11px] truncate transition-colors ${copiedEmailId === shopper.id ? 'text-emerald-600 font-bold' : 'text-slate-600 group-hover/email:text-indigo-600'}`}>
+                        <Mail size={12} className="text-slate-400 dark:text-slate-500 flex-shrink-0 group-hover/email:text-indigo-500 transition-colors" />
+                        <span className={`text-[11px] truncate transition-colors ${copiedEmailId === shopper.id ? 'text-emerald-600 dark:text-emerald-400 font-bold' : 'text-slate-600 dark:text-slate-400 group-hover/email:text-indigo-600 dark:group-hover/email:text-indigo-400'}`}>
                           {copiedEmailId === shopper.id ? 'Copied!' : shopper.email}
                         </span>
                       </div>
                       <div className="flex items-center gap-1.5 min-w-0">
-                        <Phone size={12} className="text-slate-400 flex-shrink-0" />
-                        <span className="text-[11px] text-slate-600 font-mono truncate">{shopper.phone || '---'}</span>
+                        <Phone size={12} className="text-slate-400 dark:text-slate-500 flex-shrink-0" />
+                        <span className="text-[11px] text-slate-600 dark:text-slate-400 font-mono truncate">{shopper.phone || '---'}</span>
                       </div>
                     </div>
                   </td>
@@ -168,13 +168,13 @@ const QAPage: React.FC = () => {
                     <div className="flex justify-end gap-1">
                       <button 
                         onClick={(e) => { e.stopPropagation(); handleRowClick(shopper.id); }}
-                        className="p-1.5 text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                        className="p-1.5 text-slate-300 dark:text-slate-600 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 rounded-lg transition-all"
                       >
                         <Edit3 size={14} />
                       </button>
                       <button 
                         onClick={(e) => { e.stopPropagation(); if(window.confirm('Delete shopper?')) remove(shopper.id); }}
-                        className="p-1.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                        className="p-1.5 text-slate-300 dark:text-slate-600 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-all"
                       >
                         <Trash2 size={14} />
                       </button>

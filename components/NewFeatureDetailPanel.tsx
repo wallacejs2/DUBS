@@ -14,14 +14,14 @@ interface NewFeatureDetailPanelProps {
 }
 
 const Label = ({ children, icon: Icon }: { children?: React.ReactNode, icon?: any }) => (
-  <label className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+  <label className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">
     {Icon && <Icon size={10} />}
     {children}
   </label>
 );
 
 const DataValue = ({ value, mono = false, children }: { value?: any, mono?: boolean, children?: React.ReactNode }) => (
-  <div className={`text-[12px] font-normal text-slate-700 leading-tight min-h-[1.5em] flex items-center ${mono ? 'font-mono' : ''}`}>
+  <div className={`text-[12px] font-normal text-slate-700 dark:text-slate-300 leading-tight min-h-[1.5em] flex items-center ${mono ? 'font-mono' : ''}`}>
     {children || value || '---'}
   </div>
 );
@@ -33,7 +33,7 @@ const Input = ({ value, onChange, type = "text", className = "", placeholder="",
     onChange={(e) => onChange(e.target.value)}
     placeholder={placeholder}
     required={required}
-    className={`w-full px-3 py-1.5 text-[12px] border border-slate-200 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white font-normal transition-all ${className}`}
+    className={`w-full px-3 py-1.5 text-[12px] border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-normal transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 ${className}`}
   />
 );
 
@@ -41,7 +41,7 @@ const Select = ({ value, onChange, options, className = "", placeholder }: { val
   <select 
     value={value || ''}
     onChange={(e) => onChange(e.target.value)}
-    className={`w-full px-3 py-1.5 text-[12px] border border-slate-200 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white font-normal transition-all ${className}`}
+    className={`w-full px-3 py-1.5 text-[12px] border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-normal transition-all ${className}`}
   >
     {placeholder && <option value="">{placeholder}</option>}
     {options.map(opt => (
@@ -51,9 +51,9 @@ const Select = ({ value, onChange, options, className = "", placeholder }: { val
 );
 
 const platformColors: Record<string, string> = {
-  'UCP': 'bg-blue-50 text-blue-700 border-blue-100',
-  'Curator': 'bg-purple-50 text-purple-700 border-purple-100',
-  'FOCUS': 'bg-orange-50 text-orange-700 border-orange-100',
+  'UCP': 'bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800',
+  'Curator': 'bg-purple-50 text-purple-700 border-purple-100 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800',
+  'FOCUS': 'bg-orange-50 text-orange-700 border-orange-100 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800',
 };
 
 const NewFeatureDetailPanel: React.FC<NewFeatureDetailPanelProps> = ({ 
@@ -142,10 +142,10 @@ const NewFeatureDetailPanel: React.FC<NewFeatureDetailPanelProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]" onClick={isEditing && isNew ? undefined : onClose}></div>
-      <div className="relative w-full max-w-4xl bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+      <div className="relative w-full max-w-4xl bg-white dark:bg-slate-900 h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300 transition-colors">
         
         {/* Sticky Header */}
-        <div className="bg-white sticky top-0 z-30 border-b border-slate-100 shadow-sm">
+        <div className="bg-white dark:bg-slate-900 sticky top-0 z-30 border-b border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
           <div className="p-4 flex justify-between items-center gap-4">
              <div className="flex items-center gap-3 w-full">
                <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg shadow-sm flex-shrink-0 ${isNew ? 'bg-indigo-100 text-indigo-600' : 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white'}`}>
@@ -163,7 +163,7 @@ const NewFeatureDetailPanel: React.FC<NewFeatureDetailPanelProps> = ({
                      />
                    </div>
                  ) : (
-                   <h2 className="text-xl font-bold text-slate-900 tracking-tight leading-tight">{formData.title}</h2>
+                   <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight leading-tight">{formData.title}</h2>
                  )}
                </div>
              </div>
@@ -174,23 +174,23 @@ const NewFeatureDetailPanel: React.FC<NewFeatureDetailPanelProps> = ({
                    <button onClick={() => handleSave()} className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-indigo-700 shadow-md shadow-indigo-100 flex items-center gap-2 transition-all">
                      <Save size={14} /> Save
                    </button>
-                   <button onClick={handleCancel} className="p-2 text-slate-400 hover:bg-slate-100 rounded-lg transition-all"><RefreshCw size={16} /></button>
+                   <button onClick={handleCancel} className="p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all"><RefreshCw size={16} /></button>
                  </>
                ) : (
-                 <button onClick={() => setIsEditing(true)} className="px-3 py-2 border border-slate-200 text-slate-600 rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-slate-50 flex items-center gap-2 transition-all">
+                 <button onClick={() => setIsEditing(true)} className="px-3 py-2 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 transition-all">
                     <Edit3 size={14} /> Edit
                  </button>
                )}
                {!isNew && (
-                 <button onClick={onDelete} className="p-2 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"><Trash2 size={18} /></button>
+                 <button onClick={onDelete} className="p-2 text-slate-300 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-all"><Trash2 size={18} /></button>
                )}
-               <button onClick={onClose} className="p-2 text-slate-300 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-all"><X size={20} /></button>
+               <button onClick={onClose} className="p-2 text-slate-300 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all"><X size={20} /></button>
              </div>
           </div>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-8 bg-white custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-8 bg-white dark:bg-slate-900 custom-scrollbar transition-colors">
           <form onSubmit={handleSave} className="space-y-6 mx-auto">
             
             {/* Metadata Section */}
@@ -212,8 +212,8 @@ const NewFeatureDetailPanel: React.FC<NewFeatureDetailPanelProps> = ({
                          {formData.type ? (
                            <span className={`font-bold px-2 py-0.5 rounded-md border text-[11px] ${
                              formData.type === 'New' 
-                               ? 'bg-emerald-50 text-emerald-700 border-emerald-100' 
-                               : 'bg-blue-50 text-blue-700 border-blue-100'
+                               ? 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800' 
+                               : 'bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800'
                            }`}>
                              {formData.type}
                            </span>
@@ -240,7 +240,7 @@ const NewFeatureDetailPanel: React.FC<NewFeatureDetailPanelProps> = ({
                                 { label: 'Q4', value: 'Q4' }
                             ]}
                             placeholder="Qtr"
-                            className="font-bold text-indigo-700 min-w-[70px]"
+                            className="font-bold text-indigo-700 dark:text-indigo-400 min-w-[70px]"
                           />
                           <Select 
                             value={parseRelease(formData.quarterly_release).y} 
@@ -256,13 +256,13 @@ const NewFeatureDetailPanel: React.FC<NewFeatureDetailPanelProps> = ({
                                 { label: '2028', value: '2028' }
                             ]}
                             placeholder="Year"
-                            className="font-bold text-indigo-700 w-full"
+                            className="font-bold text-indigo-700 dark:text-indigo-400 w-full"
                           />
                       </div>
                    ) : (
                       <DataValue>
                          {formData.quarterly_release ? (
-                           <span className="font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100 text-[11px]">{formData.quarterly_release}</span>
+                           <span className="font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-md text-[11px] dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800">{formData.quarterly_release}</span>
                          ) : '---'}
                       </DataValue>
                    )}
@@ -285,8 +285,8 @@ const NewFeatureDetailPanel: React.FC<NewFeatureDetailPanelProps> = ({
                          {formData.status ? (
                            <span className={`font-bold px-2 py-0.5 rounded-md border text-[11px] ${
                              formData.status === 'Launched' 
-                               ? 'bg-emerald-50 text-emerald-700 border-emerald-100' 
-                               : 'bg-purple-50 text-purple-700 border-purple-100'
+                               ? 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800' 
+                               : 'bg-purple-50 text-purple-700 border-purple-100 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800'
                            }`}>
                              {formData.status}
                            </span>
@@ -322,7 +322,7 @@ const NewFeatureDetailPanel: React.FC<NewFeatureDetailPanelProps> = ({
                    ) : (
                       <DataValue>
                         {formData.platform ? (
-                           <span className={`px-2 py-0.5 rounded-md text-[11px] font-bold border ${platformColors[formData.platform] || 'bg-slate-100 text-slate-600 border-slate-200'}`}>
+                           <span className={`px-2 py-0.5 rounded-md text-[11px] font-bold border ${platformColors[formData.platform] || 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'}`}>
                              {formData.platform}
                            </span>
                         ) : '---'}
@@ -350,7 +350,7 @@ const NewFeatureDetailPanel: React.FC<NewFeatureDetailPanelProps> = ({
             </div>
 
             {/* Support Material & PMR Section */}
-            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex flex-col gap-6">
+            <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col gap-6">
                {/* Support Material */}
                <div>
                   <Label icon={FileText}>Support Material</Label>
@@ -359,7 +359,7 @@ const NewFeatureDetailPanel: React.FC<NewFeatureDetailPanelProps> = ({
                   ) : (
                      <DataValue>
                        {formData.support_material_link ? (
-                         <a href={formData.support_material_link} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline flex items-center gap-1">
+                         <a href={formData.support_material_link} target="_blank" rel="noopener noreferrer" className="text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1">
                            View Documentation <ExternalLink size={10} />
                          </a>
                        ) : '---'}
@@ -368,14 +368,14 @@ const NewFeatureDetailPanel: React.FC<NewFeatureDetailPanelProps> = ({
                </div>
 
                {/* PMR Section */}
-               <div className="pt-4 border-t border-slate-200">
+               <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
                   <div className="flex justify-between items-center mb-2">
                      <Label icon={Hash}>PMR Tickets</Label>
                      {isEditing && (
                         <button 
                            type="button" 
                            onClick={addPmr}
-                           className="text-[9px] font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded border border-indigo-100 hover:bg-indigo-100 flex items-center gap-1"
+                           className="text-[9px] font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded border border-indigo-100 hover:bg-indigo-100 flex items-center gap-1 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800 dark:hover:bg-indigo-900/50"
                         >
                            <Plus size={10} /> Add ID
                         </button>
@@ -384,35 +384,35 @@ const NewFeatureDetailPanel: React.FC<NewFeatureDetailPanelProps> = ({
 
                   <div className="space-y-2">
                      {(!formData.pmrs || formData.pmrs.length === 0) && !isEditing && (
-                        <div className="text-[11px] text-slate-400 italic">No PMRs linked.</div>
+                        <div className="text-[11px] text-slate-400 dark:text-slate-500 italic">No PMRs linked.</div>
                      )}
 
                      {formData.pmrs?.map((pmr, idx) => (
-                        <div key={pmr.id} className="flex gap-2 items-center bg-white p-2 rounded-lg border border-slate-200 shadow-sm">
+                        <div key={pmr.id} className="flex gap-2 items-center bg-white dark:bg-slate-800 p-2 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
                            {isEditing ? (
                               <>
                                  <input 
                                     value={pmr.number} 
                                     onChange={(e) => updatePmr(idx, 'number', e.target.value)} 
                                     placeholder="PMR-####" 
-                                    className="w-32 px-2 py-1 text-[11px] border border-slate-200 rounded focus:ring-1 focus:ring-indigo-500 outline-none font-mono font-bold uppercase"
+                                    className="w-32 px-2 py-1 text-[11px] border border-slate-200 dark:border-slate-600 rounded focus:ring-1 focus:ring-indigo-500 outline-none font-mono font-bold uppercase bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                                  />
                                  <input 
                                     value={pmr.link} 
                                     onChange={(e) => updatePmr(idx, 'link', e.target.value)} 
                                     placeholder="https://..." 
-                                    className="flex-1 px-2 py-1 text-[11px] border border-slate-200 rounded focus:ring-1 focus:ring-indigo-500 outline-none"
+                                    className="flex-1 px-2 py-1 text-[11px] border border-slate-200 dark:border-slate-600 rounded focus:ring-1 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                                  />
-                                 <button type="button" onClick={() => removePmr(idx)} className="text-slate-300 hover:text-red-500"><Trash2 size={14} /></button>
+                                 <button type="button" onClick={() => removePmr(idx)} className="text-slate-300 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400"><Trash2 size={14} /></button>
                               </>
                            ) : (
                               <div className="flex items-center gap-2">
                                  {pmr.link ? (
-                                    <a href={pmr.link} target="_blank" rel="noopener noreferrer" className="font-mono text-[11px] font-bold text-indigo-600 hover:underline flex items-center gap-1 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100">
+                                    <a href={pmr.link} target="_blank" rel="noopener noreferrer" className="font-mono text-[11px] font-bold text-indigo-600 hover:underline flex items-center gap-1 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800">
                                        {pmr.number || 'LINK'} <ExternalLink size={10} />
                                     </a>
                                  ) : (
-                                    <span className="font-mono text-[11px] font-bold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
+                                    <span className="font-mono text-[11px] font-bold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600">
                                        {pmr.number || '---'}
                                     </span>
                                  )}
@@ -431,11 +431,11 @@ const NewFeatureDetailPanel: React.FC<NewFeatureDetailPanelProps> = ({
                   <textarea 
                     value={formData.description || ''}
                     onChange={(e) => updateField('description', e.target.value)}
-                    className="w-full px-4 py-3 text-[13px] border border-slate-200 rounded-xl focus:ring-1 focus:ring-indigo-500 outline-none text-slate-700 placeholder:text-slate-300 min-h-[300px] leading-relaxed resize-y"
+                    className="w-full px-4 py-3 text-[13px] border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-1 focus:ring-indigo-500 outline-none text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 placeholder:text-slate-300 dark:placeholder:text-slate-600 min-h-[300px] leading-relaxed resize-y"
                     placeholder="Enter full feature description, requirements, and notes here..."
                   />
                ) : (
-                  <div className="w-full px-4 py-3 text-[13px] border border-slate-100 bg-slate-50/50 rounded-xl text-slate-700 whitespace-pre-wrap leading-relaxed min-h-[100px]">
+                  <div className="w-full px-4 py-3 text-[13px] border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 rounded-xl text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed min-h-[100px]">
                     {formData.description || 'No description provided.'}
                   </div>
                )}
@@ -443,7 +443,7 @@ const NewFeatureDetailPanel: React.FC<NewFeatureDetailPanelProps> = ({
 
             {/* Timestamps */}
             {!isNew && (
-              <div className="pt-4 mt-6 border-t border-slate-100 flex gap-6 text-[10px] text-slate-400">
+              <div className="pt-4 mt-6 border-t border-slate-100 dark:border-slate-800 flex gap-6 text-[10px] text-slate-400 dark:text-slate-500">
                 <span>Added: {new Date(formData.created_at || '').toLocaleDateString()}</span>
                 <span>ID: {formData.id}</span>
               </div>

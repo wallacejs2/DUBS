@@ -235,6 +235,7 @@ const DealershipsPage: React.FC = () => {
       </div>
 
       <FilterBar 
+        layout="stacked"
         searchValue={filters.search}
         onSearchChange={(v) => setFilters({ ...filters, search: v })}
         filters={[
@@ -268,7 +269,8 @@ const DealershipsPage: React.FC = () => {
             onChange: (v) => setFilters({ ...filters, issue: v }),
             options: [
               { label: 'No Client ID', value: 'no_id' },
-              { label: '$0 Price', value: 'zero_price' }
+              { label: '$0 Price', value: 'zero_price' },
+              { label: 'No CSM', value: 'no_csm' }
             ]
           }
         ]}
@@ -296,6 +298,9 @@ const DealershipsPage: React.FC = () => {
             // Check for valid client ID in any website link
             const hasClientId = details?.website_links?.some(l => l.client_id && l.client_id.trim().length > 0) ?? false;
             
+            // Check for missing CSM
+            const hasCSM = details?.contacts?.assigned_specialist_name && details.contacts.assigned_specialist_name.trim().length > 0;
+
             return (
               <DealershipCard 
                 key={dealer.id} 
@@ -305,6 +310,7 @@ const DealershipsPage: React.FC = () => {
                 hasClientId={hasClientId}
                 hasAddlWeb={checkHasAddlWeb(dealer.id)}
                 hasZeroPrice={checkHasZeroPrice(dealer.id)}
+                missingCSM={!hasCSM}
                 onClick={() => setSelectedDealerId(dealer.id)}
                 onToggleFavorite={() => toggleFavorite(dealer.id)}
               />

@@ -197,13 +197,13 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-[1.5rem] shadow-2xl w-full max-w-5xl max-h-[95vh] flex flex-col overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-[1.5rem] shadow-2xl w-full max-w-5xl max-h-[95vh] flex flex-col overflow-hidden transition-colors">
         
         {/* Fixed Header */}
-        <div className="bg-white border-b border-slate-100 flex flex-col z-10 relative shadow-sm">
+        <div className="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 flex flex-col z-10 relative shadow-sm transition-colors">
             <div className="p-4 flex justify-end items-center gap-2">
               {initialData?.id && (
-                 <span className="text-[10px] uppercase font-bold text-slate-400 mr-auto pl-4">Editing Mode</span>
+                 <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 mr-auto pl-4">Editing Mode</span>
               )}
               <button 
                 type="submit"
@@ -212,7 +212,7 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
               >
                 <Save size={14} /> Save
               </button>
-              <button onClick={onCancel} className="p-2 text-slate-400 hover:bg-slate-100 rounded-lg transition-all"><X size={20} /></button>
+              <button onClick={onCancel} className="p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all"><X size={20} /></button>
             </div>
 
             <div className="px-8 pb-6 space-y-4">
@@ -221,7 +221,7 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
                     required
                     value={formData.name || ''} 
                     onChange={e => updateField('name', e.target.value)}
-                    className="w-full px-3 py-3 text-2xl font-bold text-slate-800 rounded-xl border-b-2 border-slate-200 focus:border-indigo-600 outline-none transition-all bg-transparent placeholder:text-slate-300"
+                    className="w-full px-3 py-3 text-2xl font-bold text-slate-800 dark:text-slate-100 rounded-xl border-b-2 border-slate-200 dark:border-slate-700 focus:border-indigo-600 dark:focus:border-indigo-500 outline-none transition-all bg-transparent placeholder:text-slate-300 dark:placeholder:text-slate-600"
                     placeholder="Enter Dealership Name"
                   />
                </div>
@@ -229,7 +229,7 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
                   <input 
                     value={formData.cif_number || ''} 
                     onChange={e => updateField('cif_number', e.target.value)}
-                    className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 focus:ring-1 focus:ring-indigo-500 outline-none font-mono"
+                    className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-1 focus:ring-indigo-500 outline-none font-mono placeholder:text-slate-400 dark:placeholder:text-slate-600"
                     placeholder="CIF-#####"
                   />
                </div>
@@ -237,25 +237,25 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto p-8 bg-white custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-8 bg-white dark:bg-slate-900 custom-scrollbar transition-colors">
           <form id="dealer-form" onSubmit={handleSubmit} className="space-y-8">
             
             {/* Status & Dates */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
               <div className="space-y-1">
-                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Status</label>
+                <label className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Status</label>
                 <select 
                   value={formData.status || DealershipStatus.DMT_PENDING} 
                   onChange={e => updateField('status', e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 focus:ring-1 focus:ring-indigo-500 outline-none font-normal"
+                  className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-1 focus:ring-indigo-500 outline-none font-normal"
                 >
                   {Object.values(DealershipStatus).map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
               <div className="space-y-1">
-                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Go-Live Date</label>
+                <label className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Go-Live Date</label>
                 {isLockedStatus(formData.status) ? (
-                  <div className="w-full px-3 py-2 text-xs rounded-lg border border-slate-100 bg-slate-50 text-slate-400 italic">
+                  <div className="w-full px-3 py-2 text-xs rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 text-slate-400 dark:text-slate-500 italic">
                     Pending Status
                   </div>
                 ) : (
@@ -263,38 +263,38 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
                     type="date"
                     value={formData.go_live_date ? formData.go_live_date.split('T')[0] : ''} 
                     onChange={e => updateField('go_live_date', e.target.value)}
-                    className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 focus:ring-1 focus:ring-indigo-500 outline-none font-normal"
+                    className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-1 focus:ring-indigo-500 outline-none font-normal dark:color-scheme-dark"
                   />
                 )}
               </div>
               <div className="space-y-1">
                  {formData.status === DealershipStatus.CANCELLED && (
                    <>
-                    <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Term Date</label>
+                    <label className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Term Date</label>
                     <input 
                       type="date"
                       value={formData.term_date ? formData.term_date.split('T')[0] : ''} 
                       onChange={e => updateField('term_date', e.target.value)}
-                      className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 focus:ring-1 focus:ring-indigo-500 outline-none font-normal"
+                      className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-1 focus:ring-indigo-500 outline-none font-normal dark:color-scheme-dark"
                     />
                    </>
                  )}
               </div>
             </div>
 
-            <hr className="border-slate-100" />
-            <h3 className="text-[11px] font-bold text-slate-800 uppercase tracking-widest">Account Details</h3>
+            <hr className="border-slate-100 dark:border-slate-800" />
+            <h3 className="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">Account Details</h3>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="space-y-1">
-                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Enterprise Group</label>
+                <label className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Enterprise Group</label>
                 <div className="flex gap-2 items-start">
                   {!isAddingGroup ? (
                     <>
                        <select 
                         value={formData.enterprise_group_id || ''} 
                         onChange={handleGroupSelect}
-                        className="flex-1 px-3 py-2 text-xs rounded-lg border border-slate-200 focus:ring-1 focus:ring-indigo-500 outline-none font-normal"
+                        className="flex-1 px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-1 focus:ring-indigo-500 outline-none font-normal"
                       >
                         <option value="">Single (Independent)</option>
                         {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
@@ -302,23 +302,23 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
                       <button 
                         type="button" 
                         onClick={() => setIsAddingGroup(true)}
-                        className="px-3 py-2 bg-indigo-50 text-indigo-600 rounded-lg text-xs font-bold hover:bg-indigo-100 whitespace-nowrap"
+                        className="px-3 py-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg text-xs font-bold hover:bg-indigo-100 dark:hover:bg-indigo-900/50 whitespace-nowrap border border-indigo-100 dark:border-indigo-800"
                       >
                         + New
                       </button>
                     </>
                   ) : (
-                    <div className="flex-1 p-3 bg-indigo-50 border border-indigo-100 rounded-xl animate-in fade-in zoom-in-95 duration-200">
+                    <div className="flex-1 p-3 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 rounded-xl animate-in fade-in zoom-in-95 duration-200">
                        <div className="flex justify-between items-center mb-2">
-                          <span className="text-[10px] font-bold text-indigo-800">New Group</span>
-                          <button type="button" onClick={() => setIsAddingGroup(false)} className="text-indigo-400 hover:text-indigo-800"><X size={14}/></button>
+                          <span className="text-[10px] font-bold text-indigo-800 dark:text-indigo-300">New Group</span>
+                          <button type="button" onClick={() => setIsAddingGroup(false)} className="text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200"><X size={14}/></button>
                        </div>
                        <div className="space-y-2">
                           <input 
                             value={newGroupName}
                             onChange={e => setNewGroupName(e.target.value)}
                             placeholder="Group Name"
-                            className="w-full px-2 py-1.5 text-xs rounded-lg border border-indigo-200 outline-none"
+                            className="w-full px-2 py-1.5 text-xs rounded-lg border border-indigo-200 dark:border-indigo-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 outline-none"
                             autoFocus
                           />
                           <div className="grid grid-cols-2 gap-2">
@@ -326,13 +326,13 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
                                 value={newGroupPP}
                                 onChange={e => setNewGroupPP(e.target.value)}
                                 placeholder="PP ID"
-                                className="w-full px-2 py-1.5 text-xs rounded-lg border border-indigo-200 outline-none font-mono"
+                                className="w-full px-2 py-1.5 text-xs rounded-lg border border-indigo-200 dark:border-indigo-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 outline-none font-mono"
                              />
                              <input 
                                 value={newGroupERA}
                                 onChange={e => setNewGroupERA(e.target.value)}
                                 placeholder="ERA ID"
-                                className="w-full px-2 py-1.5 text-xs rounded-lg border border-indigo-200 outline-none font-mono"
+                                className="w-full px-2 py-1.5 text-xs rounded-lg border border-indigo-200 dark:border-indigo-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 outline-none font-mono"
                              />
                           </div>
                           <button 
@@ -348,51 +348,51 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
                 </div>
               </div>
               <div className="space-y-1">
-                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">CRM Provider</label>
+                <label className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">CRM Provider</label>
                 <select 
                   value={formData.crm_provider || CRMProvider.FOCUS} 
                   onChange={e => updateField('crm_provider', e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 focus:ring-1 focus:ring-indigo-500 outline-none font-normal"
+                  className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-1 focus:ring-indigo-500 outline-none font-normal"
                 >
                   {Object.values(CRMProvider).map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
               <div className="space-y-1">
-                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Store / Branch</label>
+                <label className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Store / Branch</label>
                 <div className="flex gap-2">
-                    <input value={formData.store_number || ''} onChange={e => updateField('store_number', e.target.value)} className="w-full px-2 py-2 text-xs rounded-lg border border-slate-200 outline-none font-mono" placeholder="Store #" />
-                    <input value={formData.branch_number || ''} onChange={e => updateField('branch_number', e.target.value)} className="w-full px-2 py-2 text-xs rounded-lg border border-slate-200 outline-none font-mono" placeholder="Branch #" />
+                    <input value={formData.store_number || ''} onChange={e => updateField('store_number', e.target.value)} className="w-full px-2 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 outline-none font-mono placeholder:text-slate-400 dark:placeholder:text-slate-600" placeholder="Store #" />
+                    <input value={formData.branch_number || ''} onChange={e => updateField('branch_number', e.target.value)} className="w-full px-2 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 outline-none font-mono placeholder:text-slate-400 dark:placeholder:text-slate-600" placeholder="Branch #" />
                 </div>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-1">
-                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">PP Sys ID</label>
-                <input value={formData.pp_sys_id || ''} onChange={e => updateField('pp_sys_id', e.target.value)} className="w-full px-2 py-2 text-xs rounded-lg border border-slate-200 outline-none font-mono" />
+                <label className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">PP Sys ID</label>
+                <input value={formData.pp_sys_id || ''} onChange={e => updateField('pp_sys_id', e.target.value)} className="w-full px-2 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 outline-none font-mono placeholder:text-slate-400 dark:placeholder:text-slate-600" />
               </div>
               <div className="space-y-1">
-                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">ERA ID</label>
-                 <input value={formData.era_system_id || ''} onChange={e => updateField('era_system_id', e.target.value)} className="w-full px-2 py-2 text-xs rounded-lg border border-slate-200 outline-none font-mono" />
+                 <label className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">ERA ID</label>
+                 <input value={formData.era_system_id || ''} onChange={e => updateField('era_system_id', e.target.value)} className="w-full px-2 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 outline-none font-mono placeholder:text-slate-400 dark:placeholder:text-slate-600" />
               </div>
               <div className="space-y-1">
-                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">BU ID</label>
-                 <input value={formData.bu_id || ''} onChange={e => updateField('bu_id', e.target.value)} className="w-full px-2 py-2 text-xs rounded-lg border border-slate-200 outline-none font-mono" />
+                 <label className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">BU ID</label>
+                 <input value={formData.bu_id || ''} onChange={e => updateField('bu_id', e.target.value)} className="w-full px-2 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 outline-none font-mono placeholder:text-slate-400 dark:placeholder:text-slate-600" />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="md:col-span-2 space-y-1">
-                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Address</label>
-                <input required value={formData.address_line1 || ''} onChange={e => updateField('address_line1', e.target.value)} className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 outline-none font-normal" placeholder="Street Address" />
+                <label className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Address</label>
+                <input required value={formData.address_line1 || ''} onChange={e => updateField('address_line1', e.target.value)} className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 outline-none font-normal placeholder:text-slate-400 dark:placeholder:text-slate-600" placeholder="Street Address" />
               </div>
               <div className="space-y-1">
-                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">State</label>
+                <label className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">State</label>
                 <select 
                   required 
                   value={formData.state || ''} 
                   onChange={e => updateField('state', e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 outline-none font-normal"
+                  className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 outline-none font-normal"
                 >
                   <option value="">Select State</option>
                   {STATES.map(st => <option key={st} value={st}>{st}</option>)}
@@ -400,94 +400,94 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
               </div>
             </div>
 
-            <hr className="border-slate-100" />
-            <h3 className="text-[11px] font-bold text-slate-800 uppercase tracking-widest">Website Links</h3>
+            <hr className="border-slate-100 dark:border-slate-800" />
+            <h3 className="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">Website Links</h3>
 
             <div className="space-y-3">
               {formData.website_links?.map((link, idx) => (
-                <div key={idx} className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <div key={idx} className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
                    <div className="space-y-1">
-                      <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Primary URL</label>
-                      <input value={link.primary_url} onChange={e => updateWebsite(idx, 'primary_url', e.target.value)} className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 outline-none font-normal" />
+                      <label className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Primary URL</label>
+                      <input value={link.primary_url} onChange={e => updateWebsite(idx, 'primary_url', e.target.value)} className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 outline-none font-normal placeholder:text-slate-400 dark:placeholder:text-slate-600" />
                    </div>
                    <div className="flex gap-2">
                      <div className="flex-1 space-y-1">
-                        <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Client ID</label>
-                        <input value={link.client_id || ''} onChange={e => updateWebsite(idx, 'client_id', e.target.value)} className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 outline-none font-mono" />
+                        <label className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Client ID</label>
+                        <input value={link.client_id || ''} onChange={e => updateWebsite(idx, 'client_id', e.target.value)} className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 outline-none font-mono placeholder:text-slate-400 dark:placeholder:text-slate-600" />
                      </div>
                      {formData.website_links!.length > 1 && (
-                       <button type="button" onClick={() => removeWebsite(idx)} className="mb-1 p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg"><Trash2 size={16} /></button>
+                       <button type="button" onClick={() => removeWebsite(idx)} className="mb-1 p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"><Trash2 size={16} /></button>
                      )}
                    </div>
                 </div>
               ))}
-              <button type="button" onClick={addWebsite} className="px-3 py-2 bg-indigo-50 text-indigo-600 rounded-lg text-xs font-bold hover:bg-indigo-100 w-fit">
+              <button type="button" onClick={addWebsite} className="px-3 py-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg text-xs font-bold hover:bg-indigo-100 dark:hover:bg-indigo-900/50 w-fit border border-indigo-100 dark:border-indigo-800">
                 + Add New Website
               </button>
             </div>
 
-            <hr className="border-slate-100" />
-            <h3 className="text-[11px] font-bold text-slate-800 uppercase tracking-widest">Contacts</h3>
+            <hr className="border-slate-100 dark:border-slate-800" />
+            <h3 className="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">Contacts</h3>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                <div className="space-y-1">
-                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Sales Associate</label>
-                  <input value={formData.contacts?.sales_contact_name || ''} onChange={e => updateContact('sales_contact_name', e.target.value)} className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 outline-none font-normal" />
+                  <label className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Sales Associate</label>
+                  <input value={formData.contacts?.sales_contact_name || ''} onChange={e => updateContact('sales_contact_name', e.target.value)} className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 outline-none font-normal placeholder:text-slate-400 dark:placeholder:text-slate-600" />
                </div>
                <div className="space-y-1">
-                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Enrollment Specialist</label>
-                  <input value={formData.contacts?.enrollment_contact_name || ''} onChange={e => updateContact('enrollment_contact_name', e.target.value)} className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 outline-none font-normal" />
+                  <label className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Enrollment Specialist</label>
+                  <input value={formData.contacts?.enrollment_contact_name || ''} onChange={e => updateContact('enrollment_contact_name', e.target.value)} className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 outline-none font-normal placeholder:text-slate-400 dark:placeholder:text-slate-600" />
                </div>
                <div className="space-y-1">
-                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">CSM Specialist</label>
-                  <input value={formData.contacts?.assigned_specialist_name || ''} onChange={e => updateContact('assigned_specialist_name', e.target.value)} className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 outline-none font-normal" />
+                  <label className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">CSM Specialist</label>
+                  <input value={formData.contacts?.assigned_specialist_name || ''} onChange={e => updateContact('assigned_specialist_name', e.target.value)} className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 outline-none font-normal placeholder:text-slate-400 dark:placeholder:text-slate-600" />
                </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                <div className="space-y-1">
-                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">POC Name</label>
-                  <input value={formData.contacts?.poc_name || ''} onChange={e => updateContact('poc_name', e.target.value)} className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 outline-none font-normal" />
+                  <label className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">POC Name</label>
+                  <input value={formData.contacts?.poc_name || ''} onChange={e => updateContact('poc_name', e.target.value)} className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 outline-none font-normal placeholder:text-slate-400 dark:placeholder:text-slate-600" />
                </div>
                <div className="space-y-1">
-                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">POC Email</label>
-                  <input type="email" value={formData.contacts?.poc_email || ''} onChange={e => updateContact('poc_email', e.target.value)} className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 outline-none font-normal" />
+                  <label className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">POC Email</label>
+                  <input type="email" value={formData.contacts?.poc_email || ''} onChange={e => updateContact('poc_email', e.target.value)} className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 outline-none font-normal placeholder:text-slate-400 dark:placeholder:text-slate-600" />
                </div>
                <div className="space-y-1">
-                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">POC Phone</label>
+                  <label className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">POC Phone</label>
                   <input 
                     value={formData.contacts?.poc_phone || ''} 
                     onChange={e => updateContact('poc_phone', e.target.value)} 
                     onBlur={e => updateContact('poc_phone', formatPhone(e.target.value))}
-                    className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 outline-none font-normal" 
+                    className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 outline-none font-normal placeholder:text-slate-400 dark:placeholder:text-slate-600" 
                     placeholder="(###) ###-####"
                   />
                </div>
             </div>
 
-            <hr className="border-slate-100" />
-            <h3 className="text-[11px] font-bold text-slate-800 uppercase tracking-widest">DMT Order Section</h3>
+            <hr className="border-slate-100 dark:border-slate-800" />
+            <h3 className="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">DMT Order Section</h3>
 
             <div className="space-y-6">
                {formData.orders?.map((order, orderIdx) => (
-                 <div key={orderIdx} className="bg-slate-50 p-3 rounded-xl border border-slate-100 relative">
+                 <div key={orderIdx} className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800 relative">
                     {/* Header: Date & Order # */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
                         <div className="space-y-1">
-                           <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Received Date</label>
-                           <input type="date" value={order.received_date ? order.received_date.split('T')[0] : ''} onChange={e => updateOrder(orderIdx, 'received_date', e.target.value)} className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 outline-none font-normal bg-white" />
+                           <label className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Received Date</label>
+                           <input type="date" value={order.received_date ? order.received_date.split('T')[0] : ''} onChange={e => updateOrder(orderIdx, 'received_date', e.target.value)} className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 outline-none font-normal dark:color-scheme-dark" />
                         </div>
                         <div className="space-y-1">
-                           <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Order Number</label>
-                           <input value={order.order_number} onChange={e => updateOrder(orderIdx, 'order_number', e.target.value)} className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 outline-none font-mono bg-white font-bold text-slate-700" placeholder="ORD-#####" />
+                           <label className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Order Number</label>
+                           <input value={order.order_number} onChange={e => updateOrder(orderIdx, 'order_number', e.target.value)} className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 outline-none font-mono font-bold placeholder:text-slate-400 dark:placeholder:text-slate-600" placeholder="ORD-#####" />
                         </div>
                     </div>
 
                     {/* Products List */}
                     <div>
                        <div className="grid grid-cols-[1fr_120px_auto] gap-3 mb-2 px-1">
-                          <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Product</label>
-                          <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Price ($)</label>
+                          <label className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Product</label>
+                          <label className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Price ($)</label>
                        </div>
                        <div className="space-y-2">
                           {order.products?.map((product, prodIdx) => (
@@ -495,7 +495,7 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
                                  <select 
                                    value={product.product_code} 
                                    onChange={e => updateProductInOrder(orderIdx, prodIdx, 'product_code', e.target.value)} 
-                                   className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 outline-none font-normal bg-white"
+                                   className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 outline-none font-normal"
                                   >
                                    {Object.values(ProductCode).map(p => <option key={p} value={p}>{p}</option>)}
                                  </select>
@@ -503,14 +503,14 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
                                    type="number" 
                                    value={product.amount} 
                                    onChange={e => updateProductInOrder(orderIdx, prodIdx, 'amount', parseFloat(e.target.value))} 
-                                   className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 outline-none font-normal bg-white" 
+                                   className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 outline-none font-normal placeholder:text-slate-400 dark:placeholder:text-slate-600" 
                                    placeholder="0.00"
                                   />
-                                 <button type="button" onClick={() => removeProductFromOrder(orderIdx, prodIdx)} className="p-2 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors"><Minus size={14} /></button>
+                                 <button type="button" onClick={() => removeProductFromOrder(orderIdx, prodIdx)} className="p-2 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"><Minus size={14} /></button>
                               </div>
                            ))}
                        </div>
-                       <button type="button" onClick={() => addProductToOrder(orderIdx)} className="mt-3 text-[10px] font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1.5 uppercase tracking-wider">
+                       <button type="button" onClick={() => addProductToOrder(orderIdx)} className="mt-3 text-[10px] font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 flex items-center gap-1.5 uppercase tracking-wider">
                          <Plus size={12} /> Add New Product
                        </button>
                     </div>

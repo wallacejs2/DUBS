@@ -1,6 +1,4 @@
 
-
-
 import React, { useState, useEffect } from 'react';
 import { 
   X, Trash2, Edit3, Save, RefreshCw, Plus, Minus, Check, ArrowLeft, FileSpreadsheet, Star
@@ -28,23 +26,23 @@ const STATES = [
 ];
 
 const statusColors: Record<DealershipStatus, string> = {
-  [DealershipStatus.DMT_PENDING]: 'bg-slate-100 text-slate-600 border-slate-200',
-  [DealershipStatus.DMT_APPROVED]: 'bg-blue-50 text-blue-700 border-blue-200',
-  [DealershipStatus.HOLD]: 'bg-orange-50 text-orange-700 border-orange-200',
-  [DealershipStatus.ONBOARDING]: 'bg-indigo-50 text-indigo-700 border-indigo-200',
-  [DealershipStatus.LIVE]: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  [DealershipStatus.LEGACY]: 'bg-yellow-50 text-yellow-700 border-yellow-200',
-  [DealershipStatus.CANCELLED]: 'bg-red-50 text-red-700 border-red-200',
+  [DealershipStatus.DMT_PENDING]: 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700',
+  [DealershipStatus.DMT_APPROVED]: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800',
+  [DealershipStatus.HOLD]: 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800',
+  [DealershipStatus.ONBOARDING]: 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800',
+  [DealershipStatus.LIVE]: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800',
+  [DealershipStatus.LEGACY]: 'bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800',
+  [DealershipStatus.CANCELLED]: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800',
 };
 
 const Label = ({ children }: { children?: React.ReactNode }) => (
-  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">
+  <label className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1 block">
     {children}
   </label>
 );
 
 const DataValue = ({ value, mono = false }: { value?: any, mono?: boolean }) => (
-  <div className={`text-[12px] font-normal text-slate-700 leading-tight min-h-[1.2em] ${mono ? 'font-mono' : ''}`}>
+  <div className={`text-[12px] font-normal text-slate-700 dark:text-slate-300 leading-tight min-h-[1.2em] ${mono ? 'font-mono' : ''}`}>
     {value || '---'}
   </div>
 );
@@ -55,7 +53,7 @@ const Input = ({ value, onChange, type = "text", className = "", placeholder="" 
     value={value || ''}
     onChange={(e) => onChange(e.target.value)}
     placeholder={placeholder}
-    className={`w-full px-2 py-1 text-[12px] border border-slate-200 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white font-normal ${className}`}
+    className={`w-full px-2 py-1 text-[12px] border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-normal placeholder:text-slate-400 dark:placeholder:text-slate-600 ${className}`}
   />
 );
 
@@ -63,7 +61,7 @@ const Select = ({ value, onChange, options, className = "" }: { value: any, onCh
   <select 
     value={value || ''}
     onChange={(e) => onChange(e.target.value)}
-    className={`w-full px-2 py-1 text-[12px] border border-slate-200 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white font-normal ${className}`}
+    className={`w-full px-2 py-1 text-[12px] border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-normal ${className}`}
   >
     {options.map(opt => (
       <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -370,14 +368,14 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]" onClick={isEditing ? undefined : onClose}></div>
-      <div className="relative w-full max-w-4xl bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+      <div className="relative w-full max-w-4xl bg-white dark:bg-slate-900 h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300 transition-colors">
         
         {/* Sticky Header */}
-        <div className="bg-white sticky top-0 z-30 border-b border-slate-100 shadow-sm">
+        <div className="bg-white dark:bg-slate-900 sticky top-0 z-30 border-b border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
           <div className="p-4 flex justify-between items-center gap-2">
              <div className="flex items-center gap-2">
                {onBack && (
-                  <button onClick={onBack} className="p-2 -ml-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all mr-2">
+                  <button onClick={onBack} className="p-2 -ml-2 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 rounded-xl transition-all mr-2">
                     <ArrowLeft size={20} />
                   </button>
                )}
@@ -389,14 +387,14 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                    <button onClick={handleSave} className="px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-indigo-700 flex items-center gap-1">
                      <Save size={14} /> Save
                    </button>
-                   <button onClick={handleCancel} className="p-1.5 text-slate-400 hover:bg-slate-100 rounded-lg"><RefreshCw size={16} /></button>
+                   <button onClick={handleCancel} className="p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"><RefreshCw size={16} /></button>
                  </>
                ) : (
                  <>
                    {onToggleFavorite && (
                       <button 
                         onClick={onToggleFavorite}
-                        className={`p-1.5 rounded-lg mr-1 transition-all ${dealership.is_favorite ? 'text-amber-400 hover:text-amber-500 bg-amber-50' : 'text-slate-300 hover:text-amber-400 hover:bg-slate-50'}`}
+                        className={`p-1.5 rounded-lg mr-1 transition-all ${dealership.is_favorite ? 'text-amber-400 hover:text-amber-500 bg-amber-50 dark:bg-amber-900/30' : 'text-slate-300 hover:text-amber-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
                         title={dealership.is_favorite ? "Unfavorite" : "Favorite"}
                       >
                          <Star size={16} fill={dealership.is_favorite ? "currentColor" : "none"} />
@@ -404,18 +402,18 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                    )}
                    <button 
                      onClick={handleCopyCSV} 
-                     className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg mr-1" 
+                     className="p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 rounded-lg mr-1" 
                      title="Copy CSV Row"
                    >
-                     {isCopied ? <Check size={16} className="text-emerald-500"/> : <FileSpreadsheet size={16} />}
+                     {isCopied ? <Check size={16} className="text-emerald-500" /> : <FileSpreadsheet size={16} />}
                    </button>
-                   <button onClick={() => setIsEditing(true)} className="px-3 py-1.5 border border-slate-200 text-slate-600 rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-slate-50 flex items-center gap-1">
+                   <button onClick={() => setIsEditing(true)} className="px-3 py-1.5 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-1">
                       <Edit3 size={14} /> Edit
                    </button>
                  </>
                )}
-               <button onClick={onDelete} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg"><Trash2 size={16} /></button>
-               <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg"><X size={20} /></button>
+               <button onClick={onDelete} className="p-1.5 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"><Trash2 size={16} /></button>
+               <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"><X size={20} /></button>
              </div>
           </div>
 
@@ -425,11 +423,11 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                   <input 
                     value={formData.name} 
                     onChange={(e) => updateField('name', e.target.value)} 
-                    className="w-full text-xl font-bold py-2 border-b border-indigo-200 outline-none focus:border-indigo-500 bg-transparent text-slate-900" 
+                    className="w-full text-xl font-bold py-2 border-b border-indigo-200 dark:border-indigo-800 outline-none focus:border-indigo-500 bg-transparent text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-600" 
                     placeholder="Dealership Name" 
                   />
                ) : (
-                  <h2 className="text-2xl font-bold text-slate-900 tracking-tight leading-none">{dealership.name}</h2>
+                  <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight leading-none">{dealership.name}</h2>
                )}
              </div>
 
@@ -437,14 +435,14 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                {isEditing ? (
                   <Input value={formData.cif_number} onChange={(v) => updateField('cif_number', v)} className="font-mono text-[12px]" placeholder="CIF Number" />
                ) : (
-                  <div className="text-[12px] font-mono text-slate-500">{dealership.cif_number || '---'}</div>
+                  <div className="text-[12px] font-mono text-slate-500 dark:text-slate-400">{dealership.cif_number || '---'}</div>
                )}
              </div>
           </div>
         </div>
 
         {/* Content Scroll Area */}
-        <div className="flex-1 overflow-y-auto p-10 bg-white pb-20 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-10 bg-white dark:bg-slate-900 pb-20 custom-scrollbar transition-colors">
           <div className="animate-in fade-in duration-500 space-y-6">
             
             <div className="grid grid-cols-3 gap-6">
@@ -470,11 +468,11 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                         <textarea
                           value={formData.hold_reason || ''}
                           onChange={(e) => updateField('hold_reason', e.target.value)}
-                          className="w-full px-2 py-1.5 text-[11px] border border-orange-200 bg-orange-50 rounded-lg focus:ring-1 focus:ring-orange-500 outline-none text-slate-800 placeholder:text-orange-300 min-h-[60px]"
+                          className="w-full px-2 py-1.5 text-[11px] border border-orange-200 dark:border-orange-900 bg-orange-50 dark:bg-orange-900/20 rounded-lg focus:ring-1 focus:ring-orange-500 outline-none text-slate-800 dark:text-orange-100 placeholder:text-orange-300 min-h-[60px]"
                           placeholder="Reason for hold..."
                         />
                       ) : (
-                        <div className="w-full px-2 py-1.5 text-[11px] border border-orange-200 bg-orange-50 rounded-lg text-slate-800 italic">
+                        <div className="w-full px-2 py-1.5 text-[11px] border border-orange-200 dark:border-orange-900 bg-orange-50 dark:bg-orange-900/20 rounded-lg text-slate-800 dark:text-orange-100 italic">
                            {formData.hold_reason || 'No reason specified'}
                         </div>
                       )}
@@ -485,11 +483,11 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                   <Label>Go-Live Date</Label>
                   {isEditing ? (
                      isLockedStatus(formData.status) ? (
-                        <div className="w-full px-2 py-1 text-[12px] border border-slate-100 bg-slate-50 text-slate-400 rounded-lg italic cursor-not-allowed">
+                        <div className="w-full px-2 py-1 text-[12px] border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 text-slate-400 dark:text-slate-500 rounded-lg italic cursor-not-allowed">
                           Pending Status
                         </div>
                      ) : (
-                        <Input type="date" value={formatDateInput(formData.go_live_date)} onChange={(v) => updateField('go_live_date', v)} />
+                        <Input type="date" value={formatDateInput(formData.go_live_date)} onChange={(v) => updateField('go_live_date', v)} className="dark:color-scheme-dark" />
                      )
                   ) : (
                      <DataValue value={isLockedStatus(dealership.status) ? 'Pending' : formatDate(dealership.go_live_date)} />
@@ -500,7 +498,7 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                      <>
                        <Label>Term Date</Label>
                        {isEditing ? (
-                          <Input type="date" value={formatDateInput(formData.term_date)} onChange={(v) => updateField('term_date', v)} />
+                          <Input type="date" value={formatDateInput(formData.term_date)} onChange={(v) => updateField('term_date', v)} className="dark:color-scheme-dark" />
                        ) : (
                           <DataValue value={formatDate(dealership.term_date)} />
                        )}
@@ -509,7 +507,7 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                </div>
             </div>
 
-            <h3 className="text-[11px] font-bold text-slate-800 uppercase tracking-widest mt-6">Account Details</h3>
+            <h3 className="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest mt-6">Account Details</h3>
 
             <div className="grid grid-cols-3 gap-6">
                <div className="min-w-0 col-span-2">
@@ -526,13 +524,13 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                                 ...groups.map(g => ({ label: g.name, value: g.id }))
                               ]}
                             />
-                            <button onClick={() => setIsAddingGroup(true)} className="text-[9px] font-bold text-indigo-600 text-left hover:underline">+ Add New Group</button>
+                            <button onClick={() => setIsAddingGroup(true)} className="text-[9px] font-bold text-indigo-600 dark:text-indigo-400 text-left hover:underline">+ Add New Group</button>
                          </>
                        ) : (
-                         <div className="bg-indigo-50 p-2 rounded-lg border border-indigo-100 animate-in fade-in zoom-in-95">
+                         <div className="bg-indigo-50 dark:bg-indigo-900/20 p-2 rounded-lg border border-indigo-100 dark:border-indigo-800 animate-in fade-in zoom-in-95">
                             <div className="flex justify-between items-center mb-1">
-                               <span className="text-[9px] font-bold text-indigo-800">New Group</span>
-                               <button onClick={() => setIsAddingGroup(false)} className="text-indigo-400 hover:text-indigo-800"><X size={12} /></button>
+                               <span className="text-[9px] font-bold text-indigo-800 dark:text-indigo-300">New Group</span>
+                               <button onClick={() => setIsAddingGroup(false)} className="text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200"><X size={12} /></button>
                             </div>
                             <div className="space-y-1">
                                <Input value={newGroupName} onChange={(v) => setNewGroupName(v)} placeholder="Name" />
@@ -557,7 +555,7 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                        <Input value={formData.branch_number} onChange={(v) => updateField('branch_number', v)} placeholder="#" />
                     </div>
                   ) : (
-                    <div className="font-mono text-[12px]">{dealership.store_number || '--'} / {dealership.branch_number || '--'}</div>
+                    <div className="font-mono text-[12px] text-slate-700 dark:text-slate-300">{dealership.store_number || '--'} / {dealership.branch_number || '--'}</div>
                   )}
                </div>
             </div>
@@ -634,18 +632,18 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                </div>
             </div>
 
-            <hr className="border-slate-100 my-4" />
-            <h3 className="text-[11px] font-bold text-slate-800 uppercase tracking-widest">Website Links</h3>
+            <hr className="border-slate-100 dark:border-slate-800 my-4" />
+            <h3 className="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">Website Links</h3>
             
             <div className="space-y-2">
                {(isEditing ? (formData.website_links || []) : (dealership.website_links || [])).map((link, idx) => (
-                  <div key={idx} className="grid grid-cols-2 gap-4 items-center bg-slate-50 p-2 rounded-lg border border-slate-100">
+                  <div key={idx} className="grid grid-cols-2 gap-4 items-center bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg border border-slate-100 dark:border-slate-800">
                      <div>
                         <Label>Primary URL</Label>
                         {isEditing ? (
                            <Input value={link.primary_url} onChange={(v) => updateWebsite(idx, 'primary_url', v)} />
                         ) : (
-                           <a href={link.primary_url} target="_blank" rel="noopener noreferrer" className="text-[12px] text-indigo-600 hover:underline truncate block">{link.primary_url}</a>
+                           <a href={link.primary_url} target="_blank" rel="noopener noreferrer" className="text-[12px] text-indigo-600 dark:text-indigo-400 hover:underline truncate block">{link.primary_url}</a>
                         )}
                      </div>
                      <div className="flex gap-2">
@@ -654,7 +652,7 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                            {isEditing ? (
                               <Input value={link.client_id} onChange={(v) => updateWebsite(idx, 'client_id', v)} />
                            ) : (
-                              <div className="text-[12px] font-mono text-slate-500">{link.client_id || '---'}</div>
+                              <div className="text-[12px] font-mono text-slate-500 dark:text-slate-400">{link.client_id || '---'}</div>
                            )}
                         </div>
                         {isEditing && formData.website_links!.length > 1 && (
@@ -664,14 +662,14 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                   </div>
                ))}
                {isEditing && (
-                  <button onClick={addWebsite} className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1.5 uppercase tracking-wider bg-indigo-50 px-3 py-2 rounded-lg w-fit">
+                  <button onClick={addWebsite} className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 flex items-center gap-1.5 uppercase tracking-wider bg-indigo-50 dark:bg-indigo-900/30 px-3 py-2 rounded-lg w-fit border border-indigo-100 dark:border-indigo-800">
                     <Plus size={12} /> Add New Website
                   </button>
                )}
             </div>
 
-            <hr className="border-slate-100 my-4" />
-            <h3 className="text-[11px] font-bold text-slate-800 uppercase tracking-widest">Contacts</h3>
+            <hr className="border-slate-100 dark:border-slate-800 my-4" />
+            <h3 className="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">Contacts</h3>
 
             <div className="grid grid-cols-3 gap-4">
                <div>
@@ -695,7 +693,7 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                </div>
                <div>
                   <Label>POC Email</Label>
-                  {isEditing ? <Input value={formData.contacts?.poc_email} onChange={(v) => updateContact('poc_email', v)} /> : <a href={`mailto:${dealership.contacts?.poc_email}`} className="text-[12px] text-indigo-600 underline truncate block">{dealership.contacts?.poc_email || '---'}</a>}
+                  {isEditing ? <Input value={formData.contacts?.poc_email} onChange={(v) => updateContact('poc_email', v)} /> : <a href={`mailto:${dealership.contacts?.poc_email}`} className="text-[12px] text-indigo-600 dark:text-indigo-400 underline truncate block">{dealership.contacts?.poc_email || '---'}</a>}
                </div>
                <div>
                   <Label>POC Phone</Label>
@@ -705,24 +703,24 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                        onChange={(e) => updateContact('poc_phone', e.target.value)}
                        onBlur={(e) => updateContact('poc_phone', formatPhone(e.target.value))}
                        placeholder="(###) ###-####"
-                       className="w-full px-2 py-1 text-[12px] border border-slate-200 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white font-normal"
+                       className="w-full px-2 py-1 text-[12px] border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-normal"
                      />
                   ) : <DataValue value={dealership.contacts?.poc_phone} />}
                </div>
             </div>
 
-            <hr className="border-slate-100 my-4" />
-            <h3 className="text-[11px] font-bold text-slate-800 uppercase tracking-widest">DMT Order Section</h3>
+            <hr className="border-slate-100 dark:border-slate-800 my-4" />
+            <h3 className="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">DMT Order Section</h3>
 
             {/* New Nested Order Section */}
             <div className="space-y-6">
                {(isEditing ? (formData.orders || []) : (dealership.orders || [])).map((order, orderIdx) => (
-                  <div key={orderIdx} className="bg-slate-50 p-2 rounded-lg border border-slate-100 relative">
+                  <div key={orderIdx} className="bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg border border-slate-100 dark:border-slate-800 relative">
                      
                      <div className="grid grid-cols-2 gap-4 mb-2">
                         <div>
                            <Label>Received Date</Label>
-                           {isEditing ? <Input type="date" value={formatDateInput(order.received_date)} onChange={(v) => updateOrder(orderIdx, 'received_date', v)} /> : <DataValue value={formatDate(order.received_date)} />}
+                           {isEditing ? <Input type="date" value={formatDateInput(order.received_date)} onChange={(v) => updateOrder(orderIdx, 'received_date', v)} className="dark:color-scheme-dark" /> : <DataValue value={formatDate(order.received_date)} />}
                         </div>
                         <div>
                            <Label>Order Number</Label>
@@ -753,7 +751,7 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                                  <button onClick={() => removeProductFromOrder(orderIdx, prodIdx)} className="text-slate-300 hover:text-red-500"><Minus size={14} /></button>
                               </div>
                            ))}
-                           <button onClick={() => addProductToOrder(orderIdx)} className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1.5 uppercase tracking-wider mt-2">
+                           <button onClick={() => addProductToOrder(orderIdx)} className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 flex items-center gap-1.5 uppercase tracking-wider mt-2">
                              <Plus size={12} /> Add New Product
                            </button>
                          </>
@@ -761,7 +759,7 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                          <>
                            <Label>Line Items</Label>
                            {order.products?.map((product, prodIdx) => (
-                              <div key={prodIdx} className="flex gap-2 items-center bg-white p-2 rounded-lg border border-slate-100">
+                              <div key={prodIdx} className="flex gap-2 items-center bg-white dark:bg-slate-800 p-2 rounded-lg border border-slate-100 dark:border-slate-700">
                                  <div className="flex-1">
                                    <DataValue value={product.product_code} />
                                  </div>
@@ -776,7 +774,7 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                   </div>
                ))}
                {!isEditing && (!dealership.orders || dealership.orders.length === 0) && (
-                  <div className="text-[11px] text-slate-400 italic">No orders recorded.</div>
+                  <div className="text-[11px] text-slate-400 dark:text-slate-500 italic">No orders recorded.</div>
                )}
             </div>
 

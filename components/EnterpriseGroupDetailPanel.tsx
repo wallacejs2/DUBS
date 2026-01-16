@@ -14,17 +14,17 @@ interface EnterpriseGroupDetailPanelProps {
 }
 
 const statusColors: Record<DealershipStatus, string> = {
-  [DealershipStatus.DMT_PENDING]: 'bg-slate-100 text-slate-600 border-slate-200',
-  [DealershipStatus.DMT_APPROVED]: 'bg-blue-50 text-blue-700 border-blue-200',
-  [DealershipStatus.HOLD]: 'bg-orange-50 text-orange-700 border-orange-200',
-  [DealershipStatus.ONBOARDING]: 'bg-indigo-50 text-indigo-700 border-indigo-200',
-  [DealershipStatus.LIVE]: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  [DealershipStatus.LEGACY]: 'bg-yellow-50 text-yellow-700 border-yellow-200',
-  [DealershipStatus.CANCELLED]: 'bg-red-50 text-red-700 border-red-200',
+  [DealershipStatus.DMT_PENDING]: 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700',
+  [DealershipStatus.DMT_APPROVED]: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800',
+  [DealershipStatus.HOLD]: 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800',
+  [DealershipStatus.ONBOARDING]: 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800',
+  [DealershipStatus.LIVE]: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800',
+  [DealershipStatus.LEGACY]: 'bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800',
+  [DealershipStatus.CANCELLED]: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800',
 };
 
 const Label = ({ children }: { children?: React.ReactNode }) => (
-  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">
+  <label className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1 block">
     {children}
   </label>
 );
@@ -83,26 +83,26 @@ const EnterpriseGroupDetailPanel: React.FC<EnterpriseGroupDetailPanelProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]" onClick={isEditing ? undefined : onClose}></div>
-      <div className="relative w-full max-w-4xl bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+      <div className="relative w-full max-w-4xl bg-white dark:bg-slate-900 h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300 transition-colors">
         
         {/* Header */}
-        <div className="p-8 border-b border-slate-100 flex justify-between items-start bg-white sticky top-0 z-30">
+        <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex justify-between items-start bg-white dark:bg-slate-900 sticky top-0 z-30 transition-colors">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
-              <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest bg-slate-100 px-2 py-0.5 rounded-sm">
+              <span className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-sm">
                 GROUP HIERARCHY
               </span>
-              <span className="text-[10px] text-slate-400 font-mono tracking-tighter">GRP_{group.id.slice(0, 8).toUpperCase()}</span>
+              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono tracking-tighter">GRP_{group.id.slice(0, 8).toUpperCase()}</span>
             </div>
             {isEditing ? (
                <input 
                  value={formData.name}
                  onChange={(e) => setFormData({...formData, name: e.target.value})}
-                 className="text-2xl font-bold text-slate-900 tracking-tight leading-none w-full border-b border-indigo-200 outline-none focus:border-indigo-500 pb-1"
+                 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight leading-none w-full border-b border-indigo-200 dark:border-indigo-800 outline-none focus:border-indigo-500 bg-transparent pb-1"
                  placeholder="Group Name"
                />
             ) : (
-              <h2 className="text-2xl font-bold text-slate-900 tracking-tight leading-none">{group.name}</h2>
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight leading-none">{group.name}</h2>
             )}
           </div>
           <div className="flex gap-2 ml-6">
@@ -117,7 +117,7 @@ const EnterpriseGroupDetailPanel: React.FC<EnterpriseGroupDetailPanelProps> = ({
                 </button>
                 <button 
                   onClick={handleCancel}
-                  className="p-2.5 rounded-xl text-slate-400 hover:bg-slate-100 transition-all"
+                  className="p-2.5 rounded-xl text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
                   title="Cancel Editing"
                 >
                   <RefreshCw size={16} />
@@ -126,7 +126,7 @@ const EnterpriseGroupDetailPanel: React.FC<EnterpriseGroupDetailPanelProps> = ({
             ) : (
               <button 
                 onClick={() => setIsEditing(true)} 
-                className="p-2.5 rounded-xl transition-all text-slate-400 hover:text-indigo-600 hover:bg-slate-100"
+                className="p-2.5 rounded-xl transition-all text-slate-400 hover:text-indigo-600 hover:bg-slate-100 dark:hover:bg-slate-800"
                 title="Edit Group"
               >
                 <Edit3 size={20} />
@@ -136,12 +136,12 @@ const EnterpriseGroupDetailPanel: React.FC<EnterpriseGroupDetailPanelProps> = ({
               <>
                 <button 
                   onClick={onDelete} 
-                  className="p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all" 
+                  className="p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-xl transition-all" 
                   title="Delete Group"
                 >
                   <Trash2 size={20} />
                 </button>
-                <button onClick={onClose} className="p-2.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-all">
+                <button onClick={onClose} className="p-2.5 text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all">
                   <X size={20} />
                 </button>
               </>
@@ -150,7 +150,7 @@ const EnterpriseGroupDetailPanel: React.FC<EnterpriseGroupDetailPanelProps> = ({
         </div>
 
         {/* Content Scroll Area */}
-        <div className="flex-1 overflow-y-auto p-8 bg-white custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-8 bg-white dark:bg-slate-900 custom-scrollbar transition-colors">
           <div className="animate-in fade-in duration-500 space-y-8">
             
             {/* IDs Section */}
@@ -161,11 +161,11 @@ const EnterpriseGroupDetailPanel: React.FC<EnterpriseGroupDetailPanelProps> = ({
                      <input 
                        value={formData.pp_sys_id || ''} 
                        onChange={(e) => setFormData({...formData, pp_sys_id: e.target.value})}
-                       className="w-full px-2 py-1 text-[12px] border border-slate-200 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white font-normal font-mono"
+                       className="w-full px-2 py-1 text-[12px] border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-normal font-mono"
                        placeholder="PP-###"
                      />
                   ) : (
-                     <div className="text-base font-medium text-slate-800 font-mono">{group.pp_sys_id || '---'}</div>
+                     <div className="text-base font-medium text-slate-800 dark:text-slate-200 font-mono">{group.pp_sys_id || '---'}</div>
                   )}
                </div>
                <div>
@@ -174,28 +174,28 @@ const EnterpriseGroupDetailPanel: React.FC<EnterpriseGroupDetailPanelProps> = ({
                      <input 
                        value={formData.era_system_id || ''} 
                        onChange={(e) => setFormData({...formData, era_system_id: e.target.value})}
-                       className="w-full px-2 py-1 text-[12px] border border-slate-200 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white font-normal font-mono"
+                       className="w-full px-2 py-1 text-[12px] border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-normal font-mono"
                        placeholder="ERA-###"
                      />
                   ) : (
-                     <div className="text-base font-medium text-slate-800 font-mono">{group.era_system_id || '---'}</div>
+                     <div className="text-base font-medium text-slate-800 dark:text-slate-200 font-mono">{group.era_system_id || '---'}</div>
                   )}
                </div>
             </div>
 
             {/* Stats Compact */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
               <div>
                 <Label>Dealerships</Label>
-                <div className="text-xl font-bold text-slate-900 tracking-tight">{dealerships.length}</div>
+                <div className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">{dealerships.length}</div>
               </div>
               <div>
                 <Label>Asset Inventory</Label>
-                <div className="text-xl font-bold text-blue-600 tracking-tight">{totalProductsCount}</div>
+                <div className="text-xl font-bold text-blue-600 dark:text-blue-400 tracking-tight">{totalProductsCount}</div>
               </div>
               <div>
                 <Label>Portfolio Health</Label>
-                <div className="text-xl font-bold text-indigo-600 tracking-tight">
+                <div className="text-xl font-bold text-indigo-600 dark:text-indigo-400 tracking-tight">
                   {dealerships.length > 0 
                     ? `${Math.round((dealerships.filter(d => d.status === DealershipStatus.LIVE || d.status === DealershipStatus.LEGACY).length / dealerships.length) * 100)}%` 
                     : '0%'}
@@ -203,7 +203,7 @@ const EnterpriseGroupDetailPanel: React.FC<EnterpriseGroupDetailPanelProps> = ({
               </div>
               <div>
                 <Label>Monthly Revenue</Label>
-                <div className="text-xl font-bold text-emerald-600 tracking-tight">{formatCurrency(monthlyRevenue)}</div>
+                <div className="text-xl font-bold text-emerald-600 dark:text-emerald-400 tracking-tight">{formatCurrency(monthlyRevenue)}</div>
               </div>
             </div>
 
@@ -212,8 +212,8 @@ const EnterpriseGroupDetailPanel: React.FC<EnterpriseGroupDetailPanelProps> = ({
               <Label>Associated Dealerships</Label>
               <div className="mt-2">
                 {dealerships.length === 0 ? (
-                  <div className="text-center py-10 bg-white border border-slate-100 border-dashed rounded-xl">
-                    <p className="text-slate-400 text-[10px] uppercase font-bold tracking-[0.1em]">No dealerships assigned</p>
+                  <div className="text-center py-10 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 border-dashed rounded-xl">
+                    <p className="text-slate-400 dark:text-slate-500 text-[10px] uppercase font-bold tracking-[0.1em]">No dealerships assigned</p>
                   </div>
                 ) : (
                   <div className="flex flex-col gap-2">
@@ -224,16 +224,16 @@ const EnterpriseGroupDetailPanel: React.FC<EnterpriseGroupDetailPanelProps> = ({
                       return (
                       <div 
                         key={dealer.id} 
-                        className="flex flex-col p-4 bg-white border border-slate-100 rounded-xl hover:border-indigo-200 hover:shadow-sm transition-all cursor-pointer group"
+                        className="flex flex-col p-4 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl hover:border-indigo-200 dark:hover:border-indigo-700 hover:shadow-sm transition-all cursor-pointer group"
                         onClick={() => onViewDealer(dealer.id)}
                       >
                         <div className="flex items-center justify-between">
                             <div className="min-w-0">
-                                <p className="text-[12px] font-bold text-slate-800 truncate tracking-tight group-hover:text-indigo-700">{dealer.name}</p>
+                                <p className="text-[12px] font-bold text-slate-800 dark:text-slate-200 truncate tracking-tight group-hover:text-indigo-700 dark:group-hover:text-indigo-400">{dealer.name}</p>
                                 <div className="flex items-center gap-2 mt-0.5">
-                                    <span className="text-[10px] font-mono text-slate-400">{dealer.cif_number || 'NO CIF'}</span>
-                                    <span className="text-[10px] text-slate-400">•</span>
-                                    <p className="text-[10px] text-slate-500 font-mono tracking-tighter">
+                                    <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500">{dealer.cif_number || 'NO CIF'}</span>
+                                    <span className="text-[10px] text-slate-400 dark:text-slate-500">•</span>
+                                    <p className="text-[10px] text-slate-500 dark:text-slate-400 font-mono tracking-tighter">
                                     {dealer.store_number || '--'} / {dealer.branch_number || '--'}
                                     </p>
                                 </div>
@@ -242,21 +242,21 @@ const EnterpriseGroupDetailPanel: React.FC<EnterpriseGroupDetailPanelProps> = ({
                                 <span className={`px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest rounded-md border ${statusColors[dealer.status]}`}>
                                     {dealer.status}
                                 </span>
-                                <ArrowRight size={16} className="text-slate-200 group-hover:text-indigo-600 transition-colors" />
+                                <ArrowRight size={16} className="text-slate-200 dark:text-slate-600 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors" />
                             </div>
                         </div>
 
                         {hasProducts && (
-                            <div className="mt-3 pt-3 border-t border-slate-50">
+                            <div className="mt-3 pt-3 border-t border-slate-50 dark:border-slate-700">
                                 <div className="space-y-1.5">
                                     {dealerOrders.map(order => (
                                         order.products?.map(p => (
                                             <div key={p.id} className="flex justify-between items-center text-[10px]">
-                                                <span className="text-slate-600 font-medium flex items-center gap-1.5">
-                                                    <span className="w-1 h-1 rounded-full bg-indigo-300"></span>
+                                                <span className="text-slate-600 dark:text-slate-400 font-medium flex items-center gap-1.5">
+                                                    <span className="w-1 h-1 rounded-full bg-indigo-300 dark:bg-indigo-600"></span>
                                                     {p.product_code}
                                                 </span>
-                                                <span className="font-mono text-slate-400">${Number(p.amount).toLocaleString()}</span>
+                                                <span className="font-mono text-slate-400 dark:text-slate-500">${Number(p.amount).toLocaleString()}</span>
                                             </div>
                                         ))
                                     ))}

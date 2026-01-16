@@ -80,6 +80,10 @@ export function useDealerships(filters?: { search?: string; status?: string; gro
         if (filters.issue === 'zero_price') {
            return details.orders?.some(o => o.products?.some(p => !p.amount));
         }
+
+        if (filters.issue === 'no_csm') {
+           return !details.contacts?.assigned_specialist_name || details.contacts.assigned_specialist_name.trim().length === 0;
+        }
         
         return true;
       });
