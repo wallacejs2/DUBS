@@ -1,19 +1,9 @@
 
-
-
-
-
-
-
-
-
-
-
 import { 
-  Dealership, EnterpriseGroup, Order, Shopper, NewFeature,
+  Dealership, EnterpriseGroup, Order, Shopper, NewFeature, TeamMember,
   DealershipWithRelations, WebsiteLink, DealershipContacts, 
   ReynoldsSolution, DealershipStatus, CRMProvider, ProductCode, 
-  OrderStatus, ShopperStatus, ShopperPriority 
+  OrderStatus, ShopperStatus, ShopperPriority, TeamRole 
 } from './types';
 
 // Pure LocalStorage implementation for a seamless offline-first experience
@@ -30,6 +20,7 @@ class CuratorLocalDB extends EventTarget {
     orders: Order[];
     shoppers: Shopper[];
     newFeatures: NewFeature[];
+    teamMembers: TeamMember[];
   } = {
     dealerships: [],
     enterpriseGroups: [],
@@ -38,7 +29,8 @@ class CuratorLocalDB extends EventTarget {
     reynoldsSolutions: [],
     orders: [],
     shoppers: [],
-    newFeatures: []
+    newFeatures: [],
+    teamMembers: []
   };
 
   private constructor() {
@@ -63,7 +55,8 @@ class CuratorLocalDB extends EventTarget {
           ...this.data,
           ...parsed,
           // Ensure new fields exist if loading from old DB structure
-          newFeatures: parsed.newFeatures || [] 
+          newFeatures: parsed.newFeatures || [],
+          teamMembers: parsed.teamMembers || []
         };
       } catch (e) {
         console.error("Failed to parse LocalDB data", e);
@@ -175,6 +168,37 @@ class CuratorLocalDB extends EventTarget {
       description: 'Upgrading the core VIN decoding engine to support 2026 EV models and improved option code parsing.',
       created_at: new Date().toISOString()
     }];
+
+    // Seed Team Members
+    this.data.teamMembers = [
+      {
+        id: crypto.randomUUID(),
+        name: 'Jordan Smith',
+        role: TeamRole.CSM,
+        user_id: 'jsmith22',
+        email: 'j.smith@company.com',
+        phone: '555-0199',
+        created_at: new Date().toISOString()
+      },
+      {
+        id: crypto.randomUUID(),
+        name: 'Robert Miller',
+        role: TeamRole.SALES,
+        user_id: 'rmiller1',
+        email: 'r.miller@company.com',
+        phone: '555-0245',
+        created_at: new Date().toISOString()
+      },
+      {
+        id: crypto.randomUUID(),
+        name: 'Sarah Chen',
+        role: TeamRole.ENROLLMENT,
+        user_id: 'schen99',
+        email: 's.chen@company.com',
+        phone: '555-0312',
+        created_at: new Date().toISOString()
+      }
+    ];
 
     this.save();
   }
@@ -376,6 +400,27 @@ class CuratorLocalDB extends EventTarget {
   }
   deleteNewFeature(id: string) {
     this.data.newFeatures = this.data.newFeatures.filter(f => f.id !== id);
+    this.save();
+  }
+
+  // Team Members
+  getTeamMembers() { return [...this.data.teamMembers]; }
+  upsertTeamMember(member: Partial<TeamMember>) {
+    const id = member.id || crypto.randomUUID();
+    const existingIndex = this.data.teamMembers.findIndex(m => m.id === id);
+    const newMember = {
+      ...this.data.teamMembers[existingIndex],
+      ...member,
+      id,
+      created_at: existingIndex >= 0 ? this.data.teamMembers[existingIndex].created_at : new Date().toISOString()
+    } as TeamMember;
+    if (existingIndex >= 0) this.data.teamMembers[existingIndex] = newMember;
+    else this.data.teamMembers.push(newMember);
+    this.save();
+    return id;
+  }
+  deleteTeamMember(id: string) {
+    this.data.teamMembers = this.data.teamMembers.filter(m => m.id !== id);
     this.save();
   }
 }

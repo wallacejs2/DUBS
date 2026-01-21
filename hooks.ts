@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { db } from './db.ts';
 import { 
   Dealership, DealershipWithRelations, EnterpriseGroup, 
-  Shopper, Order, ProductCode, NewFeature
+  Shopper, Order, ProductCode, NewFeature, TeamMember
 } from './types.ts';
 
 export function useEnterpriseGroups() {
@@ -231,5 +231,45 @@ export function useNewFeatures(filters?: { search?: string; quarter?: string; ye
     loading,
     upsert: (f: Partial<NewFeature>) => db.upsertNewFeature(f),
     remove: (id: string) => db.deleteNewFeature(id)
+  };
+}
+
+export function useTeamMembers(filters?: { search?: string; role?: string }) {
+  const [members, setMembers] = useState<TeamMember[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetch = useCallback(() => {
+    let data = db.getTeamMembers();
+    
+    if (filters?.search) {
+      const s = filters.search.toLowerCase();
+      data = data.filter(m => 
+        m.name.toLowerCase().includes(s) || 
+        (m.email && m.email.toLowerCase().includes(s)) ||
+        (m.user_id && m.user_id.toLowerCase().includes(s))
+      );
+    }
+
+    if (filters?.role) {
+      data = data.filter(m => m.role === filters.role);
+    }
+
+    data.sort((a, b) => a.name.localeCompare(b.name));
+    
+    setMembers(data);
+    setLoading(false);
+  }, [filters]);
+
+  useEffect(() => {
+    fetch();
+    db.addEventListener('change', fetch);
+    return () => db.removeEventListener('change', fetch);
+  }, [fetch]);
+
+  return {
+    members,
+    loading,
+    upsert: (m: Partial<TeamMember>) => db.upsertTeamMember(m),
+    remove: (id: string) => db.deleteTeamMember(id)
   };
 }

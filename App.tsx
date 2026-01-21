@@ -2,15 +2,16 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Building2, Users, ClipboardCheck, LayoutDashboard, 
-  Menu, Search, Sparkles, Moon, Sun 
+  Menu, Search, Sparkles, Moon, Sun, Briefcase
 } from 'lucide-react';
 import DealershipsPage from './pages/DealershipsPage.tsx';
 import EnterpriseGroupsPage from './pages/EnterpriseGroupsPage.tsx';
 import QAPage from './pages/QAPage.tsx';
 import DashboardPage from './pages/DashboardPage.tsx';
 import NewFeaturesPage from './pages/NewFeaturesPage.tsx';
+import TeamMembersPage from './pages/TeamMembersPage.tsx';
 
-type NavPage = 'dealerships' | 'groups' | 'qa' | 'dashboard' | 'features';
+type NavPage = 'dealerships' | 'groups' | 'qa' | 'dashboard' | 'features' | 'team';
 
 const App: React.FC = () => {
   const [activePage, setActivePage] = useState<NavPage>('dashboard');
@@ -43,6 +44,7 @@ const App: React.FC = () => {
     { id: 'dealerships', label: 'Dealerships', icon: Building2 },
     { id: 'groups', label: 'Enterprise Groups', icon: Users },
     { id: 'qa', label: 'QA Shoppers', icon: ClipboardCheck },
+    { id: 'team', label: 'Team Members', icon: Briefcase },
     { id: 'features', label: 'New Features', icon: Sparkles },
   ];
 
@@ -52,6 +54,7 @@ const App: React.FC = () => {
       case 'groups': return <EnterpriseGroupsPage />;
       case 'qa': return <QAPage />;
       case 'features': return <NewFeaturesPage />;
+      case 'team': return <TeamMembersPage />;
       case 'dashboard': return <DashboardPage />;
       default: return <DashboardPage />;
     }

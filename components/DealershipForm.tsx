@@ -3,9 +3,10 @@ import React, { useState } from 'react';
 import { X, Save, Plus, Trash2, Check, Minus } from 'lucide-react';
 import { 
   DealershipWithRelations, DealershipStatus, CRMProvider, 
-  EnterpriseGroup, ProductCode, OrderStatus, Order
+  EnterpriseGroup, ProductCode, OrderStatus, Order, TeamRole
 } from '../types';
 import { db } from '../db';
+import { useTeamMembers } from '../hooks';
 
 interface DealershipFormProps {
   initialData?: Partial<DealershipWithRelations>;
@@ -28,6 +29,8 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
   const [newGroupName, setNewGroupName] = useState('');
   const [newGroupPP, setNewGroupPP] = useState('');
   const [newGroupERA, setNewGroupERA] = useState('');
+
+  const { members: teamMembers } = useTeamMembers();
 
   const [formData, setFormData] = useState<Partial<DealershipWithRelations>>(initialData || {
     status: DealershipStatus.DMT_PENDING,
@@ -194,6 +197,11 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
   const isLockedStatus = (status?: DealershipStatus) => {
     return [DealershipStatus.DMT_PENDING, DealershipStatus.DMT_APPROVED, DealershipStatus.HOLD].includes(status || DealershipStatus.DMT_PENDING);
   };
+
+  // Filter team members by role for dropdowns
+  const salesMembers = teamMembers.filter(m => m.role === TeamRole.SALES);
+  const enrollmentMembers = teamMembers.filter(m => m.role === TeamRole.ENROLLMENT);
+  const csmMembers = teamMembers.filter(m => m.role === TeamRole.CSM);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
@@ -432,15 +440,42 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                <div className="space-y-1">
                   <label className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Sales Associate</label>
-                  <input value={formData.contacts?.sales_contact_name || ''} onChange={e => updateContact('sales_contact_name', e.target.value)} className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 outline-none font-normal placeholder:text-slate-400 dark:placeholder:text-slate-600" />
+                  <select 
+                    value={formData.contacts?.sales_contact_name || ''} 
+                    onChange={e => updateContact('sales_contact_name', e.target.value)}
+                    className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 outline-none font-normal"
+                  >
+                     <option value="">Select Team Member</option>
+                     {salesMembers.map(m => (
+                       <option key={m.id} value={m.name}>{m.name}</option>
+                     ))}
+                  </select>
                </div>
                <div className="space-y-1">
                   <label className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Enrollment Specialist</label>
-                  <input value={formData.contacts?.enrollment_contact_name || ''} onChange={e => updateContact('enrollment_contact_name', e.target.value)} className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 outline-none font-normal placeholder:text-slate-400 dark:placeholder:text-slate-600" />
+                  <select 
+                    value={formData.contacts?.enrollment_contact_name || ''} 
+                    onChange={e => updateContact('enrollment_contact_name', e.target.value)}
+                    className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 outline-none font-normal"
+                  >
+                     <option value="">Select Team Member</option>
+                     {enrollmentMembers.map(m => (
+                       <option key={m.id} value={m.name}>{m.name}</option>
+                     ))}
+                  </select>
                </div>
                <div className="space-y-1">
                   <label className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">CSM Specialist</label>
-                  <input value={formData.contacts?.assigned_specialist_name || ''} onChange={e => updateContact('assigned_specialist_name', e.target.value)} className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 outline-none font-normal placeholder:text-slate-400 dark:placeholder:text-slate-600" />
+                  <select 
+                    value={formData.contacts?.assigned_specialist_name || ''} 
+                    onChange={e => updateContact('assigned_specialist_name', e.target.value)}
+                    className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 outline-none font-normal"
+                  >
+                     <option value="">Select Team Member</option>
+                     {csmMembers.map(m => (
+                       <option key={m.id} value={m.name}>{m.name}</option>
+                     ))}
+                  </select>
                </div>
             </div>
 

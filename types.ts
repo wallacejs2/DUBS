@@ -1,14 +1,4 @@
 
-
-
-
-
-
-
-
-
-
-
 export enum DealershipStatus {
   DMT_PENDING = 'DMT-Pending',
   DMT_APPROVED = 'DMT-Approved',
@@ -60,6 +50,12 @@ export enum ShopperPriority {
   HIGH = 'high',
   MEDIUM = 'medium',
   LOW = 'low'
+}
+
+export enum TeamRole {
+  CSM = 'CSM',
+  SALES = 'Sales',
+  ENROLLMENT = 'Enrollment'
 }
 
 export interface EnterpriseGroup {
@@ -211,6 +207,16 @@ export interface Shopper {
   
   // Issue tracking
   issue?: string;
+}
+
+export interface TeamMember {
+  id: string;
+  name: string;
+  role: TeamRole;
+  user_id?: string;
+  email?: string;
+  phone?: string;
+  created_at: string;
 }
 
 export interface PMR {

@@ -5,9 +5,10 @@ import {
 } from 'lucide-react';
 import { 
   DealershipWithRelations, 
-  DealershipStatus, EnterpriseGroup, CRMProvider, ProductCode, OrderStatus, Order
+  DealershipStatus, EnterpriseGroup, CRMProvider, ProductCode, OrderStatus, Order, TeamRole
 } from '../types';
 import { db } from '../db';
+import { useTeamMembers } from '../hooks';
 
 interface DealershipDetailPanelProps {
   dealership: DealershipWithRelations;
@@ -82,6 +83,8 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
   const [newGroupName, setNewGroupName] = useState('');
   const [newGroupPP, setNewGroupPP] = useState('');
   const [newGroupERA, setNewGroupERA] = useState('');
+
+  const { members: teamMembers } = useTeamMembers();
 
   useEffect(() => {
     // When dealership changes, update form data.
@@ -364,6 +367,11 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
   const isLockedStatus = (status: DealershipStatus) => {
      return [DealershipStatus.DMT_PENDING, DealershipStatus.DMT_APPROVED, DealershipStatus.HOLD].includes(status);
   };
+
+  // Filter team members by role for dropdowns
+  const salesMembers = teamMembers.filter(m => m.role === TeamRole.SALES);
+  const enrollmentMembers = teamMembers.filter(m => m.role === TeamRole.ENROLLMENT);
+  const csmMembers = teamMembers.filter(m => m.role === TeamRole.CSM);
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
@@ -674,15 +682,33 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
             <div className="grid grid-cols-3 gap-4">
                <div>
                   <Label>Sales Associate</Label>
-                  {isEditing ? <Input value={formData.contacts?.sales_contact_name} onChange={(v) => updateContact('sales_contact_name', v)} /> : <DataValue value={dealership.contacts?.sales_contact_name} />}
+                  {isEditing ? (
+                     <Select 
+                        value={formData.contacts?.sales_contact_name || ''} 
+                        onChange={(v) => updateContact('sales_contact_name', v)}
+                        options={[{ label: 'Select Team Member', value: '' }, ...salesMembers.map(m => ({ label: m.name, value: m.name }))]}
+                     />
+                  ) : <DataValue value={dealership.contacts?.sales_contact_name} />}
                </div>
                <div>
                   <Label>Enrollment Specialist</Label>
-                  {isEditing ? <Input value={formData.contacts?.enrollment_contact_name} onChange={(v) => updateContact('enrollment_contact_name', v)} /> : <DataValue value={dealership.contacts?.enrollment_contact_name} />}
+                  {isEditing ? (
+                     <Select 
+                        value={formData.contacts?.enrollment_contact_name || ''} 
+                        onChange={(v) => updateContact('enrollment_contact_name', v)}
+                        options={[{ label: 'Select Team Member', value: '' }, ...enrollmentMembers.map(m => ({ label: m.name, value: m.name }))]}
+                     />
+                  ) : <DataValue value={dealership.contacts?.enrollment_contact_name} />}
                </div>
                <div>
                   <Label>CSM Specialist</Label>
-                  {isEditing ? <Input value={formData.contacts?.assigned_specialist_name} onChange={(v) => updateContact('assigned_specialist_name', v)} /> : <DataValue value={dealership.contacts?.assigned_specialist_name} />}
+                  {isEditing ? (
+                     <Select 
+                        value={formData.contacts?.assigned_specialist_name || ''} 
+                        onChange={(v) => updateContact('assigned_specialist_name', v)}
+                        options={[{ label: 'Select Team Member', value: '' }, ...csmMembers.map(m => ({ label: m.name, value: m.name }))]}
+                     />
+                  ) : <DataValue value={dealership.contacts?.assigned_specialist_name} />}
                </div>
             </div>
 
