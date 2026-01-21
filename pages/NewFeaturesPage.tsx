@@ -129,7 +129,7 @@ const NewFeaturesPage: React.FC = () => {
         </div>
         <button 
           onClick={() => { setSelectedFeatureId(null); setIsCreating(true); }}
-          className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold text-xs shadow-md shadow-indigo-100 hover:bg-indigo-700 transition-all"
+          className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold text-xs shadow-md shadow-indigo-100 hover:bg-indigo-700 hover:-translate-y-0.5 transition-all dark:shadow-none"
         >
           <Plus size={16} /> Add Feature
         </button>
