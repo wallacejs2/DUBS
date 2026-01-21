@@ -461,7 +461,7 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
     copyToClipboard(text, 'all');
   };
 
-  const formatPhone = (val: string) => {
+  const formatPhone = (val?: string) => {
     if (!val) return '';
     const cleaned = ('' + val).replace(/\D/g, '');
     const match = cleaned.match(/^(\d{3})(\d{3})(\d{4})$/);
@@ -696,7 +696,7 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                       className="w-full px-3 py-1.5 text-[12px] border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-normal transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600"
                     />
                   ) : (
-                    <DataValue value={formData.phone} />
+                    <DataValue value={formatPhone(formData.phone)} />
                   )}
                 </div>
               </div>
@@ -826,7 +826,7 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                                       className="w-full px-3 py-1.5 text-[12px] border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-normal transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600"
                                     />
                                 ) : (
-                                     <DataValue value={profile.phone} />
+                                     <DataValue value={formatPhone(profile.phone)} />
                                 )}
                             </div>
                             <div>
