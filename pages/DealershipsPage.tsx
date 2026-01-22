@@ -1,13 +1,12 @@
 
 import React, { useState, useMemo } from 'react';
-import { Plus, FileSpreadsheet } from 'lucide-react';
+import { Plus, FileSpreadsheet, Search, Hash, Filter, X, ChevronDown } from 'lucide-react';
 import { useDealerships, useEnterpriseGroups, useOrders } from '../hooks';
 import { DealershipWithRelations, DealershipStatus, ProductCode } from '../types';
 import { db } from '../db';
 import DealershipCard from '../components/DealershipCard';
 import DealershipForm from '../components/DealershipForm';
 import DealershipDetailPanel from '../components/DealershipDetailPanel';
-import FilterBar from '../components/FilterBar';
 
 const DealershipsPage: React.FC = () => {
   const [filters, setFilters] = useState({ search: '', status: '', group: '', issue: '', managed: '', addl_web: '', cif: '' });
@@ -56,6 +55,14 @@ const DealershipsPage: React.FC = () => {
       o.products.some(p => !p.amount)
     );
   };
+
+  const handleResetFilters = () => {
+    setFilters({ search: '', status: '', group: '', issue: '', managed: '', addl_web: '', cif: '' });
+  };
+
+  const hasActiveFilters = useMemo(() => {
+    return !!(filters.search || filters.cif || filters.status || filters.group || filters.issue || filters.managed || filters.addl_web);
+  }, [filters]);
 
   const handleExportCSV = () => {
     // Get all data regardless of filters
@@ -215,13 +222,13 @@ const DealershipsPage: React.FC = () => {
     <div className="animate-in fade-in duration-700">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight">Dealerships</h1>
-          <p className="text-xs text-slate-500 mt-0.5">Manage and track your curator dealership network.</p>
+          <h1 className="text-2xl font-extrabold text-slate-800 dark:text-slate-100 tracking-tight">Dealerships</h1>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Manage and track your curator dealership network.</p>
         </div>
         <div className="flex items-center gap-2">
           <button 
             onClick={handleExportCSV}
-            className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-slate-600 font-bold text-[11px] hover:bg-slate-50 shadow-sm transition-all"
+            className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-600 dark:text-slate-300 font-bold text-[11px] hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm transition-all"
           >
             <FileSpreadsheet size={14} /> Export CSV
           </button>
@@ -234,93 +241,181 @@ const DealershipsPage: React.FC = () => {
         </div>
       </div>
 
-      <FilterBar 
-        layout="stacked"
-        searchValue={filters.search}
-        onSearchChange={(v) => setFilters({ ...filters, search: v })}
-        secondarySearchValue={filters.cif}
-        onSecondarySearchChange={(v) => setFilters({ ...filters, cif: v })}
-        secondarySearchPlaceholder="Search by CIF..."
-        filters={[
-          { 
-            label: 'Status', 
-            value: filters.status, 
-            onChange: (v) => setFilters({ ...filters, status: v }),
-            options: Object.values(DealershipStatus).map(s => ({ label: s, value: s }))
-          },
-          {
-            label: 'Group',
-            value: filters.group,
-            onChange: (v) => setFilters({ ...filters, group: v }),
-            options: groups.map(g => ({ label: g.name, value: g.id }))
-          },
-          {
-             label: 'Managed',
-             value: filters.managed,
-             onChange: (v) => setFilters({ ...filters, managed: v }),
-             options: [{ label: 'Yes', value: 'yes' }]
-          },
-          {
-            label: 'Addl. Web',
-            value: filters.addl_web,
-            onChange: (v) => setFilters({ ...filters, addl_web: v }),
-            options: [{ label: 'Yes', value: 'yes' }]
-          },
-          {
-            label: 'Issues',
-            value: filters.issue,
-            onChange: (v) => setFilters({ ...filters, issue: v }),
-            options: [
-              { label: 'No Client ID', value: 'no_id' },
-              { label: '$0 Price', value: 'zero_price' },
-              { label: 'No CSM', value: 'no_csm' }
-            ]
-          }
-        ]}
-        onClear={() => setFilters({ search: '', status: '', group: '', issue: '', managed: '', addl_web: '', cif: '' })}
-      />
+      <div className="flex flex-col lg:flex-row gap-6 items-start">
+        {/* Left Side Panel - Filters */}
+        <div className="w-full lg:w-72 flex-shrink-0 space-y-6 lg:sticky lg:top-0">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
+                <div className="flex items-center gap-2 mb-4 text-slate-800 dark:text-slate-100 font-bold">
+                    <Filter size={16} />
+                    <span>Filters & Search</span>
+                    {hasActiveFilters && (
+                        <button 
+                            onClick={handleResetFilters}
+                            className="ml-auto text-[10px] text-red-500 hover:text-red-600 font-bold uppercase tracking-wider"
+                        >
+                            Reset
+                        </button>
+                    )}
+                </div>
+                
+                <div className="space-y-4">
+                    {/* Search Inputs */}
+                    <div className="space-y-3">
+                        <div className="relative">
+                            <Hash className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" size={14} />
+                            <input 
+                                value={filters.cif}
+                                onChange={(e) => setFilters({...filters, cif: e.target.value})}
+                                placeholder="Search by CIF..."
+                                className="w-full pl-9 pr-3 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 outline-none transition-all dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-600"
+                            />
+                             {filters.cif && (
+                                <button onClick={() => setFilters({...filters, cif: ''})} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                                    <X size={12} />
+                                </button>
+                            )}
+                        </div>
 
-      {loading ? (
-        <div className="flex flex-col gap-3">
-          {[1,2,3,4,5].map(i => (
-            <div key={i} className="bg-white rounded-2xl h-24 border border-slate-100 animate-pulse"></div>
-          ))}
-        </div>
-      ) : dealerships.length === 0 ? (
-        <div className="bg-white rounded-[2rem] p-12 text-center border border-slate-100 border-dashed">
-          <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
-            <Plus size={32} />
-          </div>
-          <h3 className="text-xl font-bold text-slate-800">No dealerships found</h3>
-          <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">Try adjusting your filters or create a new dealership to get started.</p>
-        </div>
-      ) : (
-        <div className="flex flex-col gap-3">
-          {dealerships.map(dealer => {
-            const details = getDetails(dealer.id);
-            // Check for valid client ID in any website link
-            const hasClientId = details?.website_links?.some(l => l.client_id && l.client_id.trim().length > 0) ?? false;
-            
-            // Check for missing CSM
-            const hasCSM = details?.contacts?.assigned_specialist_name && details.contacts.assigned_specialist_name.trim().length > 0;
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" size={14} />
+                            <input 
+                                value={filters.search}
+                                onChange={(e) => setFilters({...filters, search: e.target.value})}
+                                placeholder="Search name, city..."
+                                className="w-full pl-9 pr-3 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 outline-none transition-all dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-600"
+                            />
+                             {filters.search && (
+                                <button onClick={() => setFilters({...filters, search: ''})} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                                    <X size={12} />
+                                </button>
+                            )}
+                        </div>
+                    </div>
 
-            return (
-              <DealershipCard 
-                key={dealer.id} 
-                dealership={dealer} 
-                groupName={groups.find(g => g.id === dealer.enterprise_group_id)?.name}
-                isManaged={checkIsManaged(dealer.id)}
-                hasClientId={hasClientId}
-                hasAddlWeb={checkHasAddlWeb(dealer.id)}
-                hasZeroPrice={checkHasZeroPrice(dealer.id)}
-                missingCSM={!hasCSM}
-                onClick={() => setSelectedDealerId(dealer.id)}
-                onToggleFavorite={() => toggleFavorite(dealer.id)}
-              />
-            );
-          })}
+                    <div className="h-px bg-slate-100 dark:bg-slate-800 my-2"></div>
+
+                    {/* Dropdowns */}
+                    <div className="space-y-3">
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Status</label>
+                            <div className="relative">
+                                <select 
+                                    value={filters.status} 
+                                    onChange={(e) => setFilters({...filters, status: e.target.value})}
+                                    className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs appearance-none focus:ring-2 focus:ring-indigo-500 outline-none text-slate-700 dark:text-slate-200 cursor-pointer"
+                                >
+                                    <option value="">All Statuses</option>
+                                    {Object.values(DealershipStatus).map(s => <option key={s} value={s}>{s}</option>)}
+                                </select>
+                                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" size={14} />
+                            </div>
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Group</label>
+                            <div className="relative">
+                                <select 
+                                    value={filters.group} 
+                                    onChange={(e) => setFilters({...filters, group: e.target.value})}
+                                    className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs appearance-none focus:ring-2 focus:ring-indigo-500 outline-none text-slate-700 dark:text-slate-200 cursor-pointer"
+                                >
+                                    <option value="">All Groups</option>
+                                    {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+                                </select>
+                                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" size={14} />
+                            </div>
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Potential Issues</label>
+                            <div className="relative">
+                                <select 
+                                    value={filters.issue} 
+                                    onChange={(e) => setFilters({...filters, issue: e.target.value})}
+                                    className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs appearance-none focus:ring-2 focus:ring-indigo-500 outline-none text-slate-700 dark:text-slate-200 cursor-pointer"
+                                >
+                                    <option value="">None</option>
+                                    <option value="no_id">Missing Client ID</option>
+                                    <option value="zero_price">$0 Product Price</option>
+                                    <option value="no_csm">Missing CSM</option>
+                                </select>
+                                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" size={14} />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Toggles */}
+                     <div className="h-px bg-slate-100 dark:bg-slate-800 my-2"></div>
+                     
+                     <div className="space-y-2">
+                         <label className="flex items-center gap-2 cursor-pointer p-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg transition-colors">
+                            <input 
+                                type="checkbox" 
+                                checked={filters.managed === 'yes'}
+                                onChange={(e) => setFilters({...filters, managed: e.target.checked ? 'yes' : ''})}
+                                className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                            />
+                            <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Managed Only</span>
+                         </label>
+                         <label className="flex items-center gap-2 cursor-pointer p-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg transition-colors">
+                            <input 
+                                type="checkbox" 
+                                checked={filters.addl_web === 'yes'}
+                                onChange={(e) => setFilters({...filters, addl_web: e.target.checked ? 'yes' : ''})}
+                                className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                            />
+                            <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Addl. Web Only</span>
+                         </label>
+                     </div>
+                </div>
+            </div>
         </div>
-      )}
+
+        {/* Right Side - List */}
+        <div className="flex-1 w-full min-w-0">
+            {loading ? (
+                <div className="flex flex-col gap-3">
+                {[1,2,3,4,5].map(i => (
+                    <div key={i} className="bg-white dark:bg-slate-900 rounded-2xl h-24 border border-slate-100 dark:border-slate-800 animate-pulse"></div>
+                ))}
+                </div>
+            ) : dealerships.length === 0 ? (
+                <div className="bg-white dark:bg-slate-900 rounded-[2rem] p-12 text-center border border-slate-100 dark:border-slate-800 border-dashed">
+                <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300 dark:text-slate-600">
+                    <Plus size={32} />
+                </div>
+                <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100">No dealerships found</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">Try adjusting your filters or create a new dealership to get started.</p>
+                </div>
+            ) : (
+                <div className="flex flex-col gap-3">
+                {dealerships.map(dealer => {
+                    const details = getDetails(dealer.id);
+                    // Check for valid client ID in any website link
+                    const hasClientId = details?.website_links?.some(l => l.client_id && l.client_id.trim().length > 0) ?? false;
+                    
+                    // Check for missing CSM
+                    const hasCSM = details?.contacts?.assigned_specialist_name && details.contacts.assigned_specialist_name.trim().length > 0;
+
+                    return (
+                    <DealershipCard 
+                        key={dealer.id} 
+                        dealership={dealer} 
+                        groupName={groups.find(g => g.id === dealer.enterprise_group_id)?.name}
+                        isManaged={checkIsManaged(dealer.id)}
+                        hasClientId={hasClientId}
+                        hasAddlWeb={checkHasAddlWeb(dealer.id)}
+                        hasZeroPrice={checkHasZeroPrice(dealer.id)}
+                        missingCSM={!hasCSM}
+                        onClick={() => setSelectedDealerId(dealer.id)}
+                        onToggleFavorite={() => toggleFavorite(dealer.id)}
+                    />
+                    );
+                })}
+                </div>
+            )}
+        </div>
+      </div>
 
       {isFormOpen && (
         <DealershipForm 
