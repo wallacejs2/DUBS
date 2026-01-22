@@ -10,7 +10,7 @@ import DealershipDetailPanel from '../components/DealershipDetailPanel';
 import FilterBar from '../components/FilterBar';
 
 const DealershipsPage: React.FC = () => {
-  const [filters, setFilters] = useState({ search: '', status: '', group: '', issue: '', managed: '', addl_web: '' });
+  const [filters, setFilters] = useState({ search: '', status: '', group: '', issue: '', managed: '', addl_web: '', cif: '' });
   
   // Data for List (Filtered)
   const { dealerships, loading, upsert, remove, getDetails, toggleFavorite } = useDealerships(filters);
@@ -238,6 +238,9 @@ const DealershipsPage: React.FC = () => {
         layout="stacked"
         searchValue={filters.search}
         onSearchChange={(v) => setFilters({ ...filters, search: v })}
+        secondarySearchValue={filters.cif}
+        onSecondarySearchChange={(v) => setFilters({ ...filters, cif: v })}
+        secondarySearchPlaceholder="Search by CIF..."
         filters={[
           { 
             label: 'Status', 
@@ -274,7 +277,7 @@ const DealershipsPage: React.FC = () => {
             ]
           }
         ]}
-        onClear={() => setFilters({ search: '', status: '', group: '', issue: '', managed: '', addl_web: '' })}
+        onClear={() => setFilters({ search: '', status: '', group: '', issue: '', managed: '', addl_web: '', cif: '' })}
       />
 
       {loading ? (

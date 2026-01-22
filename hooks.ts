@@ -39,7 +39,7 @@ export function useEnterpriseGroups() {
   };
 }
 
-export function useDealerships(filters?: { search?: string; status?: string; group?: string; issue?: string; managed?: string; addl_web?: string }) {
+export function useDealerships(filters?: { search?: string; status?: string; group?: string; issue?: string; managed?: string; addl_web?: string; cif?: string }) {
   const [dealerships, setDealerships] = useState<Dealership[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -48,6 +48,10 @@ export function useDealerships(filters?: { search?: string; status?: string; gro
     if (filters?.search) {
       const s = filters.search.toLowerCase();
       data = data.filter(d => d.name.toLowerCase().includes(s) || d.city.toLowerCase().includes(s));
+    }
+    if (filters?.cif) {
+      const cif = filters.cif.toLowerCase();
+      data = data.filter(d => d.cif_number && d.cif_number.toLowerCase().includes(cif));
     }
     if (filters?.status) {
       data = data.filter(d => d.status === filters.status);
