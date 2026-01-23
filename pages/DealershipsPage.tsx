@@ -251,7 +251,7 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters }) => {
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">Try adjusting your filters or create a new dealership to get started.</p>
               </div>
           ) : (
-              <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-3">
+              <div className="flex flex-col gap-3">
               {dealerships.map(dealer => {
                   const details = getDetails(dealer.id);
                   // Check for valid client ID in any website link
