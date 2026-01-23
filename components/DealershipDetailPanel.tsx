@@ -609,8 +609,8 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
             </div>
 
             {/* Providers Row */}
-            <div className="grid grid-cols-3 gap-4">
-               <div>
+            <div className="grid grid-cols-4 gap-4">
+               <div className="col-span-1">
                   <Label>CRM Provider</Label>
                   {isEditing ? (
                      <Select 
@@ -622,7 +622,7 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                      <DataValue value={dealership.crm_provider} />
                   )}
                </div>
-               <div>
+               <div className="col-span-1">
                   <Label>Website Provider</Label>
                   {isEditing ? (
                     <Input value={formData.website_provider} onChange={(v) => updateField('website_provider', v)} placeholder="Provider" />
@@ -630,12 +630,27 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                     <DataValue value={dealership.website_provider} />
                   )}
                </div>
-               <div>
+               <div className="col-span-1">
                   <Label>Inventory Provider</Label>
                   {isEditing ? (
                     <Input value={formData.inventory_provider} onChange={(v) => updateField('inventory_provider', v)} placeholder="Provider" />
                   ) : (
                     <DataValue value={dealership.inventory_provider} />
+                  )}
+               </div>
+               <div className="col-span-1">
+                  <Label>SMS Activated</Label>
+                  {isEditing ? (
+                     <div className="flex items-center h-[26px]">
+                       <input 
+                         type="checkbox" 
+                         checked={!!formData.sms_activated} 
+                         onChange={(e) => updateField('sms_activated', e.target.checked)}
+                         className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                       />
+                     </div>
+                  ) : (
+                     <DataValue value={dealership.sms_activated ? 'Yes' : 'No'} />
                   )}
                </div>
             </div>
@@ -686,7 +701,7 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                      <Select 
                         value={formData.contacts?.sales_contact_name || ''} 
                         onChange={(v) => updateContact('sales_contact_name', v)}
-                        options={[{ label: 'Select Team Member', value: '' }, ...salesMembers.map(m => ({ label: m.name, value: m.name }))]}
+                        options={[{ label: 'Select Team Member', value: '' }, ...teamMembers.filter(m => m.role === TeamRole.SALES).map(m => ({ label: m.name, value: m.name }))]}
                      />
                   ) : <DataValue value={dealership.contacts?.sales_contact_name} />}
                </div>
@@ -696,7 +711,7 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                      <Select 
                         value={formData.contacts?.enrollment_contact_name || ''} 
                         onChange={(v) => updateContact('enrollment_contact_name', v)}
-                        options={[{ label: 'Select Team Member', value: '' }, ...enrollmentMembers.map(m => ({ label: m.name, value: m.name }))]}
+                        options={[{ label: 'Select Team Member', value: '' }, ...teamMembers.filter(m => m.role === TeamRole.ENROLLMENT).map(m => ({ label: m.name, value: m.name }))]}
                      />
                   ) : <DataValue value={dealership.contacts?.enrollment_contact_name} />}
                </div>
@@ -706,7 +721,7 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                      <Select 
                         value={formData.contacts?.assigned_specialist_name || ''} 
                         onChange={(v) => updateContact('assigned_specialist_name', v)}
-                        options={[{ label: 'Select Team Member', value: '' }, ...csmMembers.map(m => ({ label: m.name, value: m.name }))]}
+                        options={[{ label: 'Select Team Member', value: '' }, ...teamMembers.filter(m => m.role === TeamRole.CSM).map(m => ({ label: m.name, value: m.name }))]}
                      />
                   ) : <DataValue value={dealership.contacts?.assigned_specialist_name} />}
                </div>

@@ -101,6 +101,7 @@ class CuratorLocalDB extends EventTarget {
       branch_number: '12',
       bu_id: 'BU-WEST',
       is_favorite: true,
+      sms_activated: true,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     }];
@@ -272,6 +273,7 @@ class CuratorLocalDB extends EventTarget {
       state: payload.state || '',
       zip_code: payload.zip_code || '',
       hold_reason: payload.hold_reason,
+      sms_activated: payload.sms_activated,
       is_favorite: payload.is_favorite !== undefined ? payload.is_favorite : (existingIndex >= 0 ? this.data.dealerships[existingIndex].is_favorite : false),
       created_at: existingIndex >= 0 ? this.data.dealerships[existingIndex].created_at : now,
       updated_at: now

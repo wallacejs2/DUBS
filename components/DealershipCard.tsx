@@ -115,6 +115,11 @@ const DealershipCard: React.FC<DealershipCardProps> = ({
                   ADDL. WEB
                 </span>
               )}
+              {dealership.sms_activated && (
+                <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-300 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                  SMS
+                </span>
+              )}
             </div>
             
             {/* Copy Buttons */}
