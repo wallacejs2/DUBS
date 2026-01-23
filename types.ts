@@ -245,3 +245,14 @@ export interface NewFeature {
   description?: string;
   created_at: string;
 }
+
+export interface DealershipFilterState {
+  search: string;
+  status: string;
+  group: string;
+  issue: string;
+  managed: string;
+  addl_web: string;
+  cif: string;
+  sms: string;
+}

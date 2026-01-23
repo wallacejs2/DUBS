@@ -10,12 +10,19 @@ import QAPage from './pages/QAPage.tsx';
 import DashboardPage from './pages/DashboardPage.tsx';
 import NewFeaturesPage from './pages/NewFeaturesPage.tsx';
 import TeamMembersPage from './pages/TeamMembersPage.tsx';
+import DealershipSidebarFilters from './components/DealershipSidebarFilters.tsx';
+import { DealershipFilterState } from './types.ts';
 
 type NavPage = 'dealerships' | 'groups' | 'qa' | 'dashboard' | 'features' | 'team';
 
 const App: React.FC = () => {
   const [activePage, setActivePage] = useState<NavPage>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  
+  // Lifted Dealership Filter State
+  const [dealershipFilters, setDealershipFilters] = useState<DealershipFilterState>({ 
+    search: '', status: '', group: '', issue: '', managed: '', addl_web: '', cif: '', sms: '' 
+  });
   
   // Dark Mode State
   const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -50,7 +57,7 @@ const App: React.FC = () => {
 
   const renderPage = () => {
     switch (activePage) {
-      case 'dealerships': return <DealershipsPage />;
+      case 'dealerships': return <DealershipsPage filters={dealershipFilters} />;
       case 'groups': return <EnterpriseGroupsPage />;
       case 'qa': return <QAPage />;
       case 'features': return <NewFeaturesPage />;
@@ -66,49 +73,60 @@ const App: React.FC = () => {
       <aside 
         className={`${
           isSidebarOpen ? 'w-56' : 'w-16'
-        } bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 transition-all duration-300 flex flex-col z-40 relative`}
+        } bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 transition-all duration-300 flex flex-col z-40 relative flex-shrink-0`}
       >
-        <div className="p-4 flex items-center gap-3 border-b border-slate-100 dark:border-slate-800">
-          <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center">
+        <div className="p-4 flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 flex-shrink-0">
+          <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center flex-shrink-0">
              <span className="text-white font-bold text-lg">C</span>
           </div>
-          {isSidebarOpen && <span className="font-bold text-lg tracking-tight text-indigo-900 dark:text-indigo-100">CURATOR</span>}
+          {isSidebarOpen && <span className="font-bold text-lg tracking-tight text-indigo-900 dark:text-indigo-100 truncate">CURATOR</span>}
         </div>
 
-        <nav className="flex-1 px-2 py-4 space-y-1">
-          {navItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setActivePage(item.id as NavPage)}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all ${
-                activePage === item.id 
-                  ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 shadow-sm font-semibold' 
-                  : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200'
-              }`}
-            >
-              <item.icon size={18} strokeWidth={activePage === item.id ? 2.5 : 2} />
-              {isSidebarOpen && <span className="text-[13px]">{item.label}</span>}
-            </button>
-          ))}
-        </nav>
+        <div className="flex-1 overflow-y-auto custom-scrollbar">
+          <nav className="px-2 py-4 space-y-1">
+            {navItems.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setActivePage(item.id as NavPage)}
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all ${
+                  activePage === item.id 
+                    ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 shadow-sm font-semibold' 
+                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200'
+                }`}
+              >
+                <item.icon size={18} strokeWidth={activePage === item.id ? 2.5 : 2} className="flex-shrink-0" />
+                {isSidebarOpen && <span className="text-[13px]">{item.label}</span>}
+              </button>
+            ))}
+          </nav>
+
+          {/* Dealership Filters (Only shown when on Dealerships Page) */}
+          {activePage === 'dealerships' && (
+            <DealershipSidebarFilters 
+              filters={dealershipFilters}
+              setFilters={setDealershipFilters}
+              isOpen={isSidebarOpen}
+            />
+          )}
+        </div>
 
         {/* Bottom Actions */}
-        <div className="p-4 border-t border-slate-100 dark:border-slate-800 space-y-2">
+        <div className="p-4 border-t border-slate-100 dark:border-slate-800 space-y-2 flex-shrink-0">
             <button
               onClick={toggleDarkMode}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200`}
               title="Toggle Dark Mode"
             >
-              {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+              {isDarkMode ? <Sun size={18} className="flex-shrink-0" /> : <Moon size={18} className="flex-shrink-0" />}
               {isSidebarOpen && <span className="text-[13px]">{isDarkMode ? 'Light Mode' : 'Dark Mode'}</span>}
             </button>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col h-screen overflow-hidden">
+      <main className="flex-1 flex flex-col h-screen overflow-hidden min-w-0">
         {/* Header */}
-        <header className="h-14 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-6 sticky top-0 z-30 transition-colors">
+        <header className="h-14 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-6 sticky top-0 z-30 transition-colors flex-shrink-0">
           <div className="flex items-center gap-4">
             <button 
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}

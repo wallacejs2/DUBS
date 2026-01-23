@@ -39,7 +39,7 @@ export function useEnterpriseGroups() {
   };
 }
 
-export function useDealerships(filters?: { search?: string; status?: string; group?: string; issue?: string; managed?: string; addl_web?: string; cif?: string }) {
+export function useDealerships(filters?: { search?: string; status?: string; group?: string; issue?: string; managed?: string; addl_web?: string; cif?: string; sms?: string }) {
   const [dealerships, setDealerships] = useState<Dealership[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -70,6 +70,9 @@ export function useDealerships(filters?: { search?: string; status?: string; gro
          const details = db.getDealershipWithRelations(d.id);
          return details?.orders?.some(o => o.products?.some(p => p.product_code === ProductCode.P15435_ADDL_WEB));
       });
+    }
+    if (filters?.sms === 'yes') {
+      data = data.filter(d => d.sms_activated);
     }
     if (filters?.issue) {
       data = data.filter(d => {
