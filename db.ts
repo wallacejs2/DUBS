@@ -46,6 +46,17 @@ class CuratorLocalDB extends EventTarget {
     return CuratorLocalDB.instance;
   }
 
+  private generateId(): string {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+      return crypto.randomUUID();
+    }
+    // Fallback for environments where crypto.randomUUID is not available
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  }
+
   private load() {
     const saved = localStorage.getItem(this.storageKey);
     if (saved) {
@@ -65,12 +76,20 @@ class CuratorLocalDB extends EventTarget {
   }
 
   private save() {
-    localStorage.setItem(this.storageKey, JSON.stringify(this.data));
-    this.dispatchEvent(new CustomEvent('change'));
+    try {
+      localStorage.setItem(this.storageKey, JSON.stringify(this.data));
+      this.dispatchEvent(new CustomEvent('change'));
+    } catch (e) {
+      console.error("Failed to save to localStorage", e);
+      // In a real app, you might want to show a toast notification here
+      if (e instanceof DOMException && e.name === 'QuotaExceededError') {
+        alert('Local storage is full. Please clear some data to save changes.');
+      }
+    }
   }
 
   private seed() {
-    const groupId = crypto.randomUUID();
+    const groupId = this.generateId();
     this.data.enterpriseGroups = [{
       id: groupId,
       name: 'Penske Automotive Group',
@@ -80,7 +99,7 @@ class CuratorLocalDB extends EventTarget {
       era_system_id: 'ERA-X82'
     }];
 
-    const dealerId = crypto.randomUUID();
+    const dealerId = this.generateId();
     this.data.dealerships = [{
       id: dealerId,
       name: 'Penske Toyota of Cerritos',
@@ -107,14 +126,14 @@ class CuratorLocalDB extends EventTarget {
     }];
 
     this.data.websiteLinks = [{
-      id: crypto.randomUUID(),
+      id: this.generateId(),
       dealership_id: dealerId,
       primary_url: 'https://www.pensketoyotacerritos.com',
       client_id: 'PENSKE-77'
     }];
 
     this.data.contacts = [{
-      id: crypto.randomUUID(),
+      id: this.generateId(),
       dealership_id: dealerId,
       sales_contact_name: 'Robert Miller',
       enrollment_contact_name: 'Sarah Chen',
@@ -125,14 +144,14 @@ class CuratorLocalDB extends EventTarget {
     }];
 
     this.data.orders = [{
-      id: crypto.randomUUID(),
+      id: this.generateId(),
       dealership_id: dealerId,
       order_number: 'ORD-5521',
       received_date: new Date().toISOString(),
       status: OrderStatus.COMPLETED,
       products: [
         {
-          id: crypto.randomUUID(),
+          id: this.generateId(),
           product_code: ProductCode.P15392_MANAGED,
           amount: 4500
         }
@@ -140,7 +159,7 @@ class CuratorLocalDB extends EventTarget {
     }];
 
     this.data.shoppers = [{
-      id: crypto.randomUUID(),
+      id: this.generateId(),
       first_name: 'Michael',
       last_name: 'Tester',
       email: 'm.tester@qa-curator.io',
@@ -153,7 +172,7 @@ class CuratorLocalDB extends EventTarget {
     }];
 
     this.data.newFeatures = [{
-      id: crypto.randomUUID(),
+      id: this.generateId(),
       title: 'Enhanced VIN Decoding',
       quarterly_release: 'Q1 2025',
       type: 'New',
@@ -163,7 +182,7 @@ class CuratorLocalDB extends EventTarget {
       location: 'Global',
       launch_date: '2025-03-15',
       pmrs: [
-        { id: crypto.randomUUID(), number: 'PMR-2025-001', link: 'https://jira.company.com/browse/PMR-001' }
+        { id: this.generateId(), number: 'PMR-2025-001', link: 'https://jira.company.com/browse/PMR-001' }
       ],
       support_material_link: 'https://docs.company.com/vin-decoding',
       description: 'Upgrading the core VIN decoding engine to support 2026 EV models and improved option code parsing.',
@@ -173,7 +192,7 @@ class CuratorLocalDB extends EventTarget {
     // Seed Team Members
     this.data.teamMembers = [
       {
-        id: crypto.randomUUID(),
+        id: this.generateId(),
         name: 'Jordan Smith',
         role: TeamRole.CSM,
         user_id: 'jsmith22',
@@ -182,7 +201,7 @@ class CuratorLocalDB extends EventTarget {
         created_at: new Date().toISOString()
       },
       {
-        id: crypto.randomUUID(),
+        id: this.generateId(),
         name: 'Robert Miller',
         role: TeamRole.SALES,
         user_id: 'rmiller1',
@@ -191,7 +210,7 @@ class CuratorLocalDB extends EventTarget {
         created_at: new Date().toISOString()
       },
       {
-        id: crypto.randomUUID(),
+        id: this.generateId(),
         name: 'Sarah Chen',
         role: TeamRole.ENROLLMENT,
         user_id: 'schen99',
@@ -207,7 +226,7 @@ class CuratorLocalDB extends EventTarget {
   // Enterprise Groups
   getEnterpriseGroups() { return [...this.data.enterpriseGroups]; }
   upsertEnterpriseGroup(group: Partial<EnterpriseGroup>) {
-    const id = group.id || crypto.randomUUID();
+    const id = group.id || this.generateId();
     const existingIndex = this.data.enterpriseGroups.findIndex(g => g.id === id);
     const newGroup = {
       ...this.data.enterpriseGroups[existingIndex],
@@ -245,37 +264,34 @@ class CuratorLocalDB extends EventTarget {
   }
 
   upsertDealership(payload: Partial<DealershipWithRelations>) {
-    const id = payload.id || crypto.randomUUID();
+    const id = payload.id || this.generateId();
     const now = new Date().toISOString();
 
     const existingIndex = this.data.dealerships.findIndex(d => d.id === id);
+    const existing = existingIndex >= 0 ? this.data.dealerships[existingIndex] : {} as Dealership;
+
+    // Destructure to separate relations from base dealership data
+    const { 
+      enterprise_group, website_links, contacts, reynolds_solution, orders, 
+      ...dealershipData 
+    } = payload;
+
     const dealershipBase: Dealership = {
+      ...existing, // Use existing data as base to support partial updates
+      ...dealershipData, // Overwrite with provided data
       id,
-      name: payload.name || 'Untitled Dealership',
-      enterprise_group_id: payload.enterprise_group_id,
-      status: payload.status || DealershipStatus.DMT_PENDING,
-      crm_provider: payload.crm_provider || CRMProvider.FOCUS,
-      website_provider: payload.website_provider,
-      inventory_provider: payload.inventory_provider,
-      contract_value: payload.contract_value || 0,
-      purchase_date: payload.purchase_date || now,
-      go_live_date: payload.go_live_date,
-      term_date: payload.term_date,
-      cif_number: payload.cif_number,
-      era_system_id: payload.era_system_id,
-      pp_sys_id: payload.pp_sys_id,
-      store_number: payload.store_number,
-      branch_number: payload.branch_number,
-      bu_id: payload.bu_id,
-      address_line1: payload.address_line1 || '',
-      address_line2: payload.address_line2,
-      city: payload.city || '',
-      state: payload.state || '',
-      zip_code: payload.zip_code || '',
-      hold_reason: payload.hold_reason,
-      sms_activated: payload.sms_activated,
-      is_favorite: payload.is_favorite !== undefined ? payload.is_favorite : (existingIndex >= 0 ? this.data.dealerships[existingIndex].is_favorite : false),
-      created_at: existingIndex >= 0 ? this.data.dealerships[existingIndex].created_at : now,
+      // Ensure required fields have defaults if this is a new record
+      name: dealershipData.name ?? existing.name ?? 'Untitled Dealership',
+      status: dealershipData.status ?? existing.status ?? DealershipStatus.DMT_PENDING,
+      crm_provider: dealershipData.crm_provider ?? existing.crm_provider ?? CRMProvider.FOCUS,
+      address_line1: dealershipData.address_line1 ?? existing.address_line1 ?? '',
+      city: dealershipData.city ?? existing.city ?? '',
+      state: dealershipData.state ?? existing.state ?? '',
+      zip_code: dealershipData.zip_code ?? existing.zip_code ?? '',
+      contract_value: dealershipData.contract_value ?? existing.contract_value ?? 0,
+      purchase_date: dealershipData.purchase_date ?? existing.purchase_date ?? now,
+      
+      created_at: existing.created_at || now,
       updated_at: now
     };
 
@@ -286,34 +302,34 @@ class CuratorLocalDB extends EventTarget {
     }
 
     // Website Links
-    if (payload.website_links) {
+    if (website_links) {
       this.data.websiteLinks = this.data.websiteLinks.filter(l => l.dealership_id !== id);
-      payload.website_links.forEach(link => {
+      website_links.forEach(link => {
         if (link.primary_url) {
-          this.data.websiteLinks.push({ ...link, id: link.id || crypto.randomUUID(), dealership_id: id });
+          this.data.websiteLinks.push({ ...link, id: link.id || this.generateId(), dealership_id: id });
         }
       });
     }
 
     // Contacts
-    if (payload.contacts) {
+    if (contacts) {
       this.data.contacts = this.data.contacts.filter(c => c.dealership_id !== id);
-      this.data.contacts.push({ ...payload.contacts, id: payload.contacts.id || crypto.randomUUID(), dealership_id: id });
+      this.data.contacts.push({ ...contacts, id: contacts.id || this.generateId(), dealership_id: id });
     }
 
-    // Reynolds Solution (kept for legacy support if needed, though not in new spec)
-    if (payload.reynolds_solution) {
+    // Reynolds Solution (legacy support)
+    if (reynolds_solution) {
       this.data.reynoldsSolutions = this.data.reynoldsSolutions.filter(r => r.dealership_id !== id);
-      this.data.reynoldsSolutions.push({ ...payload.reynolds_solution, id: payload.reynolds_solution.id || crypto.randomUUID(), dealership_id: id });
+      this.data.reynoldsSolutions.push({ ...reynolds_solution, id: reynolds_solution.id || this.generateId(), dealership_id: id });
     }
 
     // Orders
-    if (payload.orders) {
+    if (orders) {
       this.data.orders = this.data.orders.filter(o => o.dealership_id !== id);
-      payload.orders.forEach(order => {
+      orders.forEach(order => {
         this.data.orders.push({ 
            ...order, 
-           id: order.id || crypto.randomUUID(), 
+           id: order.id || this.generateId(), 
            dealership_id: id,
            products: order.products || [] 
         });
@@ -346,7 +362,7 @@ class CuratorLocalDB extends EventTarget {
     return dealerId ? this.data.orders.filter(o => o.dealership_id === dealerId) : [...this.data.orders]; 
   }
   upsertOrder(order: Partial<Order>) {
-    const id = order.id || crypto.randomUUID();
+    const id = order.id || this.generateId();
     const existingIndex = this.data.orders.findIndex(o => o.id === id);
     const newOrder = {
       ...this.data.orders[existingIndex],
@@ -366,7 +382,7 @@ class CuratorLocalDB extends EventTarget {
   // Shoppers
   getShoppers() { return [...this.data.shoppers]; }
   upsertShopper(shopper: Partial<Shopper>) {
-    const id = shopper.id || crypto.randomUUID();
+    const id = shopper.id || this.generateId();
     const existingIndex = this.data.shoppers.findIndex(s => s.id === id);
     const newShopper = {
       ...this.data.shoppers[existingIndex],
@@ -387,7 +403,7 @@ class CuratorLocalDB extends EventTarget {
   // New Features
   getNewFeatures() { return [...this.data.newFeatures]; }
   upsertNewFeature(feature: Partial<NewFeature>) {
-    const id = feature.id || crypto.randomUUID();
+    const id = feature.id || this.generateId();
     const existingIndex = this.data.newFeatures.findIndex(f => f.id === id);
     const newFeature = {
       ...this.data.newFeatures[existingIndex],
@@ -408,7 +424,7 @@ class CuratorLocalDB extends EventTarget {
   // Team Members
   getTeamMembers() { return [...this.data.teamMembers]; }
   upsertTeamMember(member: Partial<TeamMember>) {
-    const id = member.id || crypto.randomUUID();
+    const id = member.id || this.generateId();
     const existingIndex = this.data.teamMembers.findIndex(m => m.id === id);
     const newMember = {
       ...this.data.teamMembers[existingIndex],
