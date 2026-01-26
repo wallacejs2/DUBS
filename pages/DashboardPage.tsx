@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
-import { Building2, DollarSign, Calendar, Filter, X } from 'lucide-react';
+import { Building2, DollarSign, Calendar, X } from 'lucide-react';
 import { useDealerships, useOrders } from '../hooks';
 import { DealershipStatus, ProductCode } from '../types';
 
@@ -13,73 +13,60 @@ const DashboardPage: React.FC = () => {
   const { dealerships } = useDealerships();
   const { orders } = useOrders();
 
-  // Filter Logic
-  const dashboardData = useMemo(() => {
-    let dateFilteredOrders = orders;
-    
-    // 1. Filter Orders by Date
-    if (dateRange.start) {
-      dateFilteredOrders = dateFilteredOrders.filter(o => o.received_date >= dateRange.start);
-    }
-    if (dateRange.end) {
-      dateFilteredOrders = dateFilteredOrders.filter(o => o.received_date <= dateRange.end);
-    }
-
-    // 2. Identify Dealerships involved in these orders (or all if no date set)
-    let dateFilteredDealerships = dealerships;
-    
-    if (dateRange.start || dateRange.end) {
-      const activeDealerIds = new Set(dateFilteredOrders.map(o => o.dealership_id));
-      dateFilteredDealerships = dealerships.filter(d => activeDealerIds.has(d.id));
-    }
-
-    // 3. Calculate "Potential" counts (based only on date, ignoring status toggle)
-    // This is so the buttons show the count of what *would* be included if toggled on.
-    const potentialCounts = dateFilteredDealerships.reduce((acc, d) => {
+  // Metrics Calculation
+  const dashboardMetrics = useMemo(() => {
+    // 1. Status Counts (Universe) - Used for the toggle buttons
+    // This counts ALL dealerships in the DB regardless of filters, so the buttons show accurate "Total" counts available.
+    const statusCounts = dealerships.reduce((acc, d) => {
       acc[d.status] = (acc[d.status] || 0) + 1;
       return acc;
     }, {} as Record<DealershipStatus, number>);
 
-    // 4. Apply Status Exclusion for Revenue/Total/Products
-    const activeDealerships = dateFilteredDealerships.filter(d => !excludedStatuses.includes(d.status));
+    // 2. Filter Dealerships by Status (The "Active" set for the dashboard view)
+    const activeDealerships = dealerships.filter(d => !excludedStatuses.includes(d.status));
+    const activeDealershipIds = new Set(activeDealerships.map(d => d.id));
+
+    // 3. Filter Orders (by Date AND by Active Dealerships)
+    // We only count revenue/products from dealerships that are currently "visible" (not excluded).
+    let filteredOrders = orders.filter(o => activeDealershipIds.has(o.dealership_id));
+
+    if (dateRange.start) {
+        filteredOrders = filteredOrders.filter(o => o.received_date >= dateRange.start);
+    }
+    if (dateRange.end) {
+        filteredOrders = filteredOrders.filter(o => o.received_date <= dateRange.end);
+    }
+
+    // 4. Calculate Aggregate Metrics
     
-    // Filter orders to only match active (status-included) dealerships
-    const allowedDealerIds = new Set(activeDealerships.map(d => d.id));
-    const activeOrders = dateFilteredOrders.filter(o => allowedDealerIds.has(o.dealership_id));
-
-    return { 
-      activeOrders, 
-      activeDealerships,
-      potentialCounts,
-      isFiltered: !!(dateRange.start || dateRange.end)
-    };
-  }, [orders, dealerships, dateRange, excludedStatuses]);
-
-  // Metrics Calculation (Based on active/included data)
-  const metrics = useMemo(() => {
-    const { activeOrders, activeDealerships } = dashboardData;
-
-    // 1. Total Dealerships in Scope
-    const total = activeDealerships.length;
-
-    // 2. Revenue
-    const revenue = activeOrders.reduce((sum, order) => {
-       const orderTotal = order.products?.reduce((pSum, p) => pSum + (Number(p.amount) || 0), 0) || 0;
-       return sum + orderTotal;
+    // Total Dealerships: Represents the "Portfolio Size" currently viewed.
+    // We do NOT filter this by date, because "Total Dealerships" usually means "Current Active Accounts".
+    const totalDealershipsCount = activeDealerships.length;
+    
+    // Revenue: Represents "Sales Volume" or "Booked Revenue" from the filtered orders.
+    const totalRevenue = filteredOrders.reduce((sum, order) => {
+        const orderTotal = order.products?.reduce((pSum, p) => pSum + (Number(p.amount) || 0), 0) || 0;
+        return sum + orderTotal;
     }, 0);
 
-    // 3. Product Counts
-    const productCounts = activeOrders.reduce((acc, order) => {
+    // Product Breakdown: Counts number of products sold/active in the filtered orders.
+    const productBreakdown = filteredOrders.reduce((acc, order) => {
         order.products?.forEach(p => {
-            if (p.product_code) {
-                acc[p.product_code] = (acc[p.product_code] || 0) + 1;
-            }
+             if (p.product_code) {
+                 acc[p.product_code] = (acc[p.product_code] || 0) + 1;
+             }
         });
         return acc;
     }, {} as Record<string, number>);
 
-    return { total, revenue, productCounts };
-  }, [dashboardData]);
+    return {
+        statusCounts,
+        totalDealershipsCount,
+        totalRevenue,
+        productBreakdown,
+        isDateFiltered: !!(dateRange.start || dateRange.end)
+    };
+  }, [dealerships, orders, excludedStatuses, dateRange]);
 
   const toggleStatus = (statuses: DealershipStatus[]) => {
     setExcludedStatuses(prev => {
@@ -198,8 +185,7 @@ const DashboardPage: React.FC = () => {
             <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Dealerships</span>
           </div>
           <div className="text-2xl font-extrabold text-slate-800 dark:text-slate-100">
-            {metrics.total}
-            {dashboardData.isFiltered && <span className="text-xs font-normal text-slate-400 ml-2">in range</span>}
+            {dashboardMetrics.totalDealershipsCount}
           </div>
         </div>
 
@@ -209,13 +195,14 @@ const DashboardPage: React.FC = () => {
             <div className="p-2 bg-emerald-50 dark:bg-emerald-900/30 rounded-lg text-emerald-600 dark:text-emerald-400"><DollarSign size={16} /></div>
             <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Revenue Booked</span>
           </div>
-          <div className="text-2xl font-extrabold text-slate-800 dark:text-slate-100">{formatCurrency(metrics.revenue)}</div>
+          <div className="text-2xl font-extrabold text-slate-800 dark:text-slate-100">{formatCurrency(dashboardMetrics.totalRevenue)}</div>
         </div>
 
         {/* Interactive Status Cards */}
         {statusGroups.map((group) => {
             const excluded = isExcluded(group.statuses);
-            const count = group.statuses.reduce((sum, s) => sum + (dashboardData.potentialCounts[s] || 0), 0);
+            // Sum up counts for statuses in this group
+            const count = group.statuses.reduce((sum, s) => sum + (dashboardMetrics.statusCounts[s] || 0), 0);
             
             return (
                 <button 
@@ -242,16 +229,22 @@ const DashboardPage: React.FC = () => {
       </div>
 
       {/* Product Metrics Section */}
-      <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3 mt-6">Product Breakdown <span className="font-normal text-slate-300 dark:text-slate-600 ml-2">(Based on Included Statuses)</span></h3>
+      <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3 mt-6">
+        Product Breakdown 
+        {dashboardMetrics.isDateFiltered && <span className="font-normal text-slate-300 dark:text-slate-600 ml-2">(In Date Range)</span>}
+      </h3>
       <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3 mb-6">
-        {Object.values(ProductCode).map((code) => (
-            <div key={code} className="bg-slate-50 dark:bg-slate-900 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 flex flex-col justify-center items-center text-center transition-colors">
-                <span className="text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-1 break-words w-full">
-                  {code.replace(/^\d+\s*-?\s*/, '')}
-                </span>
-                <span className="text-lg font-bold text-slate-700 dark:text-slate-200">{metrics.productCounts[code] || 0}</span>
-            </div>
-        ))}
+        {Object.values(ProductCode).map((code) => {
+            const count = dashboardMetrics.productBreakdown[code] || 0;
+            return (
+              <div key={code} className="bg-slate-50 dark:bg-slate-900 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 flex flex-col justify-center items-center text-center transition-colors">
+                  <span className="text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-1 break-words w-full">
+                    {code.replace(/^\d+\s*-?\s*/, '')}
+                  </span>
+                  <span className="text-lg font-bold text-slate-700 dark:text-slate-200">{count}</span>
+              </div>
+            );
+        })}
       </div>
     </div>
   );
