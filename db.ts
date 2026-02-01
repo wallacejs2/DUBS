@@ -3,7 +3,8 @@ import {
   Dealership, EnterpriseGroup, Order, Shopper, NewFeature, TeamMember,
   DealershipWithRelations, WebsiteLink, DealershipContacts, 
   ReynoldsSolution, DealershipStatus, CRMProvider, ProductCode, 
-  OrderStatus, ShopperStatus, ShopperPriority, TeamRole 
+  OrderStatus, ShopperStatus, ShopperPriority, TeamRole,
+  ProviderProduct, ProviderProductCategory, ProviderType
 } from './types';
 
 // Pure LocalStorage implementation for a seamless offline-first experience
@@ -21,6 +22,7 @@ class CuratorLocalDB extends EventTarget {
     shoppers: Shopper[];
     newFeatures: NewFeature[];
     teamMembers: TeamMember[];
+    providersProducts: ProviderProduct[];
   } = {
     dealerships: [],
     enterpriseGroups: [],
@@ -30,7 +32,8 @@ class CuratorLocalDB extends EventTarget {
     orders: [],
     shoppers: [],
     newFeatures: [],
-    teamMembers: []
+    teamMembers: [],
+    providersProducts: []
   };
 
   private constructor() {
@@ -67,7 +70,8 @@ class CuratorLocalDB extends EventTarget {
           ...parsed,
           // Ensure new fields exist if loading from old DB structure
           newFeatures: parsed.newFeatures || [],
-          teamMembers: parsed.teamMembers || []
+          teamMembers: parsed.teamMembers || [],
+          providersProducts: parsed.providersProducts || []
         };
       } catch (e) {
         console.error("Failed to parse LocalDB data", e);
@@ -105,7 +109,7 @@ class CuratorLocalDB extends EventTarget {
       name: 'Penske Toyota of Cerritos',
       enterprise_group_id: groupId,
       status: DealershipStatus.LIVE,
-      crm_provider: CRMProvider.CDK,
+      crm_provider: 'CDK',
       contract_value: 125000,
       purchase_date: '2023-01-15',
       go_live_date: '2023-02-01',
@@ -121,6 +125,7 @@ class CuratorLocalDB extends EventTarget {
       bu_id: 'BU-WEST',
       is_favorite: true,
       sms_activated: true,
+      products: ['15392 - Managed'],
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     }];
@@ -220,6 +225,44 @@ class CuratorLocalDB extends EventTarget {
       }
     ];
 
+    // Seed Providers and Products
+    this.data.providersProducts = [
+      {
+        id: this.generateId(),
+        name: 'CDK Global',
+        category: ProviderProductCategory.PROVIDER,
+        provider_type: ProviderType.CRM,
+        support_email: 'support@cdk.com',
+        support_phone: '800-555-0199',
+        support_link: 'https://support.cdk.com',
+        notes: 'Main CRM provider for large enterprise groups.',
+        created_at: new Date().toISOString()
+      },
+      {
+        id: this.generateId(),
+        name: 'Dealer.com',
+        category: ProviderProductCategory.PROVIDER,
+        provider_type: ProviderType.WEBSITE,
+        support_email: 'web-support@dealer.com',
+        support_link: 'https://dealer.com/help',
+        created_at: new Date().toISOString()
+      },
+      {
+        id: this.generateId(),
+        name: '15392 - Managed',
+        category: ProviderProductCategory.PRODUCT,
+        notes: 'Full service managed solutions product.',
+        created_at: new Date().toISOString()
+      },
+      {
+        id: this.generateId(),
+        name: 'DealerVault',
+        category: ProviderProductCategory.PROVIDER,
+        provider_type: ProviderType.INVENTORY,
+        created_at: new Date().toISOString()
+      }
+    ];
+
     this.save();
   }
 
@@ -283,13 +326,14 @@ class CuratorLocalDB extends EventTarget {
       // Ensure required fields have defaults if this is a new record
       name: dealershipData.name ?? existing.name ?? 'Untitled Dealership',
       status: dealershipData.status ?? existing.status ?? DealershipStatus.DMT_PENDING,
-      crm_provider: dealershipData.crm_provider ?? existing.crm_provider ?? CRMProvider.FOCUS,
+      crm_provider: dealershipData.crm_provider ?? existing.crm_provider ?? 'FOCUS',
       address_line1: dealershipData.address_line1 ?? existing.address_line1 ?? '',
       city: dealershipData.city ?? existing.city ?? '',
       state: dealershipData.state ?? existing.state ?? '',
       zip_code: dealershipData.zip_code ?? existing.zip_code ?? '',
       contract_value: dealershipData.contract_value ?? existing.contract_value ?? 0,
       purchase_date: dealershipData.purchase_date ?? existing.purchase_date ?? now,
+      products: dealershipData.products ?? existing.products ?? [],
       
       created_at: existing.created_at || now,
       updated_at: now
@@ -439,6 +483,27 @@ class CuratorLocalDB extends EventTarget {
   }
   deleteTeamMember(id: string) {
     this.data.teamMembers = this.data.teamMembers.filter(m => m.id !== id);
+    this.save();
+  }
+
+  // Providers & Products
+  getProvidersProducts() { return [...this.data.providersProducts]; }
+  upsertProviderProduct(pp: Partial<ProviderProduct>) {
+    const id = pp.id || this.generateId();
+    const existingIndex = this.data.providersProducts.findIndex(p => p.id === id);
+    const newItem = {
+      ...this.data.providersProducts[existingIndex],
+      ...pp,
+      id,
+      created_at: existingIndex >= 0 ? this.data.providersProducts[existingIndex].created_at : new Date().toISOString()
+    } as ProviderProduct;
+    if (existingIndex >= 0) this.data.providersProducts[existingIndex] = newItem;
+    else this.data.providersProducts.push(newItem);
+    this.save();
+    return id;
+  }
+  deleteProviderProduct(id: string) {
+    this.data.providersProducts = this.data.providersProducts.filter(p => p.id !== id);
     this.save();
   }
 }

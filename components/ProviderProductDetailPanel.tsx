@@ -2,23 +2,25 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   X, Trash2, Edit3, Save, RefreshCw, 
-  User, Mail, Phone, Hash, Building2, Check, ArrowRight, ArrowLeft
+  Package, Mail, Phone, Hash, Building2, Globe, ArrowRight, ExternalLink, ArrowLeft
 } from 'lucide-react';
-import { TeamMember, TeamRole, DealershipStatus } from '../types';
-import { useDealerships } from '../hooks';
+import { 
+  ProviderProduct, ProviderProductCategory, ProviderType, 
+  DealershipStatus, Dealership 
+} from '../types';
+import { useDealerships, useOrders } from '../hooks';
 
-interface TeamMemberDetailPanelProps {
-  member: Partial<TeamMember>;
+interface ProviderProductDetailPanelProps {
+  item: Partial<ProviderProduct>;
   onClose: () => void;
-  onUpdate: (data: Partial<TeamMember>) => void;
+  onUpdate: (data: Partial<ProviderProduct>) => void;
   onDelete: () => void;
   onBack?: () => void;
 }
 
-const roleColors: Record<TeamRole, string> = {
-  [TeamRole.CSM]: 'bg-purple-50 text-purple-700 border-purple-100 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800',
-  [TeamRole.SALES]: 'bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800',
-  [TeamRole.ENROLLMENT]: 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800',
+const categoryColors: Record<ProviderProductCategory, string> = {
+  [ProviderProductCategory.PROVIDER]: 'bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800',
+  [ProviderProductCategory.PRODUCT]: 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800',
 };
 
 const statusColors: Record<DealershipStatus, string> = {
@@ -66,35 +68,47 @@ const Select = ({ value, onChange, options, className = "" }: { value: any, onCh
   </select>
 );
 
-const TeamMemberDetailPanel: React.FC<TeamMemberDetailPanelProps> = ({ 
-  member, onClose, onUpdate, onDelete, onBack
+const ProviderProductDetailPanel: React.FC<ProviderProductDetailPanelProps> = ({ 
+  item, onClose, onUpdate, onDelete, onBack
 }) => {
-  const isNew = !member.id;
+  const isNew = !item.id;
   const [isEditing, setIsEditing] = useState(isNew);
-  const [formData, setFormData] = useState<Partial<TeamMember>>(member);
+  const [formData, setFormData] = useState<Partial<ProviderProduct>>(item);
   
-  // Use hooks to find linked dealerships
-  const { dealerships, getDetails } = useDealerships();
+  const { dealerships } = useDealerships();
+  const { orders } = useOrders();
 
-  // Filter linked dealerships based on name match
+  // Find linked dealerships
   const linkedDealerships = useMemo(() => {
-    if (!member.name || isNew) return [];
+    if (!item.name || isNew) return [];
     
-    return dealerships.filter(d => {
-        const details = getDetails(d.id);
-        if (!details || !details.contacts) return false;
-        
-        return (
-            details.contacts.sales_contact_name === member.name ||
-            details.contacts.enrollment_contact_name === member.name ||
-            details.contacts.assigned_specialist_name === member.name
-        );
-    });
-  }, [dealerships, member.name, isNew, getDetails]);
+    if (item.category === ProviderProductCategory.PROVIDER) {
+        return dealerships.filter(d => {
+            if (item.provider_type === ProviderType.CRM) return d.crm_provider === item.name;
+            if (item.provider_type === ProviderType.WEBSITE) return d.website_provider === item.name;
+            if (item.provider_type === ProviderType.INVENTORY) return d.inventory_provider === item.name;
+            return d.crm_provider === item.name || d.website_provider === item.name || d.inventory_provider === item.name;
+        });
+    } else {
+        // Product matching: check BOTH selected internal products array AND orders
+        return dealerships.filter(d => {
+            // 1. Check if selected in Dealership Details Panel
+            const isSelectedInDetails = d.products?.includes(item.name as string);
+            
+            // 2. Check if present in any of their orders
+            const isPresentInOrders = orders.some(o => 
+                o.dealership_id === d.id && 
+                o.products?.some(p => p.product_code === item.name)
+            );
+            
+            return isSelectedInDetails || isPresentInOrders;
+        });
+    }
+  }, [dealerships, orders, item.name, item.category, item.provider_type, isNew]);
 
   useEffect(() => {
-    setFormData(member);
-  }, [member]);
+    setFormData(item);
+  }, [item]);
 
   const handleSave = () => {
     onUpdate(formData);
@@ -109,13 +123,23 @@ const TeamMemberDetailPanel: React.FC<TeamMemberDetailPanelProps> = ({
     if (isNew) {
       onClose();
     } else {
-      setFormData(member);
+      setFormData(item);
       setIsEditing(false);
     }
   };
 
-  const updateField = (field: keyof TeamMember, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const updateField = (field: keyof ProviderProduct, value: any) => {
+    if (field === 'category') {
+      if (value === ProviderProductCategory.PRODUCT) {
+        // Clear provider type when switching to Product
+        setFormData(prev => ({ ...prev, category: value as ProviderProductCategory, provider_type: undefined }));
+      } else if (value === ProviderProductCategory.PROVIDER) {
+        // Default to CRM if none selected when switching back to Provider
+        setFormData(prev => ({ ...prev, category: value as ProviderProductCategory, provider_type: prev.provider_type || ProviderType.CRM }));
+      }
+    } else {
+      setFormData(prev => ({ ...prev, [field]: value }));
+    }
   };
 
   const formatPhone = (val?: string) => {
@@ -127,6 +151,8 @@ const TeamMemberDetailPanel: React.FC<TeamMemberDetailPanelProps> = ({
     }
     return val;
   };
+
+  const isProvider = (formData.category || item.category) === ProviderProductCategory.PROVIDER;
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
@@ -147,7 +173,7 @@ const TeamMemberDetailPanel: React.FC<TeamMemberDetailPanelProps> = ({
                   </button>
                )}
                <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg shadow-sm ${isNew ? 'bg-indigo-100 text-indigo-600' : 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white'}`}>
-                 <User size={20} />
+                 <Package size={20} />
                </div>
                <div>
                  {isEditing ? (
@@ -155,14 +181,14 @@ const TeamMemberDetailPanel: React.FC<TeamMemberDetailPanelProps> = ({
                      <Input 
                        value={formData.name} 
                        onChange={(v) => updateField('name', v)} 
-                       placeholder="Full Name" 
+                       placeholder="Item Name (CDK, FOCUS, etc)" 
                        className="font-bold text-lg" 
                      />
                    </div>
                  ) : (
                    <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">{formData.name}</h2>
                  )}
-                 {!isEditing && <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">{formData.email}</p>}
+                 {!isEditing && <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">{formData.category}</p>}
                </div>
              </div>
 
@@ -191,43 +217,52 @@ const TeamMemberDetailPanel: React.FC<TeamMemberDetailPanelProps> = ({
         <div className="flex-1 overflow-y-auto p-6 bg-white dark:bg-slate-900 custom-scrollbar transition-colors">
           <div className="space-y-6">
             
-            {/* Role & ID Section */}
-            <div className="grid grid-cols-2 gap-4">
+            {/* Category & Type Section */}
+            <div className={`grid ${isProvider ? 'grid-cols-2' : 'grid-cols-1'} gap-4 transition-all duration-200`}>
                <div>
-                  <Label>Role</Label>
+                  <Label>Category</Label>
                   {isEditing ? (
                     <Select 
-                       value={formData.role || TeamRole.CSM}
-                       onChange={(v) => updateField('role', v as TeamRole)}
-                       options={Object.values(TeamRole).map(s => ({ label: s, value: s }))}
+                       value={formData.category || ProviderProductCategory.PROVIDER}
+                       onChange={(v) => updateField('category', v as ProviderProductCategory)}
+                       options={Object.values(ProviderProductCategory).map(s => ({ label: s, value: s }))}
                     />
                   ) : (
-                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border ${roleColors[formData.role || TeamRole.CSM]}`}>
-                      {formData.role}
+                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border ${categoryColors[formData.category || ProviderProductCategory.PROVIDER]}`}>
+                      {formData.category}
                     </span>
                   )}
                </div>
-               <div>
-                  <Label icon={Hash}>User ID</Label>
-                  {isEditing ? (
-                    <Input value={formData.user_id} onChange={(v) => updateField('user_id', v)} placeholder="e.g. jsmith22" className="font-mono" />
-                  ) : (
-                    <DataValue mono value={formData.user_id} />
-                  )}
-               </div>
+               
+               {isProvider && (
+                   <div className="animate-in fade-in zoom-in-95 duration-200">
+                    <Label>Provider Type</Label>
+                    {isEditing ? (
+                        <Select 
+                        value={formData.provider_type || ProviderType.CRM}
+                        onChange={(v) => updateField('provider_type', v as ProviderType)}
+                        options={Object.values(ProviderType).map(s => ({ label: s, value: s }))}
+                        />
+                    ) : (
+                        <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border bg-slate-50 border-slate-200 text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400">
+                        {formData.provider_type || 'Multiple/Other'}
+                        </span>
+                    )}
+                   </div>
+               )}
             </div>
 
-            {/* Contact Info */}
+            {/* Support Info */}
             <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
-              <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-widest mb-3">Contact Information</h3>
+              <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-widest mb-3">Support Information</h3>
               <div className="space-y-4">
                 <div>
-                  <Label icon={Mail}>Email Address</Label>
+                  <Label icon={Mail}>Support Email</Label>
                   {isEditing ? (
-                    <Input type="email" value={formData.email} onChange={(v) => updateField('email', v)} />
+                    <Input type="email" value={formData.support_email} onChange={(v) => updateField('support_email', v)} placeholder="support@company.com" />
                   ) : (
                     <DataValue>
-                      <a href={`mailto:${formData.email}`} className="text-indigo-600 dark:text-indigo-400 hover:underline">{formData.email}</a>
+                      <a href={`mailto:${formData.support_email}`} className="text-indigo-600 dark:text-indigo-400 hover:underline">{formData.support_email}</a>
                     </DataValue>
                   )}
                 </div>
@@ -236,17 +271,48 @@ const TeamMemberDetailPanel: React.FC<TeamMemberDetailPanelProps> = ({
                   {isEditing ? (
                     <input 
                       type="text"
-                      value={formData.phone || ''}
-                      onChange={(e) => updateField('phone', e.target.value)}
-                      onBlur={(e) => updateField('phone', formatPhone(e.target.value))}
+                      value={formData.support_phone || ''}
+                      onChange={(e) => updateField('support_phone', e.target.value)}
+                      onBlur={(e) => updateField('support_phone', formatPhone(e.target.value))}
                       placeholder="(###) ###-####"
-                      className="w-full px-3 py-1.5 text-[12px] border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-normal transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600"
+                      className="w-full px-3 py-1.5 text-[12px] border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-normal transition-all"
                     />
                   ) : (
-                    <DataValue value={formatPhone(formData.phone)} />
+                    <DataValue value={formatPhone(formData.support_phone)} />
+                  )}
+                </div>
+                <div>
+                  <Label icon={Globe}>Support Portal / Link</Label>
+                  {isEditing ? (
+                    <Input value={formData.support_link} onChange={(v) => updateField('support_link', v)} placeholder="https://..." />
+                  ) : (
+                    <DataValue>
+                      {formData.support_link ? (
+                        <a href={formData.support_link} target="_blank" rel="noopener noreferrer" className="text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1">
+                          {formData.support_link} <ExternalLink size={12} />
+                        </a>
+                      ) : '---'}
+                    </DataValue>
                   )}
                 </div>
               </div>
+            </div>
+
+            {/* Notes Section */}
+            <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+               <Label>Notes / Internal Documentation</Label>
+               {isEditing ? (
+                   <textarea 
+                     value={formData.notes || ''}
+                     onChange={(e) => updateField('notes', e.target.value)}
+                     className="w-full px-3 py-2 text-[12px] border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-normal min-h-[80px]"
+                     placeholder="Add any internal context..."
+                   />
+               ) : (
+                   <div className="text-[12px] text-slate-600 dark:text-slate-400 italic bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg border border-slate-100 dark:border-slate-800">
+                       {formData.notes || 'No internal notes added.'}
+                   </div>
+               )}
             </div>
 
             {/* Linked Dealerships */}
@@ -259,7 +325,7 @@ const TeamMemberDetailPanel: React.FC<TeamMemberDetailPanelProps> = ({
                     
                     {linkedDealerships.length === 0 ? (
                         <div className="text-[11px] text-slate-400 dark:text-slate-500 italic p-2 border border-dashed border-slate-200 dark:border-slate-700 rounded-lg text-center">
-                            No dealerships linked to this team member.
+                            No dealerships currently linked to this {formData.category?.toLowerCase()}.
                         </div>
                     ) : (
                         <div className="space-y-2">
@@ -271,7 +337,7 @@ const TeamMemberDetailPanel: React.FC<TeamMemberDetailPanelProps> = ({
                                         </div>
                                         <div>
                                             <div className="text-[11px] font-bold text-slate-700 dark:text-slate-200 truncate">{d.name}</div>
-                                            <div className="text-[9px] font-mono text-slate-400 dark:text-slate-500">{d.pp_sys_id}</div>
+                                            <div className="text-[9px] font-mono text-slate-400 dark:text-slate-500">{d.pp_sys_id || 'NO ID'}</div>
                                         </div>
                                     </div>
                                     <span className={`px-1.5 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-widest border ${statusColors[d.status]}`}>
@@ -299,4 +365,4 @@ const TeamMemberDetailPanel: React.FC<TeamMemberDetailPanelProps> = ({
   );
 };
 
-export default TeamMemberDetailPanel;
+export default ProviderProductDetailPanel;

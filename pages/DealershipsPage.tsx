@@ -1,26 +1,36 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Plus, FileSpreadsheet } from 'lucide-react';
-import { useDealerships, useEnterpriseGroups, useOrders } from '../hooks';
+import { useDealerships, useEnterpriseGroups, useOrders, useProvidersProducts, useTeamMembers } from '../hooks';
 import { DealershipWithRelations, DealershipStatus, ProductCode, DealershipFilterState } from '../types';
 import { db } from '../db';
 import DealershipCard from '../components/DealershipCard';
 import DealershipForm from '../components/DealershipForm';
 import DealershipDetailPanel from '../components/DealershipDetailPanel';
+import EnterpriseGroupDetailPanel from '../components/EnterpriseGroupDetailPanel';
+import ProviderProductDetailPanel from '../components/ProviderProductDetailPanel';
+import TeamMemberDetailPanel from '../components/TeamMemberDetailPanel';
 
 interface DealershipsPageProps {
   filters: DealershipFilterState;
 }
 
+type SubPanel = 
+  | { type: 'group'; id: string }
+  | { type: 'provider'; id: string }
+  | { type: 'member'; id: string };
+
 const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters }) => {
-  // Use filters passed from App.tsx
   const { dealerships, loading, upsert, remove, getDetails, toggleFavorite } = useDealerships(filters);
   const { groups } = useEnterpriseGroups();
   const { orders } = useOrders();
+  const { items: providerProducts, upsert: upsertPP, remove: removePP } = useProvidersProducts();
+  const { members: teamMembers, upsert: upsertTM, remove: removeTM } = useTeamMembers();
   
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedDealerId, setSelectedDealerId] = useState<string | null>(null);
   const [editingDealer, setEditingDealer] = useState<DealershipWithRelations | null>(null);
+  const [panelStack, setPanelStack] = useState<SubPanel[]>([]);
 
   const selectedDealerDetails = selectedDealerId ? getDetails(selectedDealerId) : null;
 
@@ -59,21 +69,16 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters }) => {
   };
 
   const handleExportCSV = () => {
-    // Get all data regardless of filters
     const allDealerships = db.getDealerships();
     const allGroups = db.getEnterpriseGroups();
-    
-    // Flatten data for CSV
     const flatData: any[] = [];
-    const productCodes = Object.values(ProductCode); // Get all product codes for columns
+    const productCodes = Object.values(ProductCode);
 
     allDealerships.forEach(d => {
       const fullD = db.getDealershipWithRelations(d.id);
       if (!fullD) return;
-      
       const groupName = allGroups.find(g => g.id === fullD.enterprise_group_id)?.name || 'Independent';
       
-      // Base Dealership Info
       const baseInfo: any = {
          Status: fullD.status,
          Hold_Reason: fullD.hold_reason || '',
@@ -94,11 +99,11 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters }) => {
          POC_Name: fullD.contacts?.poc_name || '',
          POC_Email: fullD.contacts?.poc_email || '',
          POC_Phone: fullD.contacts?.poc_phone || '',
+         Onboarding_Date: fullD.onboarding_date || '',
          Go_Live_Date: fullD.go_live_date || '',
          Term_Date: fullD.term_date || '',
       };
 
-      // Add Website Links (Max 4 as requested columns imply multiple sets)
       const links = fullD.website_links || [];
       for (let i = 0; i < 4; i++) {
           const link = links[i];
@@ -114,11 +119,7 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters }) => {
                   Order_Number: o.order_number,
                   SortDate: o.received_date || '9999-99-99'
               };
-
-              // Initialize all product columns to empty
               productCodes.forEach(code => row[code] = '');
-
-              // Fill product amounts if they exist in this order
               if (o.products && o.products.length > 0) {
                   o.products.forEach(p => {
                       if (productCodes.includes(p.product_code)) {
@@ -126,64 +127,36 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters }) => {
                       }
                   });
               }
-              
               flatData.push(row);
           });
       } else {
-          // Dealership without orders - create one row so dealership info is exported
           const row = {
               ...baseInfo,
               Received_Date: '',
               Order_Number: '',
-              SortDate: '9999-99-99' // Put at the end
+              SortDate: '9999-99-99'
           };
-          // Initialize product columns
           productCodes.forEach(code => row[code] = '');
-          
           flatData.push(row);
       }
     });
 
-    // Sort by Received Date (Oldest to Newest)
     flatData.sort((a, b) => {
       const dateA = a.SortDate;
       const dateB = b.SortDate;
-      if (dateA === dateB) {
-          return a.Name.localeCompare(b.Name);
-      }
+      if (dateA === dateB) return a.Name.localeCompare(b.Name);
       return dateA.localeCompare(dateB);
     });
 
-    // Define Header Order explicitly based on requirements
     const columns = [
-      'Status', 
-      'Hold_Reason', 
-      'CIF', 
-      'Name', 
-      'Group', 
-      'Store', 
-      'Branch', 
-      'PP_ID', 
-      'ERA_ID', 
-      'BU_ID', 
-      'Address', 
-      'State', 
-      'CRM', 
-      'Sales_Contact', 
-      'Enrollment_Contact', 
-      'CSM', 
-      'POC_Name', 
-      'POC_Email', 
-      'POC_Phone', 
-      'Received_Date', 
-      'Order_Number', 
-      'Go_Live_Date', 
-      'Term_Date',
+      'Status', 'Hold_Reason', 'CIF', 'Name', 'Group', 'Store', 'Branch', 
+      'PP_ID', 'ERA_ID', 'BU_ID', 'Address', 'State', 'CRM', 
+      'Sales_Contact', 'Enrollment_Contact', 'CSM', 'POC_Name', 'POC_Email', 'POC_Phone', 
+      'Received_Date', 'Order_Number', 'Onboarding_Date',
+      'Go_Live_Date', 'Term_Date',
       ...productCodes,
-      'clientID1', 'websiteLink1',
-      'clientID2', 'websiteLink2',
-      'clientID3', 'websiteLink3',
-      'clientID4', 'websiteLink4'
+      'clientID1', 'websiteLink1', 'clientID2', 'websiteLink2',
+      'clientID3', 'websiteLink3', 'clientID4', 'websiteLink4'
     ];
 
     const csvContent = [
@@ -198,7 +171,6 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters }) => {
       }).join(','))
     ].join('\n');
 
-    // Download
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     if (link.download !== undefined) {
@@ -211,6 +183,11 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters }) => {
       document.body.removeChild(link);
     }
   };
+
+  const pushToPanelStack = (panel: SubPanel) => setPanelStack(prev => [...prev, panel]);
+  const popPanelStack = () => setPanelStack(prev => prev.slice(0, -1));
+
+  const activeSubPanel = panelStack[panelStack.length - 1];
 
   return (
     <div className="animate-in fade-in duration-700">
@@ -254,12 +231,8 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters }) => {
               <div className="flex flex-col gap-3">
               {dealerships.map(dealer => {
                   const details = getDetails(dealer.id);
-                  // Check for valid client ID in any website link
                   const hasClientId = details?.website_links?.some(l => l.client_id && l.client_id.trim().length > 0) ?? false;
-                  
-                  // Check for missing CSM
                   const hasCSM = details?.contacts?.assigned_specialist_name && details.contacts.assigned_specialist_name.trim().length > 0;
-
                   return (
                   <DealershipCard 
                       key={dealer.id} 
@@ -288,15 +261,53 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters }) => {
         />
       )}
 
-      {selectedDealerId && selectedDealerDetails && (
+      {selectedDealerId && selectedDealerDetails && !activeSubPanel && (
         <DealershipDetailPanel 
           dealership={selectedDealerDetails}
           groups={groups}
-          onClose={() => setSelectedDealerId(null)}
+          onClose={() => { setSelectedDealerId(null); setPanelStack([]); }}
           onUpdate={(data) => upsert(data)}
           onDelete={handleDelete}
           onToggleFavorite={() => toggleFavorite(selectedDealerId)}
+          onViewEnterpriseGroup={(id) => pushToPanelStack({ type: 'group', id })}
+          onViewProviderProduct={(id) => pushToPanelStack({ type: 'provider', id })}
+          onViewTeamMember={(id) => pushToPanelStack({ type: 'member', id })}
         />
+      )}
+
+      {/* Drill-down Sub Panels */}
+      {activeSubPanel && (
+        <>
+          {activeSubPanel.type === 'group' && groups.find(g => g.id === activeSubPanel.id) && (
+            <EnterpriseGroupDetailPanel 
+              group={groups.find(g => g.id === activeSubPanel.id)!}
+              dealerships={dealerships.filter(d => d.enterprise_group_id === activeSubPanel.id)}
+              onClose={() => { setSelectedDealerId(null); setPanelStack([]); }}
+              onBack={() => popPanelStack()}
+              onUpdate={(data) => db.upsertEnterpriseGroup(data)}
+              onDelete={() => { if(window.confirm('Delete group?')) { db.deleteEnterpriseGroup(activeSubPanel.id); popPanelStack(); } }}
+              onViewDealer={(id) => { setSelectedDealerId(id); setPanelStack([]); }}
+            />
+          )}
+          {activeSubPanel.type === 'provider' && providerProducts.find(p => p.id === activeSubPanel.id) && (
+            <ProviderProductDetailPanel 
+              item={providerProducts.find(p => p.id === activeSubPanel.id)!}
+              onClose={() => { setSelectedDealerId(null); setPanelStack([]); }}
+              onBack={() => popPanelStack()}
+              onUpdate={(data) => upsertPP(data)}
+              onDelete={() => { if(window.confirm('Delete item?')) { removePP(activeSubPanel.id); popPanelStack(); } }}
+            />
+          )}
+          {activeSubPanel.type === 'member' && teamMembers.find(m => m.id === activeSubPanel.id) && (
+            <TeamMemberDetailPanel 
+              member={teamMembers.find(m => m.id === activeSubPanel.id)!}
+              onClose={() => { setSelectedDealerId(null); setPanelStack([]); }}
+              onBack={() => popPanelStack()}
+              onUpdate={(data) => upsertTM(data)}
+              onDelete={() => { if(window.confirm('Delete member?')) { removeTM(activeSubPanel.id); popPanelStack(); } }}
+            />
+          )}
+        </>
       )}
     </div>
   );

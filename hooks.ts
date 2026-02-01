@@ -3,7 +3,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { db } from './db.ts';
 import { 
   Dealership, DealershipWithRelations, EnterpriseGroup, 
-  Shopper, Order, ProductCode, NewFeature, TeamMember
+  Shopper, Order, ProductCode, NewFeature, TeamMember,
+  ProviderProduct
 } from './types.ts';
 
 export function useEnterpriseGroups() {
@@ -278,5 +279,48 @@ export function useTeamMembers(filters?: { search?: string; role?: string }) {
     loading,
     upsert: (m: Partial<TeamMember>) => db.upsertTeamMember(m),
     remove: (id: string) => db.deleteTeamMember(id)
+  };
+}
+
+export function useProvidersProducts(filters?: { search?: string; category?: string; provider_type?: string }) {
+  const [items, setItems] = useState<ProviderProduct[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetch = useCallback(() => {
+    let data = db.getProvidersProducts();
+    
+    if (filters?.search) {
+      const s = filters.search.toLowerCase();
+      data = data.filter(p => 
+        p.name.toLowerCase().includes(s) || 
+        (p.notes && p.notes.toLowerCase().includes(s))
+      );
+    }
+
+    if (filters?.category) {
+      data = data.filter(p => p.category === filters.category);
+    }
+
+    if (filters?.provider_type) {
+      data = data.filter(p => p.provider_type === filters.provider_type);
+    }
+
+    data.sort((a, b) => a.name.localeCompare(b.name));
+    
+    setItems(data);
+    setLoading(false);
+  }, [filters]);
+
+  useEffect(() => {
+    fetch();
+    db.addEventListener('change', fetch);
+    return () => db.removeEventListener('change', fetch);
+  }, [fetch]);
+
+  return {
+    items,
+    loading,
+    upsert: (p: Partial<ProviderProduct>) => db.upsertProviderProduct(p),
+    remove: (id: string) => db.deleteProviderProduct(id)
   };
 }

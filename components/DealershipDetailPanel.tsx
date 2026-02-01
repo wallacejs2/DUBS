@@ -1,14 +1,15 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
-  X, Trash2, Edit3, Save, RefreshCw, Plus, Minus, Check, ArrowLeft, FileSpreadsheet, Star
+  X, Trash2, Edit3, Save, RefreshCw, Plus, Minus, Check, ArrowLeft, FileSpreadsheet, Star, ChevronDown, ExternalLink
 } from 'lucide-react';
 import { 
   DealershipWithRelations, 
-  DealershipStatus, EnterpriseGroup, CRMProvider, ProductCode, OrderStatus, Order, TeamRole
+  DealershipStatus, EnterpriseGroup, CRMProvider, ProductCode, OrderStatus, Order, TeamRole,
+  ProviderProductCategory, ProviderType
 } from '../types';
 import { db } from '../db';
-import { useTeamMembers } from '../hooks';
+import { useTeamMembers, useProvidersProducts } from '../hooks';
 
 interface DealershipDetailPanelProps {
   dealership: DealershipWithRelations;
@@ -18,6 +19,9 @@ interface DealershipDetailPanelProps {
   onDelete: () => void;
   onBack?: () => void;
   onToggleFavorite?: () => void;
+  onViewEnterpriseGroup?: (id: string) => void;
+  onViewProviderProduct?: (id: string) => void;
+  onViewTeamMember?: (id: string) => void;
 }
 
 const STATES = [
@@ -42,27 +46,47 @@ const Label = ({ children }: { children?: React.ReactNode }) => (
   </label>
 );
 
-const DataValue = ({ value, mono = false }: { value?: any, mono?: boolean }) => (
-  <div className={`text-[12px] font-normal text-slate-700 dark:text-slate-300 leading-tight min-h-[1.2em] ${mono ? 'font-mono' : ''}`}>
-    {value || '---'}
-  </div>
-);
+const DataValue = ({ value, mono = false, children, onClick, interactive = false }: { value?: any, mono?: boolean, children?: React.ReactNode, onClick?: () => void, interactive?: boolean }) => {
+  const content = children || value || '---';
+  const baseClasses = `text-[12px] font-normal leading-tight min-h-[1.2em] ${mono ? 'font-mono' : ''}`;
+  
+  if (onClick || interactive) {
+    return (
+      <button 
+        onClick={onClick}
+        disabled={!onClick}
+        className={`${baseClasses} text-indigo-600 dark:text-indigo-400 hover:underline text-left group flex items-center gap-1 transition-colors`}
+      >
+        {content}
+        {onClick && <ExternalLink size={10} className="opacity-0 group-hover:opacity-100 transition-opacity" />}
+      </button>
+    );
+  }
 
-const Input = ({ value, onChange, type = "text", className = "", placeholder="" }: { value: any, onChange: (v: string) => void, type?: string, className?: string, placeholder?: string }) => (
+  return (
+    <div className={`${baseClasses} text-slate-700 dark:text-slate-300`}>
+      {content}
+    </div>
+  );
+};
+
+const Input = ({ value, onChange, type = "text", className = "", placeholder="", disabled = false }: { value: any, onChange: (v: string) => void, type?: string, className?: string, placeholder?: string, disabled?: boolean }) => (
   <input 
     type={type}
     value={value || ''}
     onChange={(e) => onChange(e.target.value)}
     placeholder={placeholder}
-    className={`w-full px-2 py-1 text-[12px] border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-normal placeholder:text-slate-400 dark:placeholder:text-slate-600 ${className}`}
+    disabled={disabled}
+    className={`w-full px-2 py-1 text-[12px] border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-normal placeholder:text-slate-400 dark:placeholder:text-slate-600 ${disabled ? 'opacity-50 bg-slate-50 dark:bg-slate-900 cursor-not-allowed border-slate-100 dark:border-slate-800' : ''} ${className}`}
   />
 );
 
-const Select = ({ value, onChange, options, className = "" }: { value: any, onChange: (v: string) => void, options: { label: string, value: string }[], className?: string }) => (
+const Select = ({ value, onChange, options, className = "", disabled = false }: { value: any, onChange: (v: string) => void, options: { label: string, value: string }[], className?: string, disabled?: boolean }) => (
   <select 
     value={value || ''}
     onChange={(e) => onChange(e.target.value)}
-    className={`w-full px-2 py-1 text-[12px] border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-normal ${className}`}
+    disabled={disabled}
+    className={`w-full px-2 py-1 text-[12px] border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-normal ${disabled ? 'opacity-50 cursor-not-allowed bg-slate-50 dark:bg-slate-900' : ''} ${className}`}
   >
     {options.map(opt => (
       <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -70,8 +94,70 @@ const Select = ({ value, onChange, options, className = "" }: { value: any, onCh
   </select>
 );
 
+// MultiSelect Dropdown Component
+const MultiSelect = ({ options, selected, onToggle, placeholder = "Select products..." }: { options: { name: string, id: string }[], selected: string[], onToggle: (name: string) => void, placeholder?: string }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div className="relative w-full" ref={dropdownRef}>
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between px-2 py-1 text-[12px] border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-normal text-left min-h-[30px]"
+      >
+        <div className="flex flex-wrap gap-1 items-center flex-1">
+          {selected.length === 0 ? (
+            <span className="text-slate-400 dark:text-slate-600">{placeholder}</span>
+          ) : (
+            selected.map(item => (
+              <span key={item} className="bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 px-1.5 py-0.5 rounded flex items-center gap-1 text-[10px] font-bold">
+                {item}
+                <X size={10} className="cursor-pointer hover:text-indigo-900" onClick={(e) => { e.stopPropagation(); onToggle(item); }} />
+              </span>
+            ))
+          )}
+        </div>
+        <ChevronDown size={14} className={`text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      {isOpen && (
+        <div className="absolute z-50 w-full mt-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl max-h-60 overflow-y-auto custom-scrollbar animate-in fade-in slide-in-from-top-2 duration-150">
+          <div className="p-1">
+            {options.length === 0 ? (
+              <div className="p-3 text-center text-slate-400 italic text-[11px]">No options found</div>
+            ) : (
+              options.map(opt => (
+                <div
+                  key={opt.id}
+                  onClick={() => onToggle(opt.name)}
+                  className={`flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-colors ${selected.includes(opt.name) ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300' : 'hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'}`}
+                >
+                  <span className="text-[12px]">{opt.name}</span>
+                  {selected.includes(opt.name) && <Check size={14} />}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({ 
-  dealership, groups: initialGroups, onClose, onUpdate, onDelete, onBack, onToggleFavorite
+  dealership, groups: initialGroups, onClose, onUpdate, onDelete, onBack, onToggleFavorite,
+  onViewEnterpriseGroup, onViewProviderProduct, onViewTeamMember
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<DealershipWithRelations>(dealership);
@@ -79,16 +165,24 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
   const [isAddingGroup, setIsAddingGroup] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   
-  // New Group Inline State
   const [newGroupName, setNewGroupName] = useState('');
   const [newGroupPP, setNewGroupPP] = useState('');
   const [newGroupERA, setNewGroupERA] = useState('');
 
   const { members: teamMembers } = useTeamMembers();
+  const { items: providerProducts } = useProvidersProducts();
+
+  // Helpers to find IDs from Names
+  const findProviderId = (name?: string) => providerProducts.find(p => p.name === name)?.id;
+  const findMemberId = (name?: string) => teamMembers.find(m => m.name === name)?.id;
+
+  // Filter provider lists
+  const crmProviders = useMemo(() => providerProducts.filter(i => i.category === ProviderProductCategory.PROVIDER && i.provider_type === ProviderType.CRM), [providerProducts]);
+  const websiteProviders = useMemo(() => providerProducts.filter(i => i.category === ProviderProductCategory.PROVIDER && i.provider_type === ProviderType.WEBSITE), [providerProducts]);
+  const inventoryProviders = useMemo(() => providerProducts.filter(i => i.category === ProviderProductCategory.PROVIDER && i.provider_type === ProviderType.INVENTORY), [providerProducts]);
+  const availableProducts = useMemo(() => providerProducts.filter(i => i.category === ProviderProductCategory.PRODUCT), [providerProducts]);
 
   useEffect(() => {
-    // When dealership changes, update form data.
-    // If no orders exist, initialize one so it's ready for editing.
     const initialOrders = dealership.orders && dealership.orders.length > 0 
       ? dealership.orders 
       : [{
@@ -102,7 +196,8 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
 
     setFormData({
       ...dealership,
-      orders: initialOrders
+      orders: initialOrders,
+      products: dealership.products || []
     });
   }, [dealership]);
 
@@ -112,7 +207,6 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
   };
 
   const handleCancel = () => {
-    // Reset to original dealership data, but ensure single order stub exists if needed
     const initialOrders = dealership.orders && dealership.orders.length > 0 
       ? dealership.orders 
       : [{
@@ -126,13 +220,23 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
 
     setFormData({
       ...dealership,
-      orders: initialOrders
+      orders: initialOrders,
+      products: dealership.products || []
     });
     setIsEditing(false);
   };
 
   const updateField = (field: keyof DealershipWithRelations, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const toggleProduct = (productName: string) => {
+    const current = formData.products || [];
+    if (current.includes(productName)) {
+      updateField('products', current.filter(p => p !== productName));
+    } else {
+      updateField('products', [...current, productName]);
+    }
   };
 
   const updateContact = (field: string, value: string) => {
@@ -162,7 +266,6 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
     updateField('website_links', links);
   };
 
-  // --- Order Logic for Nested Structure ---
   const updateOrder = (idx: number, field: keyof Order, val: any) => {
     const orders = [...(formData.orders || [])];
     (orders[idx] as any)[field] = val;
@@ -190,7 +293,6 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
      (orders[orderIdx].products[productIdx] as any)[field] = val;
      updateField('orders', orders);
   };
-  // ------------------------------------------
 
   const handleGroupSelect = (val: string) => {
      updateField('enterprise_group_id', val);
@@ -246,7 +348,6 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
     
     const flatData: any[] = [];
     
-    // Base Info
     const baseInfo: any = {
          Status: d.status,
          Hold_Reason: d.hold_reason || '',
@@ -267,11 +368,11 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
          POC_Name: d.contacts?.poc_name || '',
          POC_Email: d.contacts?.poc_email || '',
          POC_Phone: d.contacts?.poc_phone || '',
+         Onboarding_Date: d.onboarding_date || '',
          Go_Live_Date: d.go_live_date || '',
          Term_Date: d.term_date || '',
     };
 
-    // Website Links (Max 4)
     const links = d.website_links || [];
     for (let i = 0; i < 4; i++) {
         const link = links[i];
@@ -279,9 +380,7 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
         baseInfo[`websiteLink${i+1}`] = link ? link.primary_url || '' : '';
     }
 
-    // Orders
     if (d.orders && d.orders.length > 0) {
-        // Sort orders by date
         const sortedOrders = [...d.orders].sort((a,b) => (a.received_date || '').localeCompare(b.received_date || ''));
         
         sortedOrders.forEach(o => {
@@ -312,18 +411,16 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
         flatData.push(row);
     }
 
-    // Columns
     const columns = [
       'Status', 'Hold_Reason', 'CIF', 'Name', 'Group', 'Store', 'Branch', 
       'PP_ID', 'ERA_ID', 'BU_ID', 'Address', 'State', 'CRM', 
       'Sales_Contact', 'Enrollment_Contact', 'CSM', 'POC_Name', 'POC_Email', 'POC_Phone', 
-      'Received_Date', 'Order_Number', 'Go_Live_Date', 'Term_Date',
+      'Received_Date', 'Order_Number', 'Onboarding_Date', 'Go_Live_Date', 'Term_Date',
       ...productCodes,
       'clientID1', 'websiteLink1', 'clientID2', 'websiteLink2', 
       'clientID3', 'websiteLink3', 'clientID4', 'websiteLink4'
     ];
 
-    // CSV String (Header Removed)
     const csvContent = flatData.map(row => columns.map(col => {
           const val = row[col];
           const stringVal = String(val === undefined || val === null ? '' : val);
@@ -349,7 +446,7 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
   };
 
   const formatDate = (dateStr?: string) => {
-    if (!dateStr) return '---';
+    if (!dateStr) return null;
     const datePart = dateStr.split('T')[0];
     const [year, month, day] = datePart.split('-').map(Number);
     return new Date(year, month - 1, day).toLocaleDateString('en-US', {
@@ -364,11 +461,16 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
     return dateStr.split('T')[0];
   };
 
-  const isLockedStatus = (status: DealershipStatus) => {
-     return [DealershipStatus.DMT_PENDING, DealershipStatus.DMT_APPROVED, DealershipStatus.HOLD].includes(status);
+  const isOnboardingUnlocked = (status: DealershipStatus) => {
+    return [DealershipStatus.ONBOARDING, DealershipStatus.LIVE, DealershipStatus.LEGACY, DealershipStatus.CANCELLED].includes(status);
+  };
+  const isGoLiveUnlocked = (status: DealershipStatus) => {
+    return [DealershipStatus.LIVE, DealershipStatus.LEGACY, DealershipStatus.CANCELLED].includes(status);
+  };
+  const isTermUnlocked = (status: DealershipStatus) => {
+    return status === DealershipStatus.CANCELLED;
   };
 
-  // Filter team members by role for dropdowns
   const salesMembers = teamMembers.filter(m => m.role === TeamRole.SALES);
   const enrollmentMembers = teamMembers.filter(m => m.role === TeamRole.ENROLLMENT);
   const csmMembers = teamMembers.filter(m => m.role === TeamRole.CSM);
@@ -378,7 +480,6 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]" onClick={isEditing ? undefined : onClose}></div>
       <div className="relative w-full max-w-4xl bg-white dark:bg-slate-900 h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300 transition-colors">
         
-        {/* Sticky Header */}
         <div className="bg-white dark:bg-slate-900 sticky top-0 z-30 border-b border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
           <div className="p-4 flex justify-between items-center gap-2">
              <div className="flex items-center gap-2">
@@ -449,11 +550,10 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
           </div>
         </div>
 
-        {/* Content Scroll Area */}
         <div className="flex-1 overflow-y-auto p-10 bg-white dark:bg-slate-900 pb-20 custom-scrollbar transition-colors">
           <div className="animate-in fade-in duration-500 space-y-6">
             
-            <div className="grid grid-cols-3 gap-6">
+            <div className="grid grid-cols-4 gap-6">
                <div className="space-y-2">
                   <Label>Status</Label>
                   {isEditing ? (
@@ -467,53 +567,72 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                       {dealership.status}
                     </span>
                   )}
-                  
-                  {/* Hold Reason Input */}
-                  {formData.status === DealershipStatus.HOLD && (
-                    <div className="animate-in fade-in slide-in-from-top-1">
-                      <Label>Hold Reason</Label>
-                      {isEditing ? (
-                        <textarea
-                          value={formData.hold_reason || ''}
-                          onChange={(e) => updateField('hold_reason', e.target.value)}
-                          className="w-full px-2 py-1.5 text-[11px] border border-orange-200 dark:border-orange-900 bg-orange-50 dark:bg-orange-900/20 rounded-lg focus:ring-1 focus:ring-orange-500 outline-none text-slate-800 dark:text-orange-100 placeholder:text-orange-300 min-h-[60px]"
-                          placeholder="Reason for hold..."
-                        />
-                      ) : (
-                        <div className="w-full px-2 py-1.5 text-[11px] border border-orange-200 dark:border-orange-900 bg-orange-50 dark:bg-orange-900/20 rounded-lg text-slate-800 dark:text-orange-100 italic">
-                           {formData.hold_reason || 'No reason specified'}
-                        </div>
-                      )}
-                    </div>
+               </div>
+
+               <div>
+                  <Label>Onboarding Date</Label>
+                  {isEditing ? (
+                    <Input 
+                        type="date" 
+                        value={formatDateInput(formData.onboarding_date)} 
+                        onChange={(v) => updateField('onboarding_date', v)} 
+                        className="dark:color-scheme-dark" 
+                        disabled={!isOnboardingUnlocked(formData.status)}
+                    />
+                  ) : (
+                    <DataValue value={formatDate(dealership.onboarding_date) || 'Pending'} />
                   )}
                </div>
+
                <div>
                   <Label>Go-Live Date</Label>
                   {isEditing ? (
-                     isLockedStatus(formData.status) ? (
-                        <div className="w-full px-2 py-1 text-[12px] border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 text-slate-400 dark:text-slate-500 rounded-lg italic cursor-not-allowed">
-                          Pending Status
-                        </div>
-                     ) : (
-                        <Input type="date" value={formatDateInput(formData.go_live_date)} onChange={(v) => updateField('go_live_date', v)} className="dark:color-scheme-dark" />
-                     )
+                     <Input 
+                        type="date" 
+                        value={formatDateInput(formData.go_live_date)} 
+                        onChange={(v) => updateField('go_live_date', v)} 
+                        className="dark:color-scheme-dark" 
+                        disabled={!isGoLiveUnlocked(formData.status)}
+                    />
                   ) : (
-                     <DataValue value={isLockedStatus(dealership.status) ? 'Pending' : formatDate(dealership.go_live_date)} />
+                     <DataValue value={formatDate(dealership.go_live_date) || 'Pending'} />
                   )}
                </div>
+
                <div>
-                  {(formData.status === DealershipStatus.CANCELLED) && (
-                     <>
-                       <Label>Term Date</Label>
-                       {isEditing ? (
-                          <Input type="date" value={formatDateInput(formData.term_date)} onChange={(v) => updateField('term_date', v)} className="dark:color-scheme-dark" />
-                       ) : (
-                          <DataValue value={formatDate(dealership.term_date)} />
-                       )}
-                     </>
+                  <Label>Term Date</Label>
+                  {isEditing ? (
+                      <Input 
+                        type="date" 
+                        value={formatDateInput(formData.term_date)} 
+                        onChange={(v) => updateField('term_date', v)} 
+                        className="dark:color-scheme-dark" 
+                        disabled={!isTermUnlocked(formData.status)}
+                    />
+                  ) : (
+                      <DataValue value={dealership.status === DealershipStatus.CANCELLED ? (formatDate(dealership.term_date) || 'N/A') : 'N/A'} />
                   )}
                </div>
             </div>
+
+            {/* Hold Reason - Full Width Row */}
+            {formData.status === DealershipStatus.HOLD && (
+                <div className="animate-in fade-in slide-in-from-top-1 bg-orange-50 dark:bg-orange-900/20 p-4 rounded-xl border border-orange-200 dark:border-orange-900">
+                    <Label>Hold Reason</Label>
+                    {isEditing ? (
+                    <textarea
+                        value={formData.hold_reason || ''}
+                        onChange={(e) => updateField('hold_reason', e.target.value)}
+                        className="w-full px-2 py-1.5 text-[12px] border border-orange-200 dark:border-orange-800 bg-white dark:bg-slate-900 rounded-lg focus:ring-1 focus:ring-orange-500 outline-none text-slate-800 dark:text-orange-100 placeholder:text-orange-300 min-h-[80px] resize-none"
+                        placeholder="Reason for hold..."
+                    />
+                    ) : (
+                    <div className="text-[12px] text-slate-800 dark:text-orange-100 italic leading-relaxed">
+                        {formData.hold_reason || 'No reason specified'}
+                    </div>
+                    )}
+                </div>
+            )}
 
             <h3 className="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest mt-6">Account Details</h3>
 
@@ -552,7 +671,10 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                        )}
                     </div>
                   ) : (
-                     <DataValue value={dealership.enterprise_group?.name || 'Single (Independent)'} />
+                     <DataValue 
+                        value={dealership.enterprise_group?.name || 'Single (Independent)'} 
+                        onClick={dealership.enterprise_group_id && onViewEnterpriseGroup ? () => onViewEnterpriseGroup(dealership.enterprise_group_id!) : undefined}
+                     />
                   )}
                </div>
                <div>
@@ -616,26 +738,52 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                      <Select 
                         value={formData.crm_provider}
                         onChange={(v) => updateField('crm_provider', v)}
-                        options={Object.values(CRMProvider).map(c => ({ label: c, value: c }))}
+                        options={[{ label: 'Select CRM', value: '' }, ...crmProviders.map(i => ({ label: i.name, value: i.name }))]}
                      />
                   ) : (
-                     <DataValue value={dealership.crm_provider} />
+                     <DataValue 
+                        value={dealership.crm_provider} 
+                        onClick={() => {
+                          const id = findProviderId(dealership.crm_provider);
+                          if (id && onViewProviderProduct) onViewProviderProduct(id);
+                        }}
+                     />
                   )}
                </div>
                <div className="col-span-1">
                   <Label>Website Provider</Label>
                   {isEditing ? (
-                    <Input value={formData.website_provider} onChange={(v) => updateField('website_provider', v)} placeholder="Provider" />
+                     <Select 
+                        value={formData.website_provider}
+                        onChange={(v) => updateField('website_provider', v)}
+                        options={[{ label: 'Select Website', value: '' }, ...websiteProviders.map(i => ({ label: i.name, value: i.name }))]}
+                     />
                   ) : (
-                    <DataValue value={dealership.website_provider} />
+                    <DataValue 
+                        value={dealership.website_provider} 
+                        onClick={() => {
+                          const id = findProviderId(dealership.website_provider);
+                          if (id && onViewProviderProduct) onViewProviderProduct(id);
+                        }}
+                    />
                   )}
                </div>
                <div className="col-span-1">
                   <Label>Inventory Provider</Label>
                   {isEditing ? (
-                    <Input value={formData.inventory_provider} onChange={(v) => updateField('inventory_provider', v)} placeholder="Provider" />
+                     <Select 
+                        value={formData.inventory_provider}
+                        onChange={(v) => updateField('inventory_provider', v)}
+                        options={[{ label: 'Select Inventory', value: '' }, ...inventoryProviders.map(i => ({ label: i.name, value: i.name }))]}
+                     />
                   ) : (
-                    <DataValue value={dealership.inventory_provider} />
+                    <DataValue 
+                        value={dealership.inventory_provider} 
+                        onClick={() => {
+                          const id = findProviderId(dealership.inventory_provider);
+                          if (id && onViewProviderProduct) onViewProviderProduct(id);
+                        }}
+                    />
                   )}
                </div>
                <div className="col-span-1">
@@ -653,6 +801,39 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                      <DataValue value={dealership.sms_activated ? 'Yes' : 'No'} />
                   )}
                </div>
+            </div>
+
+            {/* Internal Products Row - MultiSelect Dropdown */}
+            <div className="w-full">
+               <Label>Internal Products</Label>
+               {isEditing ? (
+                  <MultiSelect 
+                    options={availableProducts}
+                    selected={formData.products || []}
+                    onToggle={toggleProduct}
+                    placeholder="Search or select internal products..."
+                  />
+               ) : (
+                  <div className="flex flex-wrap gap-1.5">
+                     {(dealership.products || []).length === 0 ? (
+                        <DataValue value="No products selected" />
+                     ) : (
+                        dealership.products?.map((p, idx) => (
+                           <button 
+                              key={idx} 
+                              onClick={() => {
+                                 const id = findProviderId(p);
+                                 if (id && onViewProviderProduct) onViewProviderProduct(id);
+                              }}
+                              className="px-2 py-0.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-800 rounded-md text-[10px] font-bold uppercase tracking-wider hover:bg-indigo-100 dark:hover:bg-indigo-800 transition-colors flex items-center gap-1"
+                           >
+                              {p}
+                              <ExternalLink size={8} />
+                           </button>
+                        ))
+                     )}
+                  </div>
+               )}
             </div>
 
             <hr className="border-slate-100 dark:border-slate-800 my-4" />
@@ -703,7 +884,15 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                         onChange={(v) => updateContact('sales_contact_name', v)}
                         options={[{ label: 'Select Team Member', value: '' }, ...teamMembers.filter(m => m.role === TeamRole.SALES).map(m => ({ label: m.name, value: m.name }))]}
                      />
-                  ) : <DataValue value={dealership.contacts?.sales_contact_name} />}
+                  ) : (
+                     <DataValue 
+                        value={dealership.contacts?.sales_contact_name} 
+                        onClick={() => {
+                          const id = findMemberId(dealership.contacts?.sales_contact_name);
+                          if (id && onViewTeamMember) onViewTeamMember(id);
+                        }}
+                     />
+                  )}
                </div>
                <div>
                   <Label>Enrollment Specialist</Label>
@@ -713,7 +902,15 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                         onChange={(v) => updateContact('enrollment_contact_name', v)}
                         options={[{ label: 'Select Team Member', value: '' }, ...teamMembers.filter(m => m.role === TeamRole.ENROLLMENT).map(m => ({ label: m.name, value: m.name }))]}
                      />
-                  ) : <DataValue value={dealership.contacts?.enrollment_contact_name} />}
+                  ) : (
+                     <DataValue 
+                        value={dealership.contacts?.enrollment_contact_name} 
+                        onClick={() => {
+                          const id = findMemberId(dealership.contacts?.enrollment_contact_name);
+                          if (id && onViewTeamMember) onViewTeamMember(id);
+                        }}
+                     />
+                  )}
                </div>
                <div>
                   <Label>CSM Specialist</Label>
@@ -723,7 +920,15 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                         onChange={(v) => updateContact('assigned_specialist_name', v)}
                         options={[{ label: 'Select Team Member', value: '' }, ...teamMembers.filter(m => m.role === TeamRole.CSM).map(m => ({ label: m.name, value: m.name }))]}
                      />
-                  ) : <DataValue value={dealership.contacts?.assigned_specialist_name} />}
+                  ) : (
+                     <DataValue 
+                        value={dealership.contacts?.assigned_specialist_name} 
+                        onClick={() => {
+                          const id = findMemberId(dealership.contacts?.assigned_specialist_name);
+                          if (id && onViewTeamMember) onViewTeamMember(id);
+                        }}
+                     />
+                  )}
                </div>
             </div>
 
@@ -753,7 +958,6 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
             <hr className="border-slate-100 dark:border-slate-800 my-4" />
             <h3 className="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">DMT Order Section</h3>
 
-            {/* New Nested Order Section */}
             <div className="space-y-6">
                {(isEditing ? (formData.orders || []) : (dealership.orders || [])).map((order, orderIdx) => (
                   <div key={orderIdx} className="bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg border border-slate-100 dark:border-slate-800 relative">

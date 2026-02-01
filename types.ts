@@ -32,6 +32,29 @@ export enum ProductCode {
   P15390_SMS = '15390 - SMS'
 }
 
+export enum ProviderProductCategory {
+  PROVIDER = 'Provider',
+  PRODUCT = 'Product'
+}
+
+export enum ProviderType {
+  CRM = 'CRM',
+  WEBSITE = 'Website',
+  INVENTORY = 'Inventory'
+}
+
+export interface ProviderProduct {
+  id: string;
+  name: string;
+  category: ProviderProductCategory;
+  provider_type?: ProviderType;
+  support_email?: string;
+  support_phone?: string;
+  support_link?: string;
+  notes?: string;
+  created_at: string;
+}
+
 export enum OrderStatus {
   PENDING = 'pending',
   PROCESSING = 'processing',
@@ -113,11 +136,13 @@ export interface Dealership {
   name: string;
   enterprise_group_id?: string;
   status: DealershipStatus;
-  crm_provider: CRMProvider;
+  crm_provider: string;
   website_provider?: string;
   inventory_provider?: string;
+  products?: string[];
   contract_value: number;
   purchase_date: string;
+  onboarding_date?: string;
   go_live_date?: string;
   term_date?: string;
   

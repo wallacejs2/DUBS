@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Building2, Users, ClipboardCheck, LayoutDashboard, 
-  Menu, Search, Sparkles, Moon, Sun, Briefcase
+  Menu, Search, Sparkles, Moon, Sun, Briefcase, Package
 } from 'lucide-react';
 import DealershipsPage from './pages/DealershipsPage.tsx';
 import EnterpriseGroupsPage from './pages/EnterpriseGroupsPage.tsx';
@@ -10,10 +10,11 @@ import QAPage from './pages/QAPage.tsx';
 import DashboardPage from './pages/DashboardPage.tsx';
 import NewFeaturesPage from './pages/NewFeaturesPage.tsx';
 import TeamMembersPage from './pages/TeamMembersPage.tsx';
+import ProvidersProductsPage from './pages/ProvidersProductsPage.tsx';
 import DealershipSidebarFilters from './components/DealershipSidebarFilters.tsx';
 import { DealershipFilterState } from './types.ts';
 
-type NavPage = 'dealerships' | 'groups' | 'qa' | 'dashboard' | 'features' | 'team';
+type NavPage = 'dealerships' | 'groups' | 'qa' | 'dashboard' | 'features' | 'team' | 'providers_products';
 
 const App: React.FC = () => {
   const [activePage, setActivePage] = useState<NavPage>('dashboard');
@@ -52,6 +53,7 @@ const App: React.FC = () => {
     { id: 'groups', label: 'Enterprise Groups', icon: Users },
     { id: 'qa', label: 'QA Shoppers', icon: ClipboardCheck },
     { id: 'team', label: 'Team Members', icon: Briefcase },
+    { id: 'providers_products', label: 'Providers & Products', icon: Package },
     { id: 'features', label: 'New Features', icon: Sparkles },
   ];
 
@@ -62,6 +64,7 @@ const App: React.FC = () => {
       case 'qa': return <QAPage />;
       case 'features': return <NewFeaturesPage />;
       case 'team': return <TeamMembersPage />;
+      case 'providers_products': return <ProvidersProductsPage />;
       case 'dashboard': return <DashboardPage />;
       default: return <DashboardPage />;
     }
