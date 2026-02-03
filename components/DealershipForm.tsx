@@ -524,7 +524,7 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
                         <Select 
                             value={formData.website_provider}
                             onChange={(v) => updateField('website_provider', v)}
-                            options={websiteProviders.map(i => ({ label: i.name, value: i.name }))}
+                            options={[{ label: 'Select Provider', value: '' }, ...websiteProviders.map(i => ({ label: i.name, value: i.name }))]}
                         />
                     </div>
                     <div>
@@ -532,7 +532,7 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
                         <Select 
                             value={formData.inventory_provider}
                             onChange={(v) => updateField('inventory_provider', v)}
-                            options={inventoryProviders.map(i => ({ label: i.name, value: i.name }))}
+                            options={[{ label: 'Select Provider', value: '' }, ...inventoryProviders.map(i => ({ label: i.name, value: i.name }))]}
                         />
                     </div>
                 </div>
@@ -603,7 +603,7 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
                         <Select 
                             value={formData.contacts?.sales_contact_name}
                             onChange={(v) => updateContact('sales_contact_name', v)}
-                            options={salesMembers.map(m => ({ label: m.name, value: m.name }))}
+                            options={[{ label: 'Select Member', value: '' }, ...salesMembers.map(m => ({ label: m.name, value: m.name }))]}
                         />
                     </div>
                     <div>
@@ -611,7 +611,7 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
                         <Select 
                             value={formData.contacts?.enrollment_contact_name}
                             onChange={(v) => updateContact('enrollment_contact_name', v)}
-                            options={enrollmentMembers.map(m => ({ label: m.name, value: m.name }))}
+                            options={[{ label: 'Select Member', value: '' }, ...enrollmentMembers.map(m => ({ label: m.name, value: m.name }))]}
                         />
                     </div>
                     <div>
@@ -619,7 +619,7 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
                         <Select 
                             value={formData.contacts?.assigned_specialist_name}
                             onChange={(v) => updateContact('assigned_specialist_name', v)}
-                            options={csmMembers.map(m => ({ label: m.name, value: m.name }))}
+                            options={[{ label: 'Select Member', value: '' }, ...csmMembers.map(m => ({ label: m.name, value: m.name }))]}
                         />
                     </div>
                 </div>
