@@ -1,8 +1,8 @@
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { X, Save, Plus, Trash2, Check, Minus, RefreshCw, ChevronDown } from 'lucide-react';
+import { X, Save, Plus, Trash2, Check, Minus, ChevronDown } from 'lucide-react';
 import { 
-  DealershipWithRelations, DealershipStatus, CRMProvider, 
+  DealershipWithRelations, DealershipStatus, 
   EnterpriseGroup, ProductCode, OrderStatus, Order, TeamRole,
   ProviderProductCategory, ProviderType
 } from '../types';
@@ -22,19 +22,19 @@ const STATES = [
   'SD','TN','TX','UT','VT','VA','WA','WV','WI','WY'
 ];
 
-// Helper components for consistency
+// UI Components matching DealershipDetailPanel
 const Label = ({ children }: { children?: React.ReactNode }) => (
   <label className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1 block">
     {children}
   </label>
 );
 
-// Fix: Add required prop to Input helper component to resolve type error
-const Input = ({ value, onChange, type = "text", className = "", placeholder="", disabled = false, required = false }: { value: any, onChange: (v: string) => void, type?: string, className?: string, placeholder?: string, disabled?: boolean, required?: boolean }) => (
+const Input = ({ value, onChange, type = "text", className = "", placeholder="", disabled = false, required = false, onBlur }: { value: any, onChange: (v: string) => void, type?: string, className?: string, placeholder?: string, disabled?: boolean, required?: boolean, onBlur?: (e: any) => void }) => (
   <input 
     type={type}
     value={value || ''}
     onChange={(e) => onChange(e.target.value)}
+    onBlur={onBlur}
     placeholder={placeholder}
     disabled={disabled}
     required={required}
@@ -55,7 +55,6 @@ const Select = ({ value, onChange, options, className = "", disabled = false }: 
   </select>
 );
 
-// MultiSelect Dropdown Component
 const MultiSelect = ({ options, selected, onToggle, placeholder = "Select products..." }: { options: { name: string, id: string }[], selected: string[], onToggle: (name: string) => void, placeholder?: string }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -128,7 +127,6 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
   const { members: teamMembers } = useTeamMembers();
   const { items: providerProducts } = useProvidersProducts();
 
-  // Filter lists from DB
   const crmProviders = useMemo(() => providerProducts.filter(i => i.category === ProviderProductCategory.PROVIDER && i.provider_type === ProviderType.CRM), [providerProducts]);
   const websiteProviders = useMemo(() => providerProducts.filter(i => i.category === ProviderProductCategory.PROVIDER && i.provider_type === ProviderType.WEBSITE), [providerProducts]);
   const inventoryProviders = useMemo(() => providerProducts.filter(i => i.category === ProviderProductCategory.PROVIDER && i.provider_type === ProviderType.INVENTORY), [providerProducts]);
@@ -307,342 +305,392 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]" onClick={onCancel}></div>
       <div className="relative w-full max-w-4xl bg-white dark:bg-slate-900 h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300 transition-colors">
         
-        {/* Sticky Header - Identical to Detail Panel */}
+        {/* Sticky Header */}
         <div className="bg-white dark:bg-slate-900 sticky top-0 z-30 border-b border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
-          <div className="p-4 flex justify-end items-center gap-2">
-             <button 
-                type="submit" 
-                form="dealer-form" 
-                className="px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-indigo-700 flex items-center gap-1"
-             >
-                <Save size={14} /> Save
-             </button>
-             <button 
-                type="button"
-                onClick={() => setFormData(initialData || {})} 
-                className="p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
-             >
-                <RefreshCw size={16} />
-             </button>
-             <button type="button" onClick={onCancel} className="p-1.5 text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
-                <X size={20} />
-             </button>
-          </div>
-
-          <div className="px-8 pb-6 space-y-3">
-             <div>
-               <input 
-                 value={formData.name || ''} 
-                 onChange={(e) => updateField('name', e.target.value)} 
-                 className="w-full text-xl font-bold py-2 border-b border-indigo-200 dark:border-indigo-800 outline-none focus:border-indigo-500 bg-transparent text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-600" 
-                 placeholder="Dealership Name" 
-                 required
-               />
-               {!isNew && <div className="text-[10px] uppercase font-bold text-indigo-500 mt-1">Editing Mode</div>}
+          <div className="p-4 flex justify-between items-center gap-2">
+             <div className="flex flex-col">
+               <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">{isNew ? 'New Dealership' : 'Edit Dealership'}</h2>
+               <p className="text-xs text-slate-500">Fill in the details below to {isNew ? 'create' : 'update'} the record.</p>
              </div>
-
-             <div>
-               <Input 
-                 value={formData.cif_number} 
-                 onChange={(v) => updateField('cif_number', v)} 
-                 className="font-mono text-[12px]" 
-                 placeholder="CIF Number (e.g. CIF-12345)" 
-               />
+             <div className="flex items-center gap-2">
+                <button 
+                    type="submit" 
+                    form="dealer-form" 
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-indigo-700 shadow-lg shadow-indigo-500/20 flex items-center gap-2 transition-all"
+                >
+                    <Save size={16} /> Save Changes
+                </button>
+                <button type="button" onClick={onCancel} className="p-2 text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all">
+                    <X size={20} />
+                </button>
              </div>
           </div>
         </div>
 
         {/* Form Body - Scrollable Area */}
         <div className="flex-1 overflow-y-auto p-10 bg-white dark:bg-slate-900 pb-20 custom-scrollbar transition-colors">
-          <form id="dealer-form" onSubmit={handleSubmit} className="animate-in fade-in duration-500 space-y-6">
+          <form id="dealer-form" onSubmit={handleSubmit} className="animate-in fade-in duration-500 space-y-8 max-w-3xl mx-auto">
             
-            {/* Status & Dates Row */}
-            <div className="grid grid-cols-4 gap-6">
-               <div className="space-y-2">
-                  <Label>Status</Label>
-                  <Select 
-                     value={formData.status}
-                     onChange={(v) => updateField('status', v)}
-                     options={Object.values(DealershipStatus).map(s => ({ label: s, value: s }))}
-                  />
-               </div>
-
-               <div>
-                  <Label>Onboarding Date</Label>
-                  <Input 
-                      type="date" 
-                      value={formData.onboarding_date ? formData.onboarding_date.split('T')[0] : ''} 
-                      onChange={(v) => updateField('onboarding_date', v)} 
-                      className="dark:color-scheme-dark" 
-                      disabled={!isOnboardingUnlocked(formData.status || DealershipStatus.DMT_PENDING)}
-                      placeholder="Pending"
-                  />
-               </div>
-
-               <div>
-                  <Label>Go-Live Date</Label>
-                  <Input 
-                      type="date" 
-                      value={formData.go_live_date ? formData.go_live_date.split('T')[0] : ''} 
-                      onChange={(v) => updateField('go_live_date', v)} 
-                      className="dark:color-scheme-dark" 
-                      disabled={!isGoLiveUnlocked(formData.status || DealershipStatus.DMT_PENDING)}
-                      placeholder="Pending"
-                  />
-               </div>
-
-               <div>
-                  <Label>Term Date</Label>
-                  <Input 
-                      type="date" 
-                      value={formData.term_date ? formData.term_date.split('T')[0] : ''} 
-                      onChange={(v) => updateField('term_date', v)} 
-                      className="dark:color-scheme-dark" 
-                      disabled={!isTermUnlocked(formData.status || DealershipStatus.DMT_PENDING)}
-                      placeholder="N/A"
-                  />
-               </div>
-            </div>
-
-            {/* Hold Reason - Full Width Row */}
-            {formData.status === DealershipStatus.HOLD && (
-                <div className="animate-in fade-in slide-in-from-top-1 bg-orange-50 dark:bg-orange-900/20 p-4 rounded-xl border border-orange-200 dark:border-orange-900">
-                    <Label>Hold Reason</Label>
-                    <textarea
-                        value={formData.hold_reason || ''}
-                        onChange={(e) => updateField('hold_reason', e.target.value)}
-                        className="w-full px-2 py-1.5 text-[12px] border border-orange-200 dark:border-orange-800 bg-white dark:bg-slate-900 rounded-lg focus:ring-1 focus:ring-orange-500 outline-none text-slate-800 dark:text-orange-100 placeholder:text-orange-300 min-h-[80px] resize-none"
-                        placeholder="Please provide a reason for placing this dealership on hold..."
-                    />
+            {/* Core Info */}
+            <div className="space-y-6">
+                <h3 className="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">Core Information</h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <Label>Dealership Name</Label>
+                        <Input 
+                            value={formData.name} 
+                            onChange={(v) => updateField('name', v)} 
+                            placeholder="Dealership Name"
+                            required
+                        />
+                    </div>
+                    <div>
+                        <Label>CIF Number</Label>
+                        <Input 
+                            value={formData.cif_number} 
+                            onChange={(v) => updateField('cif_number', v)} 
+                            placeholder="CIF Number"
+                        />
+                    </div>
                 </div>
-            )}
 
-            <h3 className="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest mt-6">Account Details</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div>
+                        <Label>Status</Label>
+                        <Select 
+                            value={formData.status}
+                            onChange={(v) => updateField('status', v)}
+                            options={Object.values(DealershipStatus).map(s => ({ label: s, value: s }))}
+                        />
+                    </div>
+                    <div>
+                        <Label>Onboarding</Label>
+                        <Input 
+                            type="date"
+                            value={formData.onboarding_date ? formData.onboarding_date.split('T')[0] : ''}
+                            onChange={(v) => updateField('onboarding_date', v)}
+                            disabled={!isOnboardingUnlocked(formData.status || DealershipStatus.DMT_PENDING)}
+                            className="dark:color-scheme-dark"
+                        />
+                    </div>
+                    <div>
+                        <Label>Go-Live</Label>
+                        <Input 
+                            type="date"
+                            value={formData.go_live_date ? formData.go_live_date.split('T')[0] : ''}
+                            onChange={(v) => updateField('go_live_date', v)}
+                            disabled={!isGoLiveUnlocked(formData.status || DealershipStatus.DMT_PENDING)}
+                            className="dark:color-scheme-dark"
+                        />
+                    </div>
+                    <div>
+                        <Label>Term Date</Label>
+                        <Input 
+                            type="date"
+                            value={formData.term_date ? formData.term_date.split('T')[0] : ''}
+                            onChange={(v) => updateField('term_date', v)}
+                            disabled={!isTermUnlocked(formData.status || DealershipStatus.DMT_PENDING)}
+                            className="dark:color-scheme-dark"
+                        />
+                    </div>
+                </div>
 
-            <div className="grid grid-cols-3 gap-6">
-               <div className="min-w-0 col-span-2">
-                  <Label>Enterprise Group</Label>
-                  <div className="flex flex-col gap-2">
-                     {!isAddingGroup ? (
-                       <>
-                         <Select 
-                            value={formData.enterprise_group_id}
-                            onChange={handleGroupSelect}
-                            options={[
-                              { label: 'Single (Independent)', value: '' },
-                              ...groups.map(g => ({ label: g.name, value: g.id }))
-                            ]}
-                          />
-                          <button type="button" onClick={() => setIsAddingGroup(true)} className="text-[9px] font-bold text-indigo-600 dark:text-indigo-400 text-left hover:underline">+ Add New Group</button>
-                       </>
-                     ) : (
-                       <div className="bg-indigo-50 dark:bg-indigo-900/20 p-2 rounded-lg border border-indigo-100 dark:border-indigo-800 animate-in fade-in zoom-in-95">
-                          <div className="flex justify-between items-center mb-1">
-                             <span className="text-[9px] font-bold text-indigo-800 dark:text-indigo-300">New Group</span>
-                             <button type="button" onClick={() => setIsAddingGroup(false)} className="text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200"><X size={12} /></button>
-                          </div>
-                          <div className="space-y-1">
-                             <Input value={newGroupName} onChange={(v) => setNewGroupName(v)} placeholder="Name" />
-                             <div className="grid grid-cols-2 gap-1">
-                                <Input value={newGroupPP} onChange={(v) => setNewGroupPP(v)} placeholder="PP ID" className="font-mono text-[10px]" />
-                                <Input value={newGroupERA} onChange={(v) => setNewGroupERA(v)} placeholder="ERA ID" className="font-mono text-[10px]" />
-                             </div>
-                             <button type="button" onClick={handleAddGroup} className="w-full text-[9px] bg-indigo-600 text-white rounded py-1 mt-1 font-bold">Create & Select</button>
-                          </div>
-                       </div>
-                     )}
-                  </div>
-               </div>
-               <div>
-                  <Label>Store / Branch</Label>
-                  <div className="flex gap-1">
-                     <Input value={formData.store_number} onChange={(v) => updateField('store_number', v)} placeholder="Store #" className="font-mono" />
-                     <Input value={formData.branch_number} onChange={(v) => updateField('branch_number', v)} placeholder="Branch #" className="font-mono" />
-                  </div>
-               </div>
+                {formData.status === DealershipStatus.HOLD && (
+                    <div className="animate-in fade-in slide-in-from-top-1 bg-orange-50 dark:bg-orange-900/20 p-4 rounded-xl border border-orange-200 dark:border-orange-900">
+                        <Label>Reason for Hold</Label>
+                        <textarea
+                            value={formData.hold_reason || ''}
+                            onChange={(e) => updateField('hold_reason', e.target.value)}
+                            className="w-full px-2 py-1.5 text-[12px] border border-orange-200 dark:border-orange-800 bg-white dark:bg-slate-900 rounded-lg focus:ring-1 focus:ring-orange-500 outline-none text-slate-800 dark:text-orange-100 placeholder:text-orange-300 min-h-[80px] resize-none"
+                            placeholder="Reason for hold..."
+                        />
+                    </div>
+                )}
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
-               <div>
-                  <Label>PP Sys ID</Label>
-                  <Input value={formData.pp_sys_id} onChange={(v) => updateField('pp_sys_id', v)} placeholder="PP-###" className="font-mono" />
-               </div>
-               <div>
-                  <Label>ERA ID</Label>
-                  <Input value={formData.era_system_id} onChange={(v) => updateField('era_system_id', v)} placeholder="ERA-###" className="font-mono" />
-               </div>
-               <div>
-                  <Label>BU ID</Label>
-                  <Input value={formData.bu_id} onChange={(v) => updateField('bu_id', v)} placeholder="BU-###" className="font-mono" />
-               </div>
+            <hr className="border-slate-100 dark:border-slate-800" />
+
+            {/* Enterprise & IDs */}
+            <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                    <h3 className="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">Enterprise & Identifiers</h3>
+                    {!isAddingGroup && (
+                        <button type="button" onClick={() => setIsAddingGroup(true)} className="text-[9px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline">+ New Group</button>
+                    )}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {isAddingGroup ? (
+                        <div className="col-span-2 bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-xl border border-indigo-100 dark:border-indigo-800 animate-in fade-in zoom-in-95">
+                            <div className="flex justify-between items-center mb-3">
+                                <span className="text-xs font-bold text-indigo-800 dark:text-indigo-300">Create New Enterprise Group</span>
+                                <button type="button" onClick={() => setIsAddingGroup(false)} className="text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200"><X size={14} /></button>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                <div className="md:col-span-3">
+                                    <Label>Group Name</Label>
+                                    <Input value={newGroupName} onChange={(v) => setNewGroupName(v)} placeholder="Name" />
+                                </div>
+                                <div>
+                                    <Label>PP Sys ID</Label>
+                                    <Input value={newGroupPP} onChange={(v) => setNewGroupPP(v)} placeholder="PP ID" />
+                                </div>
+                                <div>
+                                    <Label>ERA ID</Label>
+                                    <Input value={newGroupERA} onChange={(v) => setNewGroupERA(v)} placeholder="ERA ID" />
+                                </div>
+                                <div className="flex items-end">
+                                    <button type="button" onClick={handleAddGroup} className="h-[26px] w-full bg-indigo-600 text-white rounded-lg font-bold text-[10px] hover:bg-indigo-700 transition-all shadow-md">
+                                        Create & Select
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <div>
+                            <Label>Enterprise Group</Label>
+                            <Select 
+                                value={formData.enterprise_group_id}
+                                onChange={(v) => handleGroupSelect(v)}
+                                options={[
+                                    { label: 'Single (Independent)', value: '' },
+                                    ...groups.map(g => ({ label: g.name, value: g.id }))
+                                ]}
+                            />
+                        </div>
+                    )}
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <Label>Store #</Label>
+                            <Input value={formData.store_number} onChange={(v) => updateField('store_number', v)} placeholder="#" />
+                        </div>
+                        <div>
+                            <Label>Branch #</Label>
+                            <Input value={formData.branch_number} onChange={(v) => updateField('branch_number', v)} placeholder="#" />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                    <div>
+                        <Label>PP Sys ID</Label>
+                        <Input value={formData.pp_sys_id} onChange={(v) => updateField('pp_sys_id', v)} placeholder="PP-###" />
+                    </div>
+                    <div>
+                        <Label>ERA ID</Label>
+                        <Input value={formData.era_system_id} onChange={(v) => updateField('era_system_id', v)} placeholder="ERA-###" />
+                    </div>
+                    <div>
+                        <Label>BU ID</Label>
+                        <Input value={formData.bu_id} onChange={(v) => updateField('bu_id', v)} placeholder="BU-###" />
+                    </div>
+                </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
-               <div className="col-span-2">
-                  <Label>Address</Label>
-                  <Input value={formData.address_line1} onChange={(v) => updateField('address_line1', v)} placeholder="Street Address" required />
-               </div>
-               <div>
-                  <Label>State</Label>
-                  <Select 
-                      value={formData.state} 
-                      onChange={(v) => updateField('state', v)}
-                      options={[{ label: 'Select State', value: '' }, ...STATES.map(s => ({ label: s, value: s }))]}
-                  />
-               </div>
-            </div>
+            <hr className="border-slate-100 dark:border-slate-800" />
 
-            {/* Providers Row */}
-            <div className="grid grid-cols-4 gap-4">
-               <div className="col-span-1">
-                  <Label>CRM Provider</Label>
-                  <Select 
-                      value={formData.crm_provider}
-                      onChange={(v) => updateField('crm_provider', v)}
-                      options={[{ label: 'Select CRM', value: '' }, ...crmProviders.map(i => ({ label: i.name, value: i.name }))]}
-                  />
-               </div>
-               <div className="col-span-1">
-                  <Label>Website Provider</Label>
-                  <Select 
-                      value={formData.website_provider}
-                      onChange={(v) => updateField('website_provider', v)}
-                      options={[{ label: 'Select Website', value: '' }, ...websiteProviders.map(i => ({ label: i.name, value: i.name }))]}
-                  />
-               </div>
-               <div className="col-span-1">
-                  <Label>Inventory Provider</Label>
-                  <Select 
-                      value={formData.inventory_provider}
-                      onChange={(v) => updateField('inventory_provider', v)}
-                      options={[{ label: 'Select Inventory', value: '' }, ...inventoryProviders.map(i => ({ label: i.name, value: i.name }))]}
-                  />
-               </div>
-               <div className="col-span-1">
-                  <Label>SMS Activated</Label>
-                  <div className="flex items-center h-[26px]">
+            {/* Location & Providers */}
+            <div className="space-y-6">
+                <h3 className="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">Location & Providers</h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="md:col-span-2">
+                        <Label>Address</Label>
+                        <Input value={formData.address_line1} onChange={(v) => updateField('address_line1', v)} placeholder="Street Address" required />
+                    </div>
+                    <div>
+                        <Label>State</Label>
+                        <Select 
+                            value={formData.state} 
+                            onChange={(v) => updateField('state', v)}
+                            options={STATES.map(s => ({ label: s, value: s }))}
+                        />
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <Label>CRM Provider</Label>
+                        <Select 
+                            value={formData.crm_provider}
+                            onChange={(v) => updateField('crm_provider', v)}
+                            options={crmProviders.map(i => ({ label: i.name, value: i.name }))}
+                        />
+                    </div>
+                    <div>
+                        <Label>Website Provider</Label>
+                        <Select 
+                            value={formData.website_provider}
+                            onChange={(v) => updateField('website_provider', v)}
+                            options={websiteProviders.map(i => ({ label: i.name, value: i.name }))}
+                        />
+                    </div>
+                    <div>
+                        <Label>Inventory Provider</Label>
+                        <Select 
+                            value={formData.inventory_provider}
+                            onChange={(v) => updateField('inventory_provider', v)}
+                            options={inventoryProviders.map(i => ({ label: i.name, value: i.name }))}
+                        />
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
                     <input 
                       type="checkbox" 
+                      id="sms_active"
                       checked={!!formData.sms_activated} 
                       onChange={(e) => updateField('sms_activated', e.target.checked)}
                       className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
                     />
-                  </div>
-               </div>
+                    <label htmlFor="sms_active" className="text-[12px] font-medium text-slate-700 dark:text-slate-300 cursor-pointer select-none">
+                        SMS Services Activated
+                    </label>
+                </div>
+
+                <div>
+                    <Label>Internal Products</Label>
+                    <MultiSelect 
+                        options={availableProducts}
+                        selected={formData.products || []}
+                        onToggle={toggleProduct}
+                        placeholder="Internal Products"
+                    />
+                </div>
             </div>
 
-            {/* Internal Products Row - MultiSelect Dropdown */}
-            <div className="w-full">
-               <Label>Internal Products</Label>
-               <MultiSelect 
-                 options={availableProducts}
-                 selected={formData.products || []}
-                 onToggle={toggleProduct}
-                 placeholder="Search or select internal products..."
-               />
-            </div>
+            <hr className="border-slate-100 dark:border-slate-800" />
 
-            <hr className="border-slate-100 dark:border-slate-800 my-4" />
-            <h3 className="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">Website Links</h3>
-            
-            <div className="space-y-2">
-               {(formData.website_links || []).map((link, idx) => (
-                  <div key={idx} className="grid grid-cols-2 gap-4 items-center bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg border border-slate-100 dark:border-slate-800">
-                     <div>
-                        <Label>Primary URL</Label>
-                        <Input value={link.primary_url} onChange={(v) => updateWebsite(idx, 'primary_url', v)} placeholder="https://..." />
-                     </div>
-                     <div className="flex gap-2">
-                        <div className="flex-1">
-                           <Label>Client ID</Label>
-                           <Input value={link.client_id} onChange={(v) => updateWebsite(idx, 'client_id', v)} placeholder="ID" className="font-mono" />
+            {/* Websites */}
+            <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                    <h3 className="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">Websites</h3>
+                    <button type="button" onClick={addWebsite} className="text-[9px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1">
+                        <Plus size={12} /> Add URL
+                    </button>
+                </div>
+                
+                {(formData.website_links || []).map((link, idx) => (
+                    <div key={idx} className="grid grid-cols-2 gap-4 items-center bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg border border-slate-100 dark:border-slate-800">
+                        <div>
+                            <Label>Primary URL</Label>
+                            <Input value={link.primary_url} onChange={(v) => updateWebsite(idx, 'primary_url', v)} placeholder="https://..." />
                         </div>
-                        {formData.website_links!.length > 1 && (
-                           <button type="button" onClick={() => removeWebsite(idx)} className="mt-4 text-slate-400 hover:text-red-500"><Minus size={14} /></button>
-                        )}
-                     </div>
-                  </div>
-               ))}
-               <button type="button" onClick={addWebsite} className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 flex items-center gap-1.5 uppercase tracking-wider bg-indigo-50 dark:bg-indigo-900/30 px-3 py-2 rounded-lg w-fit border border-indigo-100 dark:border-indigo-800">
-                 <Plus size={12} /> Add New Website
-               </button>
+                        <div className="flex gap-2">
+                            <div className="flex-1">
+                                <Label>Client ID</Label>
+                                <Input value={link.client_id} onChange={(v) => updateWebsite(idx, 'client_id', v)} placeholder="ID" />
+                            </div>
+                            {formData.website_links!.length > 1 && (
+                               <button type="button" onClick={() => removeWebsite(idx)} className="mt-4 text-slate-400 hover:text-red-500 p-1"><Trash2 size={14} /></button>
+                            )}
+                        </div>
+                    </div>
+                ))}
             </div>
 
-            <hr className="border-slate-100 dark:border-slate-800 my-4" />
-            <h3 className="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">Contacts</h3>
+            <hr className="border-slate-100 dark:border-slate-800" />
 
-            <div className="grid grid-cols-3 gap-4">
-               <div>
-                  <Label>Sales Associate</Label>
-                  <Select 
-                      value={formData.contacts?.sales_contact_name || ''} 
-                      onChange={(v) => updateContact('sales_contact_name', v)}
-                      options={[{ label: 'Select Team Member', value: '' }, ...salesMembers.map(m => ({ label: m.name, value: m.name }))]}
-                  />
-               </div>
-               <div>
-                  <Label>Enrollment Specialist</Label>
-                  <Select 
-                      value={formData.contacts?.enrollment_contact_name || ''} 
-                      onChange={(v) => updateContact('enrollment_contact_name', v)}
-                      options={[{ label: 'Select Team Member', value: '' }, ...enrollmentMembers.map(m => ({ label: m.name, value: m.name }))]}
-                  />
-               </div>
-               <div>
-                  <Label>CSM Specialist</Label>
-                  <Select 
-                      value={formData.contacts?.assigned_specialist_name || ''} 
-                      onChange={(v) => updateContact('assigned_specialist_name', v)}
-                      options={[{ label: 'Select Team Member', value: '' }, ...csmMembers.map(m => ({ label: m.name, value: m.name }))]}
-                  />
-               </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-4">
-               <div>
-                  <Label>POC Name</Label>
-                  <Input value={formData.contacts?.poc_name} onChange={(v) => updateContact('poc_name', v)} placeholder="Contact Name" />
-               </div>
-               <div>
-                  <Label>POC Email</Label>
-                  <Input value={formData.contacts?.poc_email} onChange={(v) => updateContact('poc_email', v)} placeholder="email@domain.com" />
-               </div>
-               <div>
-                  <Label>POC Phone</Label>
-                  <input 
-                    value={formData.contacts?.poc_phone || ''}
-                    onChange={(e) => updateContact('poc_phone', e.target.value)}
-                    onBlur={(e) => updateContact('poc_phone', formatPhone(e.target.value))}
-                    placeholder="(###) ###-####"
-                    className="w-full px-2 py-1 text-[12px] border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-normal"
-                  />
-               </div>
-            </div>
-
-            <hr className="border-slate-100 dark:border-slate-800 my-4" />
-            <h3 className="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">DMT Order Section</h3>
-
+            {/* Contacts */}
             <div className="space-y-6">
-               {formData.orders?.map((order, orderIdx) => (
-                  <div key={orderIdx} className="bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg border border-slate-100 dark:border-slate-800 relative">
-                     <div className="grid grid-cols-2 gap-4 mb-2">
+                <h3 className="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">Team Assignment</h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <Label>Sales Rep</Label>
+                        <Select 
+                            value={formData.contacts?.sales_contact_name}
+                            onChange={(v) => updateContact('sales_contact_name', v)}
+                            options={salesMembers.map(m => ({ label: m.name, value: m.name }))}
+                        />
+                    </div>
+                    <div>
+                        <Label>Enrollment Specialist</Label>
+                        <Select 
+                            value={formData.contacts?.enrollment_contact_name}
+                            onChange={(v) => updateContact('enrollment_contact_name', v)}
+                            options={enrollmentMembers.map(m => ({ label: m.name, value: m.name }))}
+                        />
+                    </div>
+                    <div>
+                        <Label>CSM Specialist</Label>
+                        <Select 
+                            value={formData.contacts?.assigned_specialist_name}
+                            onChange={(v) => updateContact('assigned_specialist_name', v)}
+                            options={csmMembers.map(m => ({ label: m.name, value: m.name }))}
+                        />
+                    </div>
+                </div>
+
+                <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800 space-y-4">
+                    <h4 className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Primary Point of Contact (Dealership Side)</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                           <Label>Received Date</Label>
-                           <Input type="date" value={order.received_date ? order.received_date.split('T')[0] : ''} onChange={(v) => updateOrder(orderIdx, 'received_date', v)} className="dark:color-scheme-dark" />
+                            <Label>POC Name</Label>
+                            <Input value={formData.contacts?.poc_name} onChange={(v) => updateContact('poc_name', v)} />
                         </div>
                         <div>
-                           <Label>Order Number</Label>
-                           <Input value={order.order_number} onChange={(v) => updateOrder(orderIdx, 'order_number', v)} placeholder="ORD-#####" className="font-bold font-mono" />
+                            <Label>POC Email</Label>
+                            <Input value={formData.contacts?.poc_email} onChange={(v) => updateContact('poc_email', v)} type="email" />
+                        </div>
+                        <div>
+                            <Label>POC Phone</Label>
+                            <Input 
+                                value={formData.contacts?.poc_phone} 
+                                onChange={(v) => updateContact('poc_phone', v)}
+                                onBlur={(e) => updateContact('poc_phone', formatPhone(e.target.value))}
+                                type="tel"
+                                placeholder="(###) ###-####"
+                            />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <hr className="border-slate-100 dark:border-slate-800" />
+
+            {/* DMT Orders */}
+            <div className="space-y-6">
+               <h3 className="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">DMT Orders</h3>
+               
+               {formData.orders?.map((order, orderIdx) => (
+                  <div key={orderIdx} className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm relative space-y-4">
+                     <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <Label>Received Date</Label>
+                            <Input 
+                                type="date" 
+                                value={order.received_date ? order.received_date.split('T')[0] : ''} 
+                                onChange={(v) => updateOrder(orderIdx, 'received_date', v)} 
+                                className="dark:color-scheme-dark"
+                            />
+                        </div>
+                        <div>
+                            <Label>Order Number</Label>
+                            <Input 
+                                value={order.order_number} 
+                                onChange={(v) => updateOrder(orderIdx, 'order_number', v)} 
+                            />
                         </div>
                      </div>
 
-                     <div className="space-y-3">
-                        <div className="grid grid-cols-[1fr_120px_auto] gap-3 mb-1 px-1">
-                           <Label>Product</Label>
-                           <Label>Price ($)</Label>
+                     <div className="space-y-2 pt-2">
+                        <div className="flex justify-between items-center px-1">
+                           <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Line Items</span>
+                           <button type="button" onClick={() => addProductToOrder(orderIdx)} className="text-[9px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1">
+                             <Plus size={10} /> Add Product
+                           </button>
                         </div>
+                        
+                        <div className="grid grid-cols-[1fr_120px_auto] gap-3 mb-1 px-1">
+                            <Label>Product</Label>
+                            <Label>Price ($)</Label>
+                        </div>
+
                         {order.products?.map((product, prodIdx) => (
-                           <div key={prodIdx} className="grid grid-cols-[1fr_120px_auto] gap-3 items-center">
+                           <div key={prodIdx} className="grid grid-cols-[1fr_120px_auto] gap-3 items-center animate-in fade-in slide-in-from-left-2">
                               <Select 
                                 value={product.product_code} 
                                 onChange={(v) => updateProductInOrder(orderIdx, prodIdx, 'product_code', v)} 
@@ -654,12 +702,12 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
                                 onChange={(v) => updateProductInOrder(orderIdx, prodIdx, 'amount', parseFloat(v))} 
                                 placeholder="0.00"
                               />
-                              <button type="button" onClick={() => removeProductFromOrder(orderIdx, prodIdx)} className="text-slate-300 hover:text-red-500"><Minus size={14} /></button>
+                              <button type="button" onClick={() => removeProductFromOrder(orderIdx, prodIdx)} className="text-slate-300 hover:text-red-500 p-1"><Minus size={14} /></button>
                            </div>
                         ))}
-                        <button type="button" onClick={() => addProductToOrder(orderIdx)} className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 flex items-center gap-1.5 uppercase tracking-wider mt-2">
-                          <Plus size={12} /> Add New Product
-                        </button>
+                        {(!order.products || order.products.length === 0) && (
+                            <div className="text-center py-4 text-slate-400 text-xs italic bg-slate-50 dark:bg-slate-900 rounded-lg border border-dashed border-slate-200 dark:border-slate-800">No products added to this order.</div>
+                        )}
                      </div>
                   </div>
                ))}

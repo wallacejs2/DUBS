@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   X, Trash2, Edit3, Save, RefreshCw, Plus, Minus, Check, ArrowLeft, FileSpreadsheet, Star, ChevronDown, ExternalLink
@@ -70,13 +71,15 @@ const DataValue = ({ value, mono = false, children, onClick, interactive = false
   );
 };
 
-const Input = ({ value, onChange, type = "text", className = "", placeholder="", disabled = false }: { value: any, onChange: (v: string) => void, type?: string, className?: string, placeholder?: string, disabled?: boolean }) => (
+const Input = ({ value, onChange, type = "text", className = "", placeholder="", disabled = false, required = false, onBlur }: { value: any, onChange: (v: string) => void, type?: string, className?: string, placeholder?: string, disabled?: boolean, required?: boolean, onBlur?: (e: any) => void }) => (
   <input 
     type={type}
     value={value || ''}
     onChange={(e) => onChange(e.target.value)}
+    onBlur={onBlur}
     placeholder={placeholder}
     disabled={disabled}
+    required={required}
     className={`w-full px-2 py-1 text-[12px] border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-normal placeholder:text-slate-400 dark:placeholder:text-slate-600 ${disabled ? 'opacity-50 bg-slate-50 dark:bg-slate-900 cursor-not-allowed border-slate-100 dark:border-slate-800' : ''} ${className}`}
   />
 );
@@ -172,7 +175,7 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
   const { members: teamMembers } = useTeamMembers();
   const { items: providerProducts } = useProvidersProducts();
 
-  // Helpers to find IDs from Names
+  // Find IDs helpers
   const findProviderId = (name?: string) => providerProducts.find(p => p.name === name)?.id;
   const findMemberId = (name?: string) => teamMembers.find(m => m.name === name)?.id;
 
@@ -181,6 +184,10 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
   const websiteProviders = useMemo(() => providerProducts.filter(i => i.category === ProviderProductCategory.PROVIDER && i.provider_type === ProviderType.WEBSITE), [providerProducts]);
   const inventoryProviders = useMemo(() => providerProducts.filter(i => i.category === ProviderProductCategory.PROVIDER && i.provider_type === ProviderType.INVENTORY), [providerProducts]);
   const availableProducts = useMemo(() => providerProducts.filter(i => i.category === ProviderProductCategory.PRODUCT), [providerProducts]);
+
+  const salesMembers = teamMembers.filter(m => m.role === TeamRole.SALES);
+  const enrollmentMembers = teamMembers.filter(m => m.role === TeamRole.ENROLLMENT);
+  const csmMembers = teamMembers.filter(m => m.role === TeamRole.CSM);
 
   useEffect(() => {
     const initialOrders = dealership.orders && dealership.orders.length > 0 
@@ -316,24 +323,16 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
          pp_sys_id: newGroupPP,
          era_system_id: newGroupERA
       };
-      
       const id = db.upsertEnterpriseGroup(newGroupData);
-      
-      const newGroup = {
-         id,
-         ...newGroupData,
-         created_at: new Date().toISOString()
-      };
+      const newGroup = { id, ...newGroupData, created_at: new Date().toISOString() };
       
       setGroups([...groups, newGroup]);
       updateField('enterprise_group_id', id);
-      
       setFormData(prev => ({
          ...prev,
          pp_sys_id: newGroupPP || prev.pp_sys_id,
          era_system_id: newGroupERA || prev.era_system_id
       }));
-
       setNewGroupName('');
       setNewGroupPP('');
       setNewGroupERA('');
@@ -342,12 +341,11 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
   };
 
   const handleCopyCSV = () => {
+    // ... same logic ...
     const d = formData;
     const groupName = groups.find(g => g.id === d.enterprise_group_id)?.name || 'Independent';
     const productCodes = Object.values(ProductCode);
-    
     const flatData: any[] = [];
-    
     const baseInfo: any = {
          Status: d.status,
          Hold_Reason: d.hold_reason || '',
@@ -372,26 +370,21 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
          Go_Live_Date: d.go_live_date || '',
          Term_Date: d.term_date || '',
     };
-
     const links = d.website_links || [];
     for (let i = 0; i < 4; i++) {
         const link = links[i];
         baseInfo[`clientID${i+1}`] = link ? link.client_id || '' : '';
         baseInfo[`websiteLink${i+1}`] = link ? link.primary_url || '' : '';
     }
-
     if (d.orders && d.orders.length > 0) {
         const sortedOrders = [...d.orders].sort((a,b) => (a.received_date || '').localeCompare(b.received_date || ''));
-        
         sortedOrders.forEach(o => {
             const row: any = {
                 ...baseInfo,
                 Received_Date: o.received_date,
                 Order_Number: o.order_number,
             };
-            
             productCodes.forEach(code => row[code] = '');
-            
             if (o.products && o.products.length > 0) {
                 o.products.forEach(p => {
                     if (productCodes.includes(p.product_code)) {
@@ -410,7 +403,6 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
         productCodes.forEach(code => row[code] = '');
         flatData.push(row);
     }
-
     const columns = [
       'Status', 'Hold_Reason', 'CIF', 'Name', 'Group', 'Store', 'Branch', 
       'PP_ID', 'ERA_ID', 'BU_ID', 'Address', 'State', 'CRM', 
@@ -420,7 +412,6 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
       'clientID1', 'websiteLink1', 'clientID2', 'websiteLink2', 
       'clientID3', 'websiteLink3', 'clientID4', 'websiteLink4'
     ];
-
     const csvContent = flatData.map(row => columns.map(col => {
           const val = row[col];
           const stringVal = String(val === undefined || val === null ? '' : val);
@@ -429,7 +420,6 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
           }
           return stringVal;
       }).join(',')).join('\n');
-
     navigator.clipboard.writeText(csvContent).then(() => {
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
@@ -461,25 +451,16 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
     return dateStr.split('T')[0];
   };
 
-  const isOnboardingUnlocked = (status: DealershipStatus) => {
-    return [DealershipStatus.ONBOARDING, DealershipStatus.LIVE, DealershipStatus.LEGACY, DealershipStatus.CANCELLED].includes(status);
-  };
-  const isGoLiveUnlocked = (status: DealershipStatus) => {
-    return [DealershipStatus.LIVE, DealershipStatus.LEGACY, DealershipStatus.CANCELLED].includes(status);
-  };
-  const isTermUnlocked = (status: DealershipStatus) => {
-    return status === DealershipStatus.CANCELLED;
-  };
-
-  const salesMembers = teamMembers.filter(m => m.role === TeamRole.SALES);
-  const enrollmentMembers = teamMembers.filter(m => m.role === TeamRole.ENROLLMENT);
-  const csmMembers = teamMembers.filter(m => m.role === TeamRole.CSM);
+  const isOnboardingUnlocked = (status: DealershipStatus) => [DealershipStatus.ONBOARDING, DealershipStatus.LIVE, DealershipStatus.LEGACY, DealershipStatus.CANCELLED].includes(status);
+  const isGoLiveUnlocked = (status: DealershipStatus) => [DealershipStatus.LIVE, DealershipStatus.LEGACY, DealershipStatus.CANCELLED].includes(status);
+  const isTermUnlocked = (status: DealershipStatus) => status === DealershipStatus.CANCELLED;
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]" onClick={isEditing ? undefined : onClose}></div>
       <div className="relative w-full max-w-4xl bg-white dark:bg-slate-900 h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300 transition-colors">
         
+        {/* Header */}
         <div className="bg-white dark:bg-slate-900 sticky top-0 z-30 border-b border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
           <div className="p-4 flex justify-between items-center gap-2">
              <div className="flex items-center gap-2">
@@ -487,6 +468,12 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                   <button onClick={onBack} className="p-2 -ml-2 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 rounded-xl transition-all mr-2">
                     <ArrowLeft size={20} />
                   </button>
+               )}
+               {isEditing && (
+                 <div className="flex flex-col">
+                   <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">Edit Dealership</h2>
+                   <p className="text-xs text-slate-500">Update details for {dealership.name}</p>
+                 </div>
                )}
              </div>
 
@@ -521,506 +508,580 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                    </button>
                  </>
                )}
-               <button onClick={onDelete} className="p-1.5 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"><Trash2 size={16} /></button>
+               {!isEditing && (
+                 <button onClick={onDelete} className="p-1.5 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"><Trash2 size={16} /></button>
+               )}
                <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"><X size={20} /></button>
              </div>
           </div>
 
-          <div className="px-8 pb-6 space-y-3">
-             <div>
-               {isEditing ? (
-                  <input 
-                    value={formData.name} 
-                    onChange={(e) => updateField('name', e.target.value)} 
-                    className="w-full text-xl font-bold py-2 border-b border-indigo-200 dark:border-indigo-800 outline-none focus:border-indigo-500 bg-transparent text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-600" 
-                    placeholder="Dealership Name" 
-                  />
-               ) : (
-                  <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight leading-none">{dealership.name}</h2>
-               )}
-             </div>
-
-             <div>
-               {isEditing ? (
-                  <Input value={formData.cif_number} onChange={(v) => updateField('cif_number', v)} className="font-mono text-[12px]" placeholder="CIF Number" />
-               ) : (
-                  <div className="text-[12px] font-mono text-slate-500 dark:text-slate-400">{dealership.cif_number || '---'}</div>
-               )}
-             </div>
-          </div>
+          {!isEditing && (
+            <div className="px-8 pb-6 space-y-2">
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight leading-none">{dealership.name}</h2>
+                <div className="text-[12px] font-mono text-slate-500 dark:text-slate-400">{dealership.cif_number || '---'}</div>
+            </div>
+          )}
         </div>
 
         <div className="flex-1 overflow-y-auto p-10 bg-white dark:bg-slate-900 pb-20 custom-scrollbar transition-colors">
-          <div className="animate-in fade-in duration-500 space-y-6">
+          <div className="animate-in fade-in duration-500 space-y-8">
             
-            <div className="grid grid-cols-4 gap-6">
-               <div className="space-y-2">
-                  <Label>Status</Label>
-                  {isEditing ? (
-                    <Select 
-                       value={formData.status}
-                       onChange={(v) => updateField('status', v)}
-                       options={Object.values(DealershipStatus).map(s => ({ label: s, value: s }))}
-                    />
-                  ) : (
-                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest border ${statusColors[dealership.status]}`}>
-                      {dealership.status}
-                    </span>
-                  )}
-               </div>
+            {/* Core Info */}
+            <div className="space-y-6">
+                <h3 className="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">Core Information</h3>
+                
+                {isEditing ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <Label>Dealership Name</Label>
+                            <Input 
+                                value={formData.name} 
+                                onChange={(v) => updateField('name', v)} 
+                                placeholder="Dealership Name"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <Label>CIF Number</Label>
+                            <Input 
+                                value={formData.cif_number} 
+                                onChange={(v) => updateField('cif_number', v)} 
+                                placeholder="CIF Number"
+                            />
+                        </div>
+                    </div>
+                ) : null}
 
-               <div>
-                  <Label>Onboarding Date</Label>
-                  {isEditing ? (
-                    <Input 
-                        type="date" 
-                        value={formatDateInput(formData.onboarding_date)} 
-                        onChange={(v) => updateField('onboarding_date', v)} 
-                        className="dark:color-scheme-dark" 
-                        disabled={!isOnboardingUnlocked(formData.status)}
-                    />
-                  ) : (
-                    <DataValue value={formatDate(dealership.onboarding_date) || 'Pending'} />
-                  )}
-               </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div>
+                        <Label>Status</Label>
+                        {isEditing ? (
+                            <Select 
+                                value={formData.status}
+                                onChange={(v) => updateField('status', v)}
+                                options={Object.values(DealershipStatus).map(s => ({ label: s, value: s }))}
+                            />
+                        ) : (
+                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest border ${statusColors[dealership.status]}`}>
+                                {dealership.status}
+                            </span>
+                        )}
+                    </div>
+                    <div>
+                        <Label>Onboarding</Label>
+                        {isEditing ? (
+                            <Input 
+                                type="date"
+                                value={formatDateInput(formData.onboarding_date)}
+                                onChange={(v) => updateField('onboarding_date', v)}
+                                disabled={!isOnboardingUnlocked(formData.status)}
+                                className="dark:color-scheme-dark"
+                            />
+                        ) : (
+                            <DataValue value={formatDate(dealership.onboarding_date) || 'Pending'} />
+                        )}
+                    </div>
+                    <div>
+                        <Label>Go-Live</Label>
+                        {isEditing ? (
+                            <Input 
+                                type="date"
+                                value={formatDateInput(formData.go_live_date)}
+                                onChange={(v) => updateField('go_live_date', v)}
+                                disabled={!isGoLiveUnlocked(formData.status)}
+                                className="dark:color-scheme-dark"
+                            />
+                        ) : (
+                            <DataValue value={formatDate(dealership.go_live_date) || 'Pending'} />
+                        )}
+                    </div>
+                    <div>
+                        <Label>Term Date</Label>
+                        {isEditing ? (
+                            <Input 
+                                type="date"
+                                value={formatDateInput(formData.term_date)}
+                                onChange={(v) => updateField('term_date', v)}
+                                disabled={!isTermUnlocked(formData.status)}
+                                className="dark:color-scheme-dark"
+                            />
+                        ) : (
+                            <DataValue value={dealership.status === DealershipStatus.CANCELLED ? (formatDate(dealership.term_date) || 'N/A') : 'N/A'} />
+                        )}
+                    </div>
+                </div>
 
-               <div>
-                  <Label>Go-Live Date</Label>
-                  {isEditing ? (
-                     <Input 
-                        type="date" 
-                        value={formatDateInput(formData.go_live_date)} 
-                        onChange={(v) => updateField('go_live_date', v)} 
-                        className="dark:color-scheme-dark" 
-                        disabled={!isGoLiveUnlocked(formData.status)}
-                    />
-                  ) : (
-                     <DataValue value={formatDate(dealership.go_live_date) || 'Pending'} />
-                  )}
-               </div>
-
-               <div>
-                  <Label>Term Date</Label>
-                  {isEditing ? (
-                      <Input 
-                        type="date" 
-                        value={formatDateInput(formData.term_date)} 
-                        onChange={(v) => updateField('term_date', v)} 
-                        className="dark:color-scheme-dark" 
-                        disabled={!isTermUnlocked(formData.status)}
-                    />
-                  ) : (
-                      <DataValue value={dealership.status === DealershipStatus.CANCELLED ? (formatDate(dealership.term_date) || 'N/A') : 'N/A'} />
-                  )}
-               </div>
+                {formData.status === DealershipStatus.HOLD && (
+                    <div className="animate-in fade-in slide-in-from-top-1 bg-orange-50 dark:bg-orange-900/20 p-4 rounded-xl border border-orange-200 dark:border-orange-900">
+                        <Label>Reason for Hold</Label>
+                        {isEditing ? (
+                            <textarea
+                                value={formData.hold_reason || ''}
+                                onChange={(e) => updateField('hold_reason', e.target.value)}
+                                className="w-full px-2 py-1.5 text-[12px] border border-orange-200 dark:border-orange-800 bg-white dark:bg-slate-900 rounded-lg focus:ring-1 focus:ring-orange-500 outline-none text-slate-800 dark:text-orange-100 placeholder:text-orange-300 min-h-[80px] resize-none"
+                                placeholder="Reason for hold..."
+                            />
+                        ) : (
+                            <div className="text-[12px] text-slate-800 dark:text-orange-100 italic leading-relaxed">
+                                {formData.hold_reason || 'No reason specified'}
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
 
-            {/* Hold Reason - Full Width Row */}
-            {formData.status === DealershipStatus.HOLD && (
-                <div className="animate-in fade-in slide-in-from-top-1 bg-orange-50 dark:bg-orange-900/20 p-4 rounded-xl border border-orange-200 dark:border-orange-900">
-                    <Label>Hold Reason</Label>
-                    {isEditing ? (
-                    <textarea
-                        value={formData.hold_reason || ''}
-                        onChange={(e) => updateField('hold_reason', e.target.value)}
-                        className="w-full px-2 py-1.5 text-[12px] border border-orange-200 dark:border-orange-800 bg-white dark:bg-slate-900 rounded-lg focus:ring-1 focus:ring-orange-500 outline-none text-slate-800 dark:text-orange-100 placeholder:text-orange-300 min-h-[80px] resize-none"
-                        placeholder="Reason for hold..."
-                    />
-                    ) : (
-                    <div className="text-[12px] text-slate-800 dark:text-orange-100 italic leading-relaxed">
-                        {formData.hold_reason || 'No reason specified'}
-                    </div>
+            <hr className="border-slate-100 dark:border-slate-800" />
+
+            {/* Enterprise & IDs */}
+            <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                    <h3 className="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">Enterprise & Identifiers</h3>
+                    {isEditing && !isAddingGroup && (
+                        <button type="button" onClick={() => setIsAddingGroup(true)} className="text-[9px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline">+ New Group</button>
                     )}
                 </div>
-            )}
 
-            <h3 className="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest mt-6">Account Details</h3>
-
-            <div className="grid grid-cols-3 gap-6">
-               <div className="min-w-0 col-span-2">
-                  <Label>Enterprise Group</Label>
-                  {isEditing ? (
-                    <div className="flex flex-col gap-2">
-                       {!isAddingGroup ? (
-                         <>
-                           <Select 
-                              value={formData.enterprise_group_id}
-                              onChange={handleGroupSelect}
-                              options={[
-                                { label: 'Single (Independent)', value: '' },
-                                ...groups.map(g => ({ label: g.name, value: g.id }))
-                              ]}
-                            />
-                            <button onClick={() => setIsAddingGroup(true)} className="text-[9px] font-bold text-indigo-600 dark:text-indigo-400 text-left hover:underline">+ Add New Group</button>
-                         </>
-                       ) : (
-                         <div className="bg-indigo-50 dark:bg-indigo-900/20 p-2 rounded-lg border border-indigo-100 dark:border-indigo-800 animate-in fade-in zoom-in-95">
-                            <div className="flex justify-between items-center mb-1">
-                               <span className="text-[9px] font-bold text-indigo-800 dark:text-indigo-300">New Group</span>
-                               <button onClick={() => setIsAddingGroup(false)} className="text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200"><X size={12} /></button>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {isAddingGroup ? (
+                        <div className="col-span-2 bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-xl border border-indigo-100 dark:border-indigo-800 animate-in fade-in zoom-in-95">
+                            <div className="flex justify-between items-center mb-3">
+                                <span className="text-xs font-bold text-indigo-800 dark:text-indigo-300">Create New Enterprise Group</span>
+                                <button type="button" onClick={() => setIsAddingGroup(false)} className="text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200"><X size={14} /></button>
                             </div>
-                            <div className="space-y-1">
-                               <Input value={newGroupName} onChange={(v) => setNewGroupName(v)} placeholder="Name" />
-                               <div className="grid grid-cols-2 gap-1">
-                                  <Input value={newGroupPP} onChange={(v) => setNewGroupPP(v)} placeholder="PP ID" className="font-mono text-[10px]" />
-                                  <Input value={newGroupERA} onChange={(v) => setNewGroupERA(v)} placeholder="ERA ID" className="font-mono text-[10px]" />
-                               </div>
-                               <button onClick={handleAddGroup} className="w-full text-[9px] bg-indigo-600 text-white rounded py-1 mt-1 font-bold">Create</button>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                <div className="md:col-span-3">
+                                    <Label>Group Name</Label>
+                                    <Input value={newGroupName} onChange={(v) => setNewGroupName(v)} placeholder="Name" />
+                                </div>
+                                <div>
+                                    <Label>PP Sys ID</Label>
+                                    <Input value={newGroupPP} onChange={(v) => setNewGroupPP(v)} placeholder="PP ID" />
+                                </div>
+                                <div>
+                                    <Label>ERA ID</Label>
+                                    <Input value={newGroupERA} onChange={(v) => setNewGroupERA(v)} placeholder="ERA ID" />
+                                </div>
+                                <div className="flex items-end">
+                                    <button type="button" onClick={handleAddGroup} className="h-[26px] w-full bg-indigo-600 text-white rounded-lg font-bold text-[10px] hover:bg-indigo-700 transition-all shadow-md">
+                                        Create & Select
+                                    </button>
+                                </div>
                             </div>
-                         </div>
-                       )}
+                        </div>
+                    ) : (
+                        <div>
+                            <Label>Enterprise Group</Label>
+                            {isEditing ? (
+                                <Select 
+                                    value={formData.enterprise_group_id}
+                                    onChange={(v) => handleGroupSelect(v)}
+                                    options={[
+                                        { label: 'Single (Independent)', value: '' },
+                                        ...groups.map(g => ({ label: g.name, value: g.id }))
+                                    ]}
+                                />
+                            ) : (
+                                <DataValue 
+                                    value={dealership.enterprise_group?.name || 'Single (Independent)'} 
+                                    onClick={dealership.enterprise_group_id && onViewEnterpriseGroup ? () => onViewEnterpriseGroup(dealership.enterprise_group_id!) : undefined}
+                                />
+                            )}
+                        </div>
+                    )}
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <Label>Store #</Label>
+                            {isEditing ? (
+                                <Input value={formData.store_number} onChange={(v) => updateField('store_number', v)} placeholder="#" />
+                            ) : (
+                                <DataValue mono value={dealership.store_number} />
+                            )}
+                        </div>
+                        <div>
+                            <Label>Branch #</Label>
+                            {isEditing ? (
+                                <Input value={formData.branch_number} onChange={(v) => updateField('branch_number', v)} placeholder="#" />
+                            ) : (
+                                <DataValue mono value={dealership.branch_number} />
+                            )}
+                        </div>
                     </div>
-                  ) : (
-                     <DataValue 
-                        value={dealership.enterprise_group?.name || 'Single (Independent)'} 
-                        onClick={dealership.enterprise_group_id && onViewEnterpriseGroup ? () => onViewEnterpriseGroup(dealership.enterprise_group_id!) : undefined}
-                     />
-                  )}
-               </div>
-               <div>
-                  <Label>Store / Branch</Label>
-                  {isEditing ? (
-                    <div className="flex gap-1">
-                       <Input value={formData.store_number} onChange={(v) => updateField('store_number', v)} placeholder="#" />
-                       <Input value={formData.branch_number} onChange={(v) => updateField('branch_number', v)} placeholder="#" />
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                    <div>
+                        <Label>PP Sys ID</Label>
+                        {isEditing ? <Input value={formData.pp_sys_id} onChange={(v) => updateField('pp_sys_id', v)} placeholder="PP-###" /> : <DataValue mono value={dealership.pp_sys_id} />}
                     </div>
-                  ) : (
-                    <div className="font-mono text-[12px] text-slate-700 dark:text-slate-300">{dealership.store_number || '--'} / {dealership.branch_number || '--'}</div>
-                  )}
-               </div>
+                    <div>
+                        <Label>ERA ID</Label>
+                        {isEditing ? <Input value={formData.era_system_id} onChange={(v) => updateField('era_system_id', v)} placeholder="ERA-###" /> : <DataValue mono value={dealership.era_system_id} />}
+                    </div>
+                    <div>
+                        <Label>BU ID</Label>
+                        {isEditing ? <Input value={formData.bu_id} onChange={(v) => updateField('bu_id', v)} placeholder="BU-###" /> : <DataValue mono value={dealership.bu_id} />}
+                    </div>
+                </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
-               <div>
-                  <Label>PP Sys ID</Label>
-                  {isEditing ? <Input value={formData.pp_sys_id} onChange={(v) => updateField('pp_sys_id', v)} /> : <DataValue mono value={dealership.pp_sys_id} />}
-               </div>
-               <div>
-                  <Label>ERA ID</Label>
-                  {isEditing ? <Input value={formData.era_system_id} onChange={(v) => updateField('era_system_id', v)} /> : <DataValue mono value={dealership.era_system_id} />}
-               </div>
-               <div>
-                  <Label>BU ID</Label>
-                  {isEditing ? <Input value={formData.bu_id} onChange={(v) => updateField('bu_id', v)} /> : <DataValue mono value={dealership.bu_id} />}
-               </div>
-            </div>
+            <hr className="border-slate-100 dark:border-slate-800" />
 
-            <div className="grid grid-cols-3 gap-4">
-               <div className="col-span-2">
-                  <Label>Address</Label>
-                  {isEditing ? (
-                     <div className="flex gap-2">
-                        <Input value={formData.address_line1} onChange={(v) => updateField('address_line1', v)} placeholder="Street Address" className="w-full" />
-                     </div>
-                  ) : (
-                     <DataValue value={`${dealership.address_line1}`} />
-                  )}
-               </div>
-               <div>
-                  <Label>State</Label>
-                  {isEditing ? (
-                     <Select 
-                        value={formData.state} 
-                        onChange={(v) => updateField('state', v)}
-                        options={[{ label: 'Select', value: '' }, ...STATES.map(s => ({ label: s, value: s }))]}
-                     />
-                  ) : (
-                     <DataValue value={dealership.state} />
-                  )}
-               </div>
-            </div>
-
-            {/* Providers Row */}
-            <div className="grid grid-cols-4 gap-4">
-               <div className="col-span-1">
-                  <Label>CRM Provider</Label>
-                  {isEditing ? (
-                     <Select 
-                        value={formData.crm_provider}
-                        onChange={(v) => updateField('crm_provider', v)}
-                        options={[{ label: 'Select CRM', value: '' }, ...crmProviders.map(i => ({ label: i.name, value: i.name }))]}
-                     />
-                  ) : (
-                     <DataValue 
-                        value={dealership.crm_provider} 
-                        onClick={() => {
-                          const id = findProviderId(dealership.crm_provider);
-                          if (id && onViewProviderProduct) onViewProviderProduct(id);
-                        }}
-                     />
-                  )}
-               </div>
-               <div className="col-span-1">
-                  <Label>Website Provider</Label>
-                  {isEditing ? (
-                     <Select 
-                        value={formData.website_provider}
-                        onChange={(v) => updateField('website_provider', v)}
-                        options={[{ label: 'Select Website', value: '' }, ...websiteProviders.map(i => ({ label: i.name, value: i.name }))]}
-                     />
-                  ) : (
-                    <DataValue 
-                        value={dealership.website_provider} 
-                        onClick={() => {
-                          const id = findProviderId(dealership.website_provider);
-                          if (id && onViewProviderProduct) onViewProviderProduct(id);
-                        }}
-                    />
-                  )}
-               </div>
-               <div className="col-span-1">
-                  <Label>Inventory Provider</Label>
-                  {isEditing ? (
-                     <Select 
-                        value={formData.inventory_provider}
-                        onChange={(v) => updateField('inventory_provider', v)}
-                        options={[{ label: 'Select Inventory', value: '' }, ...inventoryProviders.map(i => ({ label: i.name, value: i.name }))]}
-                     />
-                  ) : (
-                    <DataValue 
-                        value={dealership.inventory_provider} 
-                        onClick={() => {
-                          const id = findProviderId(dealership.inventory_provider);
-                          if (id && onViewProviderProduct) onViewProviderProduct(id);
-                        }}
-                    />
-                  )}
-               </div>
-               <div className="col-span-1">
-                  <Label>SMS Activated</Label>
-                  {isEditing ? (
-                     <div className="flex items-center h-[26px]">
-                       <input 
-                         type="checkbox" 
-                         checked={!!formData.sms_activated} 
-                         onChange={(e) => updateField('sms_activated', e.target.checked)}
-                         className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-                       />
-                     </div>
-                  ) : (
-                     <DataValue value={dealership.sms_activated ? 'Yes' : 'No'} />
-                  )}
-               </div>
-            </div>
-
-            {/* Internal Products Row - MultiSelect Dropdown */}
-            <div className="w-full">
-               <Label>Internal Products</Label>
-               {isEditing ? (
-                  <MultiSelect 
-                    options={availableProducts}
-                    selected={formData.products || []}
-                    onToggle={toggleProduct}
-                    placeholder="Search or select internal products..."
-                  />
-               ) : (
-                  <div className="flex flex-wrap gap-1.5">
-                     {(dealership.products || []).length === 0 ? (
-                        <DataValue value="No products selected" />
-                     ) : (
-                        dealership.products?.map((p, idx) => (
-                           <button 
-                              key={idx} 
-                              onClick={() => {
-                                 const id = findProviderId(p);
-                                 if (id && onViewProviderProduct) onViewProviderProduct(id);
-                              }}
-                              className="px-2 py-0.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-800 rounded-md text-[10px] font-bold uppercase tracking-wider hover:bg-indigo-100 dark:hover:bg-indigo-800 transition-colors flex items-center gap-1"
-                           >
-                              {p}
-                              <ExternalLink size={8} />
-                           </button>
-                        ))
-                     )}
-                  </div>
-               )}
-            </div>
-
-            <hr className="border-slate-100 dark:border-slate-800 my-4" />
-            <h3 className="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">Website Links</h3>
-            
-            <div className="space-y-2">
-               {(isEditing ? (formData.website_links || []) : (dealership.website_links || [])).map((link, idx) => (
-                  <div key={idx} className="grid grid-cols-2 gap-4 items-center bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg border border-slate-100 dark:border-slate-800">
-                     <div>
-                        <Label>Primary URL</Label>
+            {/* Location & Providers */}
+            <div className="space-y-6">
+                <h3 className="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">Location & Providers</h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="md:col-span-2">
+                        <Label>Address</Label>
                         {isEditing ? (
-                           <Input value={link.primary_url} onChange={(v) => updateWebsite(idx, 'primary_url', v)} />
+                            <Input value={formData.address_line1} onChange={(v) => updateField('address_line1', v)} placeholder="Street Address" required />
                         ) : (
-                           <a href={link.primary_url} target="_blank" rel="noopener noreferrer" className="text-[12px] text-indigo-600 dark:text-indigo-400 hover:underline truncate block">{link.primary_url}</a>
+                            <DataValue value={dealership.address_line1} />
                         )}
+                    </div>
+                    <div>
+                        <Label>State</Label>
+                        {isEditing ? (
+                            <Select 
+                                value={formData.state} 
+                                onChange={(v) => updateField('state', v)}
+                                options={STATES.map(s => ({ label: s, value: s }))}
+                            />
+                        ) : (
+                            <DataValue value={dealership.state} />
+                        )}
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <Label>CRM Provider</Label>
+                        {isEditing ? (
+                            <Select 
+                                value={formData.crm_provider}
+                                onChange={(v) => updateField('crm_provider', v)}
+                                options={crmProviders.map(i => ({ label: i.name, value: i.name }))}
+                            />
+                        ) : (
+                            <DataValue 
+                                value={dealership.crm_provider} 
+                                onClick={() => {
+                                    const id = findProviderId(dealership.crm_provider);
+                                    if (id && onViewProviderProduct) onViewProviderProduct(id);
+                                }}
+                            />
+                        )}
+                    </div>
+                    <div>
+                        <Label>Website Provider</Label>
+                        {isEditing ? (
+                            <Select 
+                                value={formData.website_provider}
+                                onChange={(v) => updateField('website_provider', v)}
+                                options={websiteProviders.map(i => ({ label: i.name, value: i.name }))}
+                            />
+                        ) : (
+                            <DataValue 
+                                value={dealership.website_provider} 
+                                onClick={() => {
+                                    const id = findProviderId(dealership.website_provider);
+                                    if (id && onViewProviderProduct) onViewProviderProduct(id);
+                                }}
+                            />
+                        )}
+                    </div>
+                    <div>
+                        <Label>Inventory Provider</Label>
+                        {isEditing ? (
+                            <Select 
+                                value={formData.inventory_provider}
+                                onChange={(v) => updateField('inventory_provider', v)}
+                                options={inventoryProviders.map(i => ({ label: i.name, value: i.name }))}
+                            />
+                        ) : (
+                            <DataValue 
+                                value={dealership.inventory_provider} 
+                                onClick={() => {
+                                    const id = findProviderId(dealership.inventory_provider);
+                                    if (id && onViewProviderProduct) onViewProviderProduct(id);
+                                }}
+                            />
+                        )}
+                    </div>
+                </div>
+
+                {isEditing ? (
+                    <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+                        <input 
+                        type="checkbox" 
+                        id="sms_active"
+                        checked={!!formData.sms_activated} 
+                        onChange={(e) => updateField('sms_activated', e.target.checked)}
+                        className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                        />
+                        <label htmlFor="sms_active" className="text-[12px] font-medium text-slate-700 dark:text-slate-300 cursor-pointer select-none">
+                            SMS Services Activated
+                        </label>
+                    </div>
+                ) : (
+                    <div>
+                        <Label>SMS Activated</Label>
+                        <DataValue value={dealership.sms_activated ? 'Yes' : 'No'} />
+                    </div>
+                )}
+
+                <div>
+                    <Label>Internal Products</Label>
+                    {isEditing ? (
+                        <MultiSelect 
+                            options={availableProducts}
+                            selected={formData.products || []}
+                            onToggle={toggleProduct}
+                            placeholder="Internal Products"
+                        />
+                    ) : (
+                        <div className="flex flex-wrap gap-1.5 mt-1">
+                            {(dealership.products || []).length === 0 ? (
+                                <DataValue value="No products selected" />
+                            ) : (
+                                dealership.products?.map((p, idx) => (
+                                <button 
+                                    key={idx} 
+                                    onClick={() => {
+                                        const id = findProviderId(p);
+                                        if (id && onViewProviderProduct) onViewProviderProduct(id);
+                                    }}
+                                    className="px-2 py-0.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-800 rounded-md text-[10px] font-bold uppercase tracking-wider hover:bg-indigo-100 dark:hover:bg-indigo-800 transition-colors flex items-center gap-1"
+                                >
+                                    {p}
+                                    <ExternalLink size={8} />
+                                </button>
+                                ))
+                            )}
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            <hr className="border-slate-100 dark:border-slate-800" />
+
+            {/* Websites */}
+            <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                    <h3 className="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">Websites</h3>
+                    {isEditing && (
+                        <button type="button" onClick={addWebsite} className="text-[9px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1">
+                            <Plus size={12} /> Add URL
+                        </button>
+                    )}
+                </div>
+                
+                {(isEditing ? (formData.website_links || []) : (dealership.website_links || [])).map((link, idx) => (
+                    <div key={idx} className="grid grid-cols-2 gap-4 items-center bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg border border-slate-100 dark:border-slate-800">
+                        <div>
+                            <Label>Primary URL</Label>
+                            {isEditing ? (
+                                <Input value={link.primary_url} onChange={(v) => updateWebsite(idx, 'primary_url', v)} placeholder="https://..." />
+                            ) : (
+                                <a href={link.primary_url} target="_blank" rel="noopener noreferrer" className="text-[12px] text-indigo-600 dark:text-indigo-400 hover:underline truncate block">{link.primary_url}</a>
+                            )}
+                        </div>
+                        <div className="flex gap-2">
+                            <div className="flex-1">
+                                <Label>Client ID</Label>
+                                {isEditing ? (
+                                    <Input value={link.client_id} onChange={(v) => updateWebsite(idx, 'client_id', v)} placeholder="ID" />
+                                ) : (
+                                    <div className="text-[12px] font-mono text-slate-500 dark:text-slate-400">{link.client_id || '---'}</div>
+                                )}
+                            </div>
+                            {isEditing && formData.website_links!.length > 1 && (
+                               <button type="button" onClick={() => removeWebsite(idx)} className="mt-4 text-slate-400 hover:text-red-500 p-1"><Trash2 size={14} /></button>
+                            )}
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            <hr className="border-slate-100 dark:border-slate-800" />
+
+            {/* Contacts */}
+            <div className="space-y-6">
+                <h3 className="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">Team Assignment</h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <Label>Sales Rep</Label>
+                        {isEditing ? (
+                            <Select 
+                                value={formData.contacts?.sales_contact_name}
+                                onChange={(v) => updateContact('sales_contact_name', v)}
+                                options={[{ label: 'Select', value: '' }, ...salesMembers.map(m => ({ label: m.name, value: m.name }))]}
+                            />
+                        ) : (
+                            <DataValue 
+                                value={dealership.contacts?.sales_contact_name} 
+                                onClick={() => {
+                                const id = findMemberId(dealership.contacts?.sales_contact_name);
+                                if (id && onViewTeamMember) onViewTeamMember(id);
+                                }}
+                            />
+                        )}
+                    </div>
+                    <div>
+                        <Label>Enrollment Specialist</Label>
+                        {isEditing ? (
+                            <Select 
+                                value={formData.contacts?.enrollment_contact_name}
+                                onChange={(v) => updateContact('enrollment_contact_name', v)}
+                                options={[{ label: 'Select', value: '' }, ...enrollmentMembers.map(m => ({ label: m.name, value: m.name }))]}
+                            />
+                        ) : (
+                            <DataValue 
+                                value={dealership.contacts?.enrollment_contact_name} 
+                                onClick={() => {
+                                const id = findMemberId(dealership.contacts?.enrollment_contact_name);
+                                if (id && onViewTeamMember) onViewTeamMember(id);
+                                }}
+                            />
+                        )}
+                    </div>
+                    <div>
+                        <Label>CSM Specialist</Label>
+                        {isEditing ? (
+                            <Select 
+                                value={formData.contacts?.assigned_specialist_name}
+                                onChange={(v) => updateContact('assigned_specialist_name', v)}
+                                options={[{ label: 'Select', value: '' }, ...csmMembers.map(m => ({ label: m.name, value: m.name }))]}
+                            />
+                        ) : (
+                            <DataValue 
+                                value={dealership.contacts?.assigned_specialist_name} 
+                                onClick={() => {
+                                const id = findMemberId(dealership.contacts?.assigned_specialist_name);
+                                if (id && onViewTeamMember) onViewTeamMember(id);
+                                }}
+                            />
+                        )}
+                    </div>
+                </div>
+
+                <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800 space-y-4">
+                    <h4 className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Primary Point of Contact (Dealership Side)</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <Label>POC Name</Label>
+                            {isEditing ? <Input value={formData.contacts?.poc_name} onChange={(v) => updateContact('poc_name', v)} /> : <DataValue value={dealership.contacts?.poc_name} />}
+                        </div>
+                        <div>
+                            <Label>POC Email</Label>
+                            {isEditing ? <Input value={formData.contacts?.poc_email} onChange={(v) => updateContact('poc_email', v)} type="email" /> : <a href={`mailto:${dealership.contacts?.poc_email}`} className="text-[12px] text-indigo-600 dark:text-indigo-400 underline truncate block">{dealership.contacts?.poc_email || '---'}</a>}
+                        </div>
+                        <div>
+                            <Label>POC Phone</Label>
+                            {isEditing ? (
+                                <Input 
+                                    value={formData.contacts?.poc_phone} 
+                                    onChange={(v) => updateContact('poc_phone', v)}
+                                    onBlur={(e) => updateContact('poc_phone', formatPhone(e.target.value))}
+                                    type="tel"
+                                    placeholder="(###) ###-####"
+                                />
+                            ) : (
+                                <DataValue value={dealership.contacts?.poc_phone} />
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <hr className="border-slate-100 dark:border-slate-800" />
+
+            {/* DMT Orders */}
+            <div className="space-y-6">
+               <h3 className="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">DMT Orders</h3>
+               
+               {(isEditing ? (formData.orders || []) : (dealership.orders || [])).map((order, orderIdx) => (
+                  <div key={orderIdx} className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm relative space-y-4">
+                     <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <Label>Received Date</Label>
+                            {isEditing ? (
+                                <Input 
+                                    type="date" 
+                                    value={formatDateInput(order.received_date)} 
+                                    onChange={(v) => updateOrder(orderIdx, 'received_date', v)} 
+                                    className="dark:color-scheme-dark"
+                                />
+                            ) : (
+                                <DataValue value={formatDate(order.received_date)} />
+                            )}
+                        </div>
+                        <div>
+                            <Label>Order Number</Label>
+                            {isEditing ? (
+                                <Input 
+                                    value={order.order_number} 
+                                    onChange={(v) => updateOrder(orderIdx, 'order_number', v)} 
+                                />
+                            ) : (
+                                <DataValue mono value={order.order_number} />
+                            )}
+                        </div>
                      </div>
-                     <div className="flex gap-2">
-                        <div className="flex-1">
-                           <Label>Client ID</Label>
-                           {isEditing ? (
-                              <Input value={link.client_id} onChange={(v) => updateWebsite(idx, 'client_id', v)} />
-                           ) : (
-                              <div className="text-[12px] font-mono text-slate-500 dark:text-slate-400">{link.client_id || '---'}</div>
+
+                     <div className="space-y-2 pt-2">
+                        <div className="flex justify-between items-center px-1">
+                           <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Line Items</span>
+                           {isEditing && (
+                               <button type="button" onClick={() => addProductToOrder(orderIdx)} className="text-[9px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1">
+                                 <Plus size={10} /> Add Product
+                               </button>
                            )}
                         </div>
-                        {isEditing && formData.website_links!.length > 1 && (
-                           <button onClick={() => removeWebsite(idx)} className="mt-4 text-slate-400 hover:text-red-500"><Minus size={14} /></button>
+                        
+                        {isEditing && (
+                            <div className="grid grid-cols-[1fr_120px_auto] gap-3 mb-1 px-1">
+                                <Label>Product</Label>
+                                <Label>Price ($)</Label>
+                            </div>
+                        )}
+
+                        {order.products?.map((product, prodIdx) => (
+                           <div key={prodIdx} className={`grid ${isEditing ? 'grid-cols-[1fr_120px_auto]' : 'grid-cols-[1fr_auto]'} gap-3 items-center`}>
+                              {isEditing ? (
+                                <>
+                                  <Select 
+                                    value={product.product_code} 
+                                    onChange={(v) => updateProductInOrder(orderIdx, prodIdx, 'product_code', v)} 
+                                    options={Object.values(ProductCode).map(p => ({ label: p, value: p }))}
+                                  />
+                                  <Input 
+                                    type="number" 
+                                    value={product.amount} 
+                                    onChange={(v) => updateProductInOrder(orderIdx, prodIdx, 'amount', parseFloat(v))} 
+                                    placeholder="0.00"
+                                  />
+                                  <button type="button" onClick={() => removeProductFromOrder(orderIdx, prodIdx)} className="text-slate-300 hover:text-red-500 p-1"><Minus size={14} /></button>
+                                </>
+                              ) : (
+                                <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg border border-slate-100 dark:border-slate-800 w-full col-span-2">
+                                    <div className="flex items-center gap-2">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                                        <span className="text-[11px] text-slate-700 dark:text-slate-300 font-medium">{product.product_code}</span>
+                                    </div>
+                                    <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400">${Number(product.amount).toLocaleString()}</span>
+                                </div>
+                              )}
+                           </div>
+                        ))}
+                        {(!order.products || order.products.length === 0) && (
+                            <div className="text-center py-4 text-slate-400 text-xs italic bg-slate-50 dark:bg-slate-900 rounded-lg border border-dashed border-slate-200 dark:border-slate-800">No products added to this order.</div>
                         )}
                      </div>
                   </div>
                ))}
-               {isEditing && (
-                  <button onClick={addWebsite} className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 flex items-center gap-1.5 uppercase tracking-wider bg-indigo-50 dark:bg-indigo-900/30 px-3 py-2 rounded-lg w-fit border border-indigo-100 dark:border-indigo-800">
-                    <Plus size={12} /> Add New Website
-                  </button>
-               )}
-            </div>
-
-            <hr className="border-slate-100 dark:border-slate-800 my-4" />
-            <h3 className="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">Contacts</h3>
-
-            <div className="grid grid-cols-3 gap-4">
-               <div>
-                  <Label>Sales Associate</Label>
-                  {isEditing ? (
-                     <Select 
-                        value={formData.contacts?.sales_contact_name || ''} 
-                        onChange={(v) => updateContact('sales_contact_name', v)}
-                        options={[{ label: 'Select Team Member', value: '' }, ...teamMembers.filter(m => m.role === TeamRole.SALES).map(m => ({ label: m.name, value: m.name }))]}
-                     />
-                  ) : (
-                     <DataValue 
-                        value={dealership.contacts?.sales_contact_name} 
-                        onClick={() => {
-                          const id = findMemberId(dealership.contacts?.sales_contact_name);
-                          if (id && onViewTeamMember) onViewTeamMember(id);
-                        }}
-                     />
-                  )}
-               </div>
-               <div>
-                  <Label>Enrollment Specialist</Label>
-                  {isEditing ? (
-                     <Select 
-                        value={formData.contacts?.enrollment_contact_name || ''} 
-                        onChange={(v) => updateContact('enrollment_contact_name', v)}
-                        options={[{ label: 'Select Team Member', value: '' }, ...teamMembers.filter(m => m.role === TeamRole.ENROLLMENT).map(m => ({ label: m.name, value: m.name }))]}
-                     />
-                  ) : (
-                     <DataValue 
-                        value={dealership.contacts?.enrollment_contact_name} 
-                        onClick={() => {
-                          const id = findMemberId(dealership.contacts?.enrollment_contact_name);
-                          if (id && onViewTeamMember) onViewTeamMember(id);
-                        }}
-                     />
-                  )}
-               </div>
-               <div>
-                  <Label>CSM Specialist</Label>
-                  {isEditing ? (
-                     <Select 
-                        value={formData.contacts?.assigned_specialist_name || ''} 
-                        onChange={(v) => updateContact('assigned_specialist_name', v)}
-                        options={[{ label: 'Select Team Member', value: '' }, ...teamMembers.filter(m => m.role === TeamRole.CSM).map(m => ({ label: m.name, value: m.name }))]}
-                     />
-                  ) : (
-                     <DataValue 
-                        value={dealership.contacts?.assigned_specialist_name} 
-                        onClick={() => {
-                          const id = findMemberId(dealership.contacts?.assigned_specialist_name);
-                          if (id && onViewTeamMember) onViewTeamMember(id);
-                        }}
-                     />
-                  )}
-               </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-4">
-               <div>
-                  <Label>POC Name</Label>
-                  {isEditing ? <Input value={formData.contacts?.poc_name} onChange={(v) => updateContact('poc_name', v)} /> : <DataValue value={dealership.contacts?.poc_name} />}
-               </div>
-               <div>
-                  <Label>POC Email</Label>
-                  {isEditing ? <Input value={formData.contacts?.poc_email} onChange={(v) => updateContact('poc_email', v)} /> : <a href={`mailto:${dealership.contacts?.poc_email}`} className="text-[12px] text-indigo-600 dark:text-indigo-400 underline truncate block">{dealership.contacts?.poc_email || '---'}</a>}
-               </div>
-               <div>
-                  <Label>POC Phone</Label>
-                  {isEditing ? (
-                     <input 
-                       value={formData.contacts?.poc_phone || ''}
-                       onChange={(e) => updateContact('poc_phone', e.target.value)}
-                       onBlur={(e) => updateContact('poc_phone', formatPhone(e.target.value))}
-                       placeholder="(###) ###-####"
-                       className="w-full px-2 py-1 text-[12px] border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-normal"
-                     />
-                  ) : <DataValue value={dealership.contacts?.poc_phone} />}
-               </div>
-            </div>
-
-            <hr className="border-slate-100 dark:border-slate-800 my-4" />
-            <h3 className="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">DMT Order Section</h3>
-
-            <div className="space-y-6">
-               {(isEditing ? (formData.orders || []) : (dealership.orders || [])).map((order, orderIdx) => (
-                  <div key={orderIdx} className="bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg border border-slate-100 dark:border-slate-800 relative">
-                     
-                     <div className="grid grid-cols-2 gap-4 mb-2">
-                        <div>
-                           <Label>Received Date</Label>
-                           {isEditing ? <Input type="date" value={formatDateInput(order.received_date)} onChange={(v) => updateOrder(orderIdx, 'received_date', v)} className="dark:color-scheme-dark" /> : <DataValue value={formatDate(order.received_date)} />}
-                        </div>
-                        <div>
-                           <Label>Order Number</Label>
-                           {isEditing ? <Input value={order.order_number} onChange={(v) => updateOrder(orderIdx, 'order_number', v)} className="font-bold font-mono" /> : <DataValue mono value={order.order_number} />}
-                        </div>
-                     </div>
-
-                     <div className="space-y-3">
-                       {isEditing ? (
-                         <>
-                           <div className="grid grid-cols-[1fr_120px_auto] gap-3 mb-1 px-1">
-                              <Label>Product</Label>
-                              <Label>Price ($)</Label>
-                           </div>
-                           {order.products?.map((product, prodIdx) => (
-                              <div key={prodIdx} className="grid grid-cols-[1fr_120px_auto] gap-3 items-center">
-                                 <Select 
-                                   value={product.product_code} 
-                                   onChange={(v) => updateProductInOrder(orderIdx, prodIdx, 'product_code', v)} 
-                                   options={Object.values(ProductCode).map(p => ({ label: p, value: p }))}
-                                 />
-                                 <Input 
-                                   type="number" 
-                                   value={product.amount} 
-                                   onChange={(v) => updateProductInOrder(orderIdx, prodIdx, 'amount', parseFloat(v))} 
-                                   placeholder="0.00"
-                                 />
-                                 <button onClick={() => removeProductFromOrder(orderIdx, prodIdx)} className="text-slate-300 hover:text-red-500"><Minus size={14} /></button>
-                              </div>
-                           ))}
-                           <button onClick={() => addProductToOrder(orderIdx)} className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 flex items-center gap-1.5 uppercase tracking-wider mt-2">
-                             <Plus size={12} /> Add New Product
-                           </button>
-                         </>
-                       ) : (
-                         <>
-                           <Label>Line Items</Label>
-                           {order.products?.map((product, prodIdx) => (
-                              <div key={prodIdx} className="flex gap-2 items-center bg-white dark:bg-slate-800 p-2 rounded-lg border border-slate-100 dark:border-slate-700">
-                                 <div className="flex-1">
-                                   <DataValue value={product.product_code} />
-                                 </div>
-                                 <div className="w-20 text-right">
-                                   <DataValue value={product.amount ? `$${product.amount.toLocaleString()}` : '$0'} />
-                                 </div>
-                              </div>
-                           ))}
-                         </>
-                       )}
-                     </div>
-                  </div>
-               ))}
-               {!isEditing && (!dealership.orders || dealership.orders.length === 0) && (
-                  <div className="text-[11px] text-slate-400 dark:text-slate-500 italic">No orders recorded.</div>
-               )}
             </div>
 
           </div>

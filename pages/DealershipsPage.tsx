@@ -1,8 +1,8 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { Plus, FileSpreadsheet } from 'lucide-react';
 import { useDealerships, useEnterpriseGroups, useOrders, useProvidersProducts, useTeamMembers } from '../hooks';
-import { DealershipWithRelations, DealershipStatus, ProductCode, DealershipFilterState } from '../types';
+import { DealershipWithRelations, ProductCode, DealershipFilterState } from '../types';
 import { db } from '../db';
 import DealershipCard from '../components/DealershipCard';
 import DealershipForm from '../components/DealershipForm';
@@ -13,6 +13,7 @@ import TeamMemberDetailPanel from '../components/TeamMemberDetailPanel';
 
 interface DealershipsPageProps {
   filters: DealershipFilterState;
+  setFilters: React.Dispatch<React.SetStateAction<DealershipFilterState>>;
 }
 
 type SubPanel = 
@@ -20,7 +21,7 @@ type SubPanel =
   | { type: 'provider'; id: string }
   | { type: 'member'; id: string };
 
-const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters }) => {
+const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }) => {
   const { dealerships, loading, upsert, remove, getDetails, toggleFavorite } = useDealerships(filters);
   const { groups } = useEnterpriseGroups();
   const { orders } = useOrders();
@@ -190,8 +191,8 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters }) => {
   const activeSubPanel = panelStack[panelStack.length - 1];
 
   return (
-    <div className="animate-in fade-in duration-700">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+    <div className="animate-in fade-in duration-700 h-full flex flex-col">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 flex-shrink-0">
         <div>
           <h1 className="text-2xl font-extrabold text-slate-800 dark:text-slate-100 tracking-tight">Dealerships</h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Manage and track your curator dealership network.</p>
@@ -212,44 +213,46 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters }) => {
         </div>
       </div>
 
-      <div className="w-full min-w-0">
-          {loading ? (
-              <div className="flex flex-col gap-3">
-              {[1,2,3,4,5].map(i => (
-                  <div key={i} className="bg-white dark:bg-slate-900 rounded-2xl h-24 border border-slate-100 dark:border-slate-800 animate-pulse"></div>
-              ))}
-              </div>
-          ) : dealerships.length === 0 ? (
-              <div className="bg-white dark:bg-slate-900 rounded-[2rem] p-12 text-center border border-slate-100 dark:border-slate-800 border-dashed">
-              <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300 dark:text-slate-600">
-                  <Plus size={32} />
-              </div>
-              <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100">No dealerships found</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">Try adjusting your filters or create a new dealership to get started.</p>
-              </div>
-          ) : (
-              <div className="flex flex-col gap-3">
-              {dealerships.map(dealer => {
-                  const details = getDetails(dealer.id);
-                  const hasClientId = details?.website_links?.some(l => l.client_id && l.client_id.trim().length > 0) ?? false;
-                  const hasCSM = details?.contacts?.assigned_specialist_name && details.contacts.assigned_specialist_name.trim().length > 0;
-                  return (
-                  <DealershipCard 
-                      key={dealer.id} 
-                      dealership={dealer} 
-                      groupName={groups.find(g => g.id === dealer.enterprise_group_id)?.name}
-                      isManaged={checkIsManaged(dealer.id)}
-                      hasClientId={hasClientId}
-                      hasAddlWeb={checkHasAddlWeb(dealer.id)}
-                      hasZeroPrice={checkHasZeroPrice(dealer.id)}
-                      missingCSM={!hasCSM}
-                      onClick={() => setSelectedDealerId(dealer.id)}
-                      onToggleFavorite={() => toggleFavorite(dealer.id)}
-                  />
-                  );
-              })}
-              </div>
-          )}
+      <div className="flex gap-6 items-start h-full">
+        <div className="flex-1 w-full min-w-0">
+            {loading ? (
+                <div className="flex flex-col gap-3">
+                {[1,2,3,4,5].map(i => (
+                    <div key={i} className="bg-white dark:bg-slate-900 rounded-2xl h-24 border border-slate-100 dark:border-slate-800 animate-pulse"></div>
+                ))}
+                </div>
+            ) : dealerships.length === 0 ? (
+                <div className="bg-white dark:bg-slate-900 rounded-[2rem] p-12 text-center border border-slate-100 dark:border-slate-800 border-dashed">
+                <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300 dark:text-slate-600">
+                    <Plus size={32} />
+                </div>
+                <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100">No dealerships found</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">Try adjusting your filters or create a new dealership to get started.</p>
+                </div>
+            ) : (
+                <div className="flex flex-col gap-3 pb-20">
+                {dealerships.map(dealer => {
+                    const details = getDetails(dealer.id);
+                    const hasClientId = details?.website_links?.some(l => l.client_id && l.client_id.trim().length > 0) ?? false;
+                    const hasCSM = details?.contacts?.assigned_specialist_name && details.contacts.assigned_specialist_name.trim().length > 0;
+                    return (
+                    <DealershipCard 
+                        key={dealer.id} 
+                        dealership={dealer} 
+                        groupName={groups.find(g => g.id === dealer.enterprise_group_id)?.name}
+                        isManaged={checkIsManaged(dealer.id)}
+                        hasClientId={hasClientId}
+                        hasAddlWeb={checkHasAddlWeb(dealer.id)}
+                        hasZeroPrice={checkHasZeroPrice(dealer.id)}
+                        missingCSM={!hasCSM}
+                        onClick={() => setSelectedDealerId(dealer.id)}
+                        onToggleFavorite={() => toggleFavorite(dealer.id)}
+                    />
+                    );
+                })}
+                </div>
+            )}
+        </div>
       </div>
 
       {isFormOpen && (
