@@ -95,10 +95,6 @@ const DealershipCard: React.FC<DealershipCardProps> = ({
         {/* Top Row: Badges & Copy */}
         <div className="flex items-center justify-between gap-2">
             <div className="flex flex-wrap items-center gap-2">
-              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider border ${statusColors[dealership.status]}`}>
-                {dealership.status}
-              </span>
-
               <span className="text-[10px] font-mono font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
                 {dealership.cif_number || 'NO CIF'}
               </span>
@@ -141,28 +137,33 @@ const DealershipCard: React.FC<DealershipCardProps> = ({
               )}
             </div>
 
-            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button 
-                onClick={handleCopyDetails}
-                className="p-1 text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 rounded transition-all"
-                title="Copy Full Details"
-              >
-                {copiedField === 'details' ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
-              </button>
-              <button 
-                onClick={handleCopyCombo}
-                className="p-1 text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 rounded transition-all"
-                title="Copy PP_Store_Branch"
-              >
-                {copiedField === 'combo' ? <Check size={14} className="text-emerald-500" /> : <Link size={14} />}
-              </button>
-              <button 
-                onClick={handleCopyPP}
-                className="p-1 text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 rounded transition-all"
-                title="Copy PP Sys ID"
-              >
-                {copiedField === 'pp' ? <Check size={14} className="text-emerald-500" /> : <Hash size={14} />}
-              </button>
+            <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button 
+                    onClick={handleCopyDetails}
+                    className="p-1 text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 rounded transition-all"
+                    title="Copy Full Details"
+                >
+                    {copiedField === 'details' ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
+                </button>
+                <button 
+                    onClick={handleCopyCombo}
+                    className="p-1 text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 rounded transition-all"
+                    title="Copy PP_Store_Branch"
+                >
+                    {copiedField === 'combo' ? <Check size={14} className="text-emerald-500" /> : <Link size={14} />}
+                </button>
+                <button 
+                    onClick={handleCopyPP}
+                    className="p-1 text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 rounded transition-all"
+                    title="Copy PP Sys ID"
+                >
+                    {copiedField === 'pp' ? <Check size={14} className="text-emerald-500" /> : <Hash size={14} />}
+                </button>
+                </div>
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider border ${statusColors[dealership.status]}`}>
+                    {dealership.status}
+                </span>
             </div>
         </div>
 
