@@ -83,6 +83,7 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
       const baseInfo: any = {
          Status: fullD.status,
          Hold_Reason: fullD.hold_reason || '',
+         Cancellation_Reason: fullD.cancellation_reason || '',
          CIF: fullD.cif_number || '',
          Name: fullD.name,
          Group: groupName,
@@ -150,7 +151,7 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
     });
 
     const columns = [
-      'Status', 'Hold_Reason', 'CIF', 'Name', 'Group', 'Store', 'Branch', 
+      'Status', 'Hold_Reason', 'Cancellation_Reason', 'CIF', 'Name', 'Group', 'Store', 'Branch', 
       'PP_ID', 'ERA_ID', 'BU_ID', 'Address', 'State', 'CRM', 
       'Sales_Contact', 'Enrollment_Contact', 'CSM', 'POC_Name', 'POC_Email', 'POC_Phone', 
       'Received_Date', 'Order_Number', 'Onboarding_Date',

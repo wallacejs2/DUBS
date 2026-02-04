@@ -70,16 +70,35 @@ const DealershipCard: React.FC<DealershipCardProps> = ({
     copyToClipboard(`${pp}_${store}_${branch}`, 'combo');
   };
 
+  const getStatusColorClass = (status: DealershipStatus) => {
+    switch (status) {
+      case DealershipStatus.DMT_PENDING: return 'bg-slate-400';
+      case DealershipStatus.DMT_APPROVED: return 'bg-blue-500';
+      case DealershipStatus.HOLD: return 'bg-orange-500';
+      case DealershipStatus.ONBOARDING: return 'bg-indigo-500';
+      case DealershipStatus.LIVE: return 'bg-emerald-500';
+      case DealershipStatus.LEGACY: return 'bg-yellow-500';
+      case DealershipStatus.CANCELLED: return 'bg-red-500';
+      default: return 'bg-slate-400';
+    }
+  };
+
   return (
     <div 
       onClick={onClick}
-      className="group bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-700 transition-all duration-200 cursor-pointer overflow-hidden relative"
+      className="group bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-700 transition-all duration-200 cursor-pointer overflow-hidden relative flex"
     >
-      <div className="p-4 flex items-center justify-between gap-4">
-        <div className="flex-1 min-w-0">
-          {/* Top Row: CIF, CRM Provider and Copy Buttons */}
-          <div className="flex items-center justify-between gap-2 mb-1">
-            <div className="flex items-center gap-2">
+      <div className={`w-1.5 flex-shrink-0 ${getStatusColorClass(dealership.status)}`}></div>
+      
+      <div className="p-4 flex-1 flex flex-col gap-2 min-w-0">
+        
+        {/* Top Row: Badges & Copy */}
+        <div className="flex items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider border ${statusColors[dealership.status]}`}>
+                {dealership.status}
+              </span>
+
               <span className="text-[10px] font-mono font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
                 {dealership.cif_number || 'NO CIF'}
               </span>
@@ -121,8 +140,7 @@ const DealershipCard: React.FC<DealershipCardProps> = ({
                 </span>
               )}
             </div>
-            
-            {/* Copy Buttons */}
+
             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
               <button 
                 onClick={handleCopyDetails}
@@ -146,10 +164,10 @@ const DealershipCard: React.FC<DealershipCardProps> = ({
                 {copiedField === 'pp' ? <Check size={14} className="text-emerald-500" /> : <Hash size={14} />}
               </button>
             </div>
-          </div>
+        </div>
 
-          {/* Middle Row: Name and Favorite */}
-          <div className="flex items-center gap-2">
+        {/* Name Row */}
+        <div className="flex items-center gap-2">
             {onToggleFavorite && (
               <button 
                 onClick={(e) => {
@@ -162,65 +180,50 @@ const DealershipCard: React.FC<DealershipCardProps> = ({
                  <Star size={16} fill={dealership.is_favorite ? "currentColor" : "none"} />
               </button>
             )}
-            <h3 className="text-base font-extrabold text-slate-800 dark:text-slate-100 truncate mb-1.5 leading-tight group-hover:text-indigo-700 dark:group-hover:text-indigo-400 transition-colors">
+            <h3 className="text-base font-extrabold text-slate-800 dark:text-slate-100 truncate leading-tight group-hover:text-indigo-700 dark:group-hover:text-indigo-400 transition-colors">
               {dealership.name}
             </h3>
-          </div>
+        </div>
 
-          {/* Hold Reason Display */}
-          {dealership.status === DealershipStatus.HOLD && dealership.hold_reason && (
-            <div className="mb-2 bg-orange-50 dark:bg-orange-900/20 border border-orange-100 dark:border-orange-900/30 rounded px-2 py-1 text-[10px] text-orange-800 dark:text-orange-200 font-medium truncate">
+        {/* Hold/Cancel Reason */}
+        {dealership.status === DealershipStatus.HOLD && dealership.hold_reason && (
+            <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-100 dark:border-orange-900/30 rounded px-2 py-1 text-[10px] text-orange-800 dark:text-orange-200 font-medium truncate">
                <span className="font-bold uppercase text-orange-400 mr-1">Hold:</span>
                {dealership.hold_reason}
             </div>
-          )}
+        )}
+        {dealership.status === DealershipStatus.CANCELLED && dealership.cancellation_reason && (
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 rounded px-2 py-1 text-[10px] text-red-800 dark:text-red-200 font-medium truncate">
+               <span className="font-bold uppercase text-red-400 mr-1">Cancelled:</span>
+               {dealership.cancellation_reason}
+            </div>
+        )}
 
-          {/* Bottom Row: Group, Store/Branch, IDs, Date */}
-          <div className="flex flex-wrap items-center gap-y-1 gap-x-3 text-[10px] text-slate-500 dark:text-slate-400 font-medium">
-             <div className="flex items-center gap-1.5" title="Enterprise Group">
-               <span className="text-slate-400 dark:text-slate-500">GRP:</span>
-               <span className="text-slate-700 dark:text-slate-300 font-semibold truncate max-w-[150px]">{groupName || 'Single'}</span>
-             </div>
-             <div className="w-px h-3 bg-slate-200 dark:bg-slate-700 hidden sm:block"></div>
-             
-             <div className="flex items-center gap-1.5" title="Store / Branch">
-               <span className="text-slate-400 dark:text-slate-500">S/B:</span>
-               <span className="font-mono text-slate-700 dark:text-slate-300">{dealership.store_number || '-'}/{dealership.branch_number || '-'}</span>
-             </div>
-             <div className="w-px h-3 bg-slate-200 dark:bg-slate-700 hidden sm:block"></div>
+        {/* Bottom Row */}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[10px] text-slate-500 dark:text-slate-400 mt-1 pt-2 border-t border-slate-50 dark:border-slate-800/50">
+            {groupName && (
+              <div className="flex items-center gap-1.5" title="Enterprise Group">
+                <span className="font-bold text-slate-400 uppercase tracking-wider">Grp:</span>
+                <span className="font-medium truncate max-w-[150px]">{groupName}</span>
+              </div>
+            )}
+            
+            <div className="flex items-center gap-1.5" title="Store / Branch">
+               <span className="font-bold text-slate-400 uppercase tracking-wider">St/Br:</span>
+               <span className="font-mono">{dealership.store_number || '--'} / {dealership.branch_number || '--'}</span>
+            </div>
 
-             <div className="flex items-center gap-1.5" title="PP Sys ID">
-               <span className="text-slate-400 dark:text-slate-500">PP:</span>
-               <span className="font-mono text-slate-700 dark:text-slate-300">{dealership.pp_sys_id || '-'}</span>
-             </div>
-             <div className="w-px h-3 bg-slate-200 dark:bg-slate-700 hidden sm:block"></div>
+            <div className="flex items-center gap-1.5" title="PP / ERA Systems">
+               <span className="font-bold text-slate-400 uppercase tracking-wider">IDs:</span>
+               <span className="font-mono">{dealership.pp_sys_id || '--'} / {dealership.era_system_id || '--'}</span>
+            </div>
 
-             <div className="flex items-center gap-1.5" title="ERA ID">
-               <span className="text-slate-400 dark:text-slate-500">ERA:</span>
-               <span className="font-mono text-slate-700 dark:text-slate-300">{dealership.era_system_id || '-'}</span>
-             </div>
-             <div className="w-px h-3 bg-slate-200 dark:bg-slate-700 hidden sm:block"></div>
-
-             {dealership.status === DealershipStatus.CANCELLED ? (
-               <div className="flex items-center gap-1.5" title="Termination Date">
-                 <span className="text-red-400 font-bold">TERM:</span>
-                 <span className="text-slate-700 dark:text-slate-300">{formatDate(dealership.term_date)}</span>
-               </div>
-             ) : (
-               <div className="flex items-center gap-1.5" title="Go-Live Date">
-                 <span className="text-slate-400 dark:text-slate-500">LIVE:</span>
-                 <span className="text-slate-700 dark:text-slate-300">{formatDate(dealership.go_live_date)}</span>
-               </div>
-             )}
-          </div>
+            <div className="flex items-center gap-1.5 ml-auto" title="Received Date">
+               <span className="font-bold text-slate-400 uppercase tracking-wider">Date:</span>
+               <span>{formatDate(dealership.created_at)}</span>
+            </div>
         </div>
 
-        {/* Right Side: Status */}
-        <div className="flex-shrink-0 pl-4 border-l border-slate-100 dark:border-slate-800">
-           <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border ${statusColors[dealership.status]}`}>
-              {dealership.status}
-           </span>
-        </div>
       </div>
     </div>
   );

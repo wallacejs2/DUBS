@@ -407,6 +407,18 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
                         />
                     </div>
                 )}
+
+                {formData.status === DealershipStatus.CANCELLED && (
+                    <div className="animate-in fade-in slide-in-from-top-1 bg-red-50 dark:bg-red-900/20 p-4 rounded-xl border border-red-200 dark:border-red-900">
+                        <Label>Reason for Cancellation</Label>
+                        <textarea
+                            value={formData.cancellation_reason || ''}
+                            onChange={(e) => updateField('cancellation_reason', e.target.value)}
+                            className="w-full px-2 py-1.5 text-[12px] border border-red-200 dark:border-red-800 bg-white dark:bg-slate-900 rounded-lg focus:ring-1 focus:ring-red-500 outline-none text-slate-800 dark:text-red-100 placeholder:text-red-300 min-h-[80px] resize-none"
+                            placeholder="Reason for cancellation..."
+                        />
+                    </div>
+                )}
             </div>
 
             <hr className="border-slate-100 dark:border-slate-800" />

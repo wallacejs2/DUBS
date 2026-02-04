@@ -81,6 +81,7 @@ const TeamMemberDetailPanel: React.FC<TeamMemberDetailPanelProps> = ({
     if (!member.name || isNew) return [];
     
     return dealerships.filter(d => {
+        // We include CANCELLED here so history is visible in the panel
         const details = getDetails(d.id);
         if (!details || !details.contacts) return false;
         
@@ -264,13 +265,15 @@ const TeamMemberDetailPanel: React.FC<TeamMemberDetailPanelProps> = ({
                     ) : (
                         <div className="space-y-2">
                             {linkedDealerships.map(d => (
-                                <div key={d.id} className="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-100 dark:border-slate-800">
+                                <div key={d.id} className={`flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-800/50 rounded-lg border ${d.status === DealershipStatus.CANCELLED ? 'border-red-100 dark:border-red-900/30 bg-red-50/10 dark:bg-red-900/10' : 'border-slate-100 dark:border-slate-700'}`}>
                                     <div className="min-w-0 flex items-center gap-3">
                                         <div className="p-1.5 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 text-slate-400">
                                             <Building2 size={12} />
                                         </div>
                                         <div>
-                                            <div className="text-[11px] font-bold text-slate-700 dark:text-slate-200 truncate">{d.name}</div>
+                                            <div className={`text-[11px] font-bold truncate ${d.status === DealershipStatus.CANCELLED ? 'text-red-700 dark:text-red-400' : 'text-slate-700 dark:text-slate-200'}`}>
+                                                {d.name}
+                                            </div>
                                             <div className="text-[9px] font-mono text-slate-400 dark:text-slate-500">{d.pp_sys_id}</div>
                                         </div>
                                     </div>

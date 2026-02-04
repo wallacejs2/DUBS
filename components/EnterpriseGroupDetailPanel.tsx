@@ -59,14 +59,19 @@ const EnterpriseGroupDetailPanel: React.FC<EnterpriseGroupDetailPanelProps> = ({
     setIsEditing(false);
   };
 
+  // Filter out CANCELLED dealerships for calculations
+  const activeDealerships = useMemo(() => {
+    return dealerships.filter(d => d.status !== DealershipStatus.CANCELLED);
+  }, [dealerships]);
+
   const monthlyRevenue = useMemo(() => {
-    const activeDealerIds = new Set(
+    const revenueDealerIds = new Set(
       dealerships
         .filter(d => d.status === DealershipStatus.LIVE || d.status === DealershipStatus.LEGACY)
         .map(d => d.id)
     );
     return orders
-      .filter(o => activeDealerIds.has(o.dealership_id))
+      .filter(o => revenueDealerIds.has(o.dealership_id))
       .reduce((sum, order) => {
         const orderTotal = order.products?.reduce((pSum, p) => pSum + (Number(p.amount) || 0), 0) || 0;
         return sum + orderTotal;
@@ -74,11 +79,12 @@ const EnterpriseGroupDetailPanel: React.FC<EnterpriseGroupDetailPanelProps> = ({
   }, [dealerships, orders]);
 
   const totalProductsCount = useMemo(() => {
-    const groupDealerIds = new Set(dealerships.map(d => d.id));
+    // Only count products from non-cancelled dealerships
+    const groupDealerIds = new Set(activeDealerships.map(d => d.id));
     return orders
       .filter(o => groupDealerIds.has(o.dealership_id))
       .reduce((total, order) => total + (order.products?.length || 0), 0);
-  }, [dealerships, orders]);
+  }, [activeDealerships, orders]);
 
   const formatCurrency = (val: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
 
@@ -185,7 +191,7 @@ const EnterpriseGroupDetailPanel: React.FC<EnterpriseGroupDetailPanelProps> = ({
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
               <div>
                 <Label>Dealerships</Label>
-                <div className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">{dealerships.length}</div>
+                <div className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">{activeDealerships.length}</div>
               </div>
               <div>
                 <Label>Asset Inventory</Label>
@@ -194,8 +200,8 @@ const EnterpriseGroupDetailPanel: React.FC<EnterpriseGroupDetailPanelProps> = ({
               <div>
                 <Label>Portfolio Health</Label>
                 <div className="text-xl font-bold text-indigo-600 dark:text-indigo-400 tracking-tight">
-                  {dealerships.length > 0 
-                    ? `${Math.round((dealerships.filter(d => d.status === DealershipStatus.LIVE || d.status === DealershipStatus.LEGACY).length / dealerships.length) * 100)}%` 
+                  {activeDealerships.length > 0 
+                    ? `${Math.round((activeDealerships.filter(d => d.status === DealershipStatus.LIVE || d.status === DealershipStatus.LEGACY).length / activeDealerships.length) * 100)}%` 
                     : '0%'}
                 </div>
               </div>
@@ -222,12 +228,14 @@ const EnterpriseGroupDetailPanel: React.FC<EnterpriseGroupDetailPanelProps> = ({
                       return (
                       <div 
                         key={dealer.id} 
-                        className="flex flex-col p-4 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl hover:border-indigo-200 dark:hover:border-indigo-700 hover:shadow-sm transition-all cursor-pointer group"
+                        className={`flex flex-col p-4 bg-white dark:bg-slate-800 border rounded-xl hover:border-indigo-200 dark:hover:border-indigo-700 hover:shadow-sm transition-all cursor-pointer group ${dealer.status === DealershipStatus.CANCELLED ? 'border-red-100 dark:border-red-900/30 opacity-70 grayscale-[0.5]' : 'border-slate-100 dark:border-slate-700'}`}
                         onClick={() => onViewDealer(dealer.id)}
                       >
                         <div className="flex items-center justify-between">
                             <div className="min-w-0">
-                                <p className="text-[12px] font-bold text-slate-800 dark:text-slate-200 truncate tracking-tight group-hover:text-indigo-700 dark:group-hover:text-indigo-400">{dealer.name}</p>
+                                <p className={`text-[12px] font-bold truncate tracking-tight group-hover:text-indigo-700 dark:group-hover:text-indigo-400 ${dealer.status === DealershipStatus.CANCELLED ? 'text-red-700 dark:text-red-400' : 'text-slate-800 dark:text-slate-200'}`}>
+                                    {dealer.name}
+                                </p>
                                 <div className="flex items-center gap-2 mt-0.5">
                                     <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500">{dealer.cif_number || 'NO CIF'}</span>
                                     <span className="text-[10px] text-slate-400 dark:text-slate-500">•</span>

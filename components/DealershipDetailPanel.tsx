@@ -348,6 +348,7 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
     const baseInfo: any = {
          Status: d.status,
          Hold_Reason: d.hold_reason || '',
+         Cancellation_Reason: d.cancellation_reason || '',
          CIF: d.cif_number || '',
          Name: d.name,
          Group: groupName,
@@ -403,7 +404,7 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
         flatData.push(row);
     }
     const columns = [
-      'Status', 'Hold_Reason', 'CIF', 'Name', 'Group', 'Store', 'Branch', 
+      'Status', 'Hold_Reason', 'Cancellation_Reason', 'CIF', 'Name', 'Group', 'Store', 'Branch', 
       'PP_ID', 'ERA_ID', 'BU_ID', 'Address', 'State', 'CRM', 
       'Sales_Contact', 'Enrollment_Contact', 'CSM', 'POC_Name', 'POC_Email', 'POC_Phone', 
       'Received_Date', 'Order_Number', 'Onboarding_Date', 'Go_Live_Date', 'Term_Date',
@@ -623,6 +624,24 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                         ) : (
                             <div className="text-[12px] text-slate-800 dark:text-orange-100 italic leading-relaxed">
                                 {formData.hold_reason || 'No reason specified'}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {formData.status === DealershipStatus.CANCELLED && (
+                    <div className="animate-in fade-in slide-in-from-top-1 bg-red-50 dark:bg-red-900/20 p-4 rounded-xl border border-red-200 dark:border-red-900">
+                        <Label>Reason for Cancellation</Label>
+                        {isEditing ? (
+                            <textarea
+                                value={formData.cancellation_reason || ''}
+                                onChange={(e) => updateField('cancellation_reason', e.target.value)}
+                                className="w-full px-2 py-1.5 text-[12px] border border-red-200 dark:border-red-800 bg-white dark:bg-slate-900 rounded-lg focus:ring-1 focus:ring-red-500 outline-none text-slate-800 dark:text-red-100 placeholder:text-red-300 min-h-[80px] resize-none"
+                                placeholder="Reason for cancellation..."
+                            />
+                        ) : (
+                            <div className="text-[12px] text-slate-800 dark:text-red-100 italic leading-relaxed">
+                                {formData.cancellation_reason || 'No reason specified'}
                             </div>
                         )}
                     </div>

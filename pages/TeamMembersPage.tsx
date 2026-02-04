@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { Plus, User, Mail, Phone, Hash, Building2, Trash2, Edit3 } from 'lucide-react';
 import { useTeamMembers, useDealerships } from '../hooks';
-import { TeamMember, TeamRole } from '../types';
+import { TeamMember, TeamRole, DealershipStatus } from '../types';
 import FilterBar from '../components/FilterBar';
 import TeamMemberDetailPanel from '../components/TeamMemberDetailPanel';
 
@@ -14,10 +14,12 @@ const TeamMembersPage: React.FC = () => {
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
 
-  // Helper to count linked dealerships for a member
+  // Helper to count linked dealerships for a member, excluding cancelled
   const getLinkedCount = (memberName: string) => {
     if (!memberName) return 0;
     return dealerships.filter(d => {
+        if (d.status === DealershipStatus.CANCELLED) return false;
+        
         const details = getDetails(d.id);
         if (!details || !details.contacts) return false;
         return (

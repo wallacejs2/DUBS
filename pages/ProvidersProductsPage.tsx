@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { Plus, Package, Mail, Phone, Hash, Building2, Trash2, Edit3, Globe } from 'lucide-react';
 import { useProvidersProducts, useDealerships, useOrders } from '../hooks';
-import { ProviderProduct, ProviderProductCategory, ProviderType } from '../types';
+import { ProviderProduct, ProviderProductCategory, ProviderType, DealershipStatus } from '../types';
 import FilterBar from '../components/FilterBar';
 import ProviderProductDetailPanel from '../components/ProviderProductDetailPanel';
 
@@ -15,12 +15,14 @@ const ProvidersProductsPage: React.FC = () => {
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
 
-  // Helper to count linked dealerships for a provider or product
+  // Helper to count linked dealerships for a provider or product, excluding cancelled
   const getLinkedCount = (item: ProviderProduct) => {
     if (!item.name) return 0;
     
     if (item.category === ProviderProductCategory.PROVIDER) {
         return dealerships.filter(d => {
+            if (d.status === DealershipStatus.CANCELLED) return false;
+
             if (item.provider_type === ProviderType.CRM) return d.crm_provider === item.name;
             if (item.provider_type === ProviderType.WEBSITE) return d.website_provider === item.name;
             if (item.provider_type === ProviderType.INVENTORY) return d.inventory_provider === item.name;
@@ -29,6 +31,8 @@ const ProvidersProductsPage: React.FC = () => {
     } else {
         // Product matching: check BOTH selected internal products AND orders
         return dealerships.filter(d => {
+            if (d.status === DealershipStatus.CANCELLED) return false;
+
             const isSelectedInDetails = d.products?.includes(item.name);
             const isPresentInOrders = orders.some(o => 
                 o.dealership_id === d.id && 

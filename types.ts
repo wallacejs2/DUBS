@@ -163,6 +163,8 @@ export interface Dealership {
   
   // Reason for Hold status
   hold_reason?: string;
+  // Reason for Cancelled status
+  cancellation_reason?: string;
   
   // New Field
   sms_activated?: boolean;
