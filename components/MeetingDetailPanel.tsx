@@ -5,6 +5,7 @@ import {
   CalendarDays
 } from 'lucide-react';
 import { Meeting } from '../types';
+import RichTextEditor from './RichTextEditor';
 
 interface MeetingDetailPanelProps {
   meeting: Partial<Meeting>;
@@ -149,17 +150,22 @@ const MeetingDetailPanel: React.FC<MeetingDetailPanelProps> = ({
             <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
               <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-widest mb-3">Meeting Notes</h3>
               {isEditing ? (
-                <textarea
+                <RichTextEditor
                   value={formData.notes || ''}
-                  onChange={(e) => updateField('notes', e.target.value)}
+                  onChange={(html) => updateField('notes', html)}
                   placeholder="Type your meeting notes here..."
-                  rows={12}
-                  className="w-full px-3 py-2 text-[12px] border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-normal transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 resize-y min-h-[200px]"
                 />
               ) : (
-                <div className="text-[12px] font-normal text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4 border border-slate-100 dark:border-slate-700 min-h-[200px]">
-                  {formData.notes || <span className="text-slate-400 dark:text-slate-500 italic">No notes recorded.</span>}
-                </div>
+                formData.notes ? (
+                  <div
+                    className="text-[12px] font-normal text-slate-700 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4 border border-slate-100 dark:border-slate-700 min-h-[200px] [&_ul]:list-disc [&_ul]:ml-4 [&_ol]:list-decimal [&_ol]:ml-4 [&_li]:my-0.5"
+                    dangerouslySetInnerHTML={{ __html: formData.notes }}
+                  />
+                ) : (
+                  <div className="text-[12px] font-normal text-slate-700 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4 border border-slate-100 dark:border-slate-700 min-h-[200px]">
+                    <span className="text-slate-400 dark:text-slate-500 italic">No notes recorded.</span>
+                  </div>
+                )
               )}
             </div>
 

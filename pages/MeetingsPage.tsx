@@ -33,6 +33,11 @@ const MeetingsPage: React.FC = () => {
     setIsCreating(false);
   };
 
+  const stripHtml = (html: string) => {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    return doc.body.textContent || '';
+  };
+
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return '';
     const d = new Date(dateStr + 'T00:00:00');
@@ -98,7 +103,7 @@ const MeetingsPage: React.FC = () => {
                   {meeting.notes && (
                     <div className="flex items-start gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
                       <FileText size={12} className="text-slate-400 flex-shrink-0 mt-0.5" />
-                      <span className="line-clamp-2">{meeting.notes}</span>
+                      <span className="line-clamp-2">{stripHtml(meeting.notes)}</span>
                     </div>
                   )}
                 </div>
