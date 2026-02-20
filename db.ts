@@ -1,10 +1,11 @@
 
-import { 
+import {
   Dealership, EnterpriseGroup, Order, Shopper, NewFeature, TeamMember,
-  DealershipWithRelations, WebsiteLink, DealershipContacts, 
-  ReynoldsSolution, DealershipStatus, CRMProvider, ProductCode, 
+  DealershipWithRelations, WebsiteLink, DealershipContacts,
+  ReynoldsSolution, DealershipStatus, CRMProvider, ProductCode,
   OrderStatus, ShopperStatus, ShopperPriority, TeamRole,
-  ProviderProduct, ProviderProductCategory, ProviderType
+  ProviderProduct, ProviderProductCategory, ProviderType,
+  Meeting
 } from './types';
 
 // Pure LocalStorage implementation for a seamless offline-first experience
@@ -23,6 +24,7 @@ class CuratorLocalDB extends EventTarget {
     newFeatures: NewFeature[];
     teamMembers: TeamMember[];
     providersProducts: ProviderProduct[];
+    meetings: Meeting[];
   } = {
     dealerships: [],
     enterpriseGroups: [],
@@ -33,7 +35,8 @@ class CuratorLocalDB extends EventTarget {
     shoppers: [],
     newFeatures: [],
     teamMembers: [],
-    providersProducts: []
+    providersProducts: [],
+    meetings: []
   };
 
   private constructor() {
@@ -71,7 +74,8 @@ class CuratorLocalDB extends EventTarget {
           // Ensure new fields exist if loading from old DB structure
           newFeatures: parsed.newFeatures || [],
           teamMembers: parsed.teamMembers || [],
-          providersProducts: parsed.providersProducts || []
+          providersProducts: parsed.providersProducts || [],
+          meetings: parsed.meetings || []
         };
       } catch (e) {
         console.error("Failed to parse LocalDB data", e);
@@ -504,6 +508,27 @@ class CuratorLocalDB extends EventTarget {
   }
   deleteProviderProduct(id: string) {
     this.data.providersProducts = this.data.providersProducts.filter(p => p.id !== id);
+    this.save();
+  }
+
+  // Meetings
+  getMeetings() { return [...this.data.meetings]; }
+  upsertMeeting(meeting: Partial<Meeting>) {
+    const id = meeting.id || this.generateId();
+    const existingIndex = this.data.meetings.findIndex(m => m.id === id);
+    const newMeeting = {
+      ...this.data.meetings[existingIndex],
+      ...meeting,
+      id,
+      created_at: existingIndex >= 0 ? this.data.meetings[existingIndex].created_at : new Date().toISOString()
+    } as Meeting;
+    if (existingIndex >= 0) this.data.meetings[existingIndex] = newMeeting;
+    else this.data.meetings.push(newMeeting);
+    this.save();
+    return id;
+  }
+  deleteMeeting(id: string) {
+    this.data.meetings = this.data.meetings.filter(m => m.id !== id);
     this.save();
   }
 }

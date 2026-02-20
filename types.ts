@@ -273,6 +273,14 @@ export interface NewFeature {
   created_at: string;
 }
 
+export interface Meeting {
+  id: string;
+  name: string;
+  date: string;
+  notes: string;
+  created_at: string;
+}
+
 export interface DealershipFilterState {
   search: string;
   status: string;

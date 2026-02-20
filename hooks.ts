@@ -1,10 +1,10 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { db } from './db.ts';
-import { 
-  Dealership, DealershipWithRelations, EnterpriseGroup, 
+import {
+  Dealership, DealershipWithRelations, EnterpriseGroup,
   Shopper, Order, ProductCode, NewFeature, TeamMember,
-  ProviderProduct
+  ProviderProduct, Meeting
 } from './types.ts';
 
 export function useEnterpriseGroups() {
@@ -322,5 +322,46 @@ export function useProvidersProducts(filters?: { search?: string; category?: str
     loading,
     upsert: (p: Partial<ProviderProduct>) => db.upsertProviderProduct(p),
     remove: (id: string) => db.deleteProviderProduct(id)
+  };
+}
+
+export function useMeetings(filters?: { search?: string }) {
+  const [meetings, setMeetings] = useState<Meeting[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetch = useCallback(() => {
+    let data = db.getMeetings();
+
+    if (filters?.search) {
+      const s = filters.search.toLowerCase();
+      data = data.filter(m =>
+        m.name.toLowerCase().includes(s) ||
+        (m.notes && m.notes.toLowerCase().includes(s))
+      );
+    }
+
+    // Sort by date descending (newest first)
+    data.sort((a, b) => {
+      const dateA = a.date ? new Date(a.date).getTime() : 0;
+      const dateB = b.date ? new Date(b.date).getTime() : 0;
+      if (dateA !== dateB) return dateB - dateA;
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+
+    setMeetings(data);
+    setLoading(false);
+  }, [filters]);
+
+  useEffect(() => {
+    fetch();
+    db.addEventListener('change', fetch);
+    return () => db.removeEventListener('change', fetch);
+  }, [fetch]);
+
+  return {
+    meetings,
+    loading,
+    upsert: (m: Partial<Meeting>) => db.upsertMeeting(m),
+    remove: (id: string) => db.deleteMeeting(id)
   };
 }
