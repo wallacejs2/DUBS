@@ -1,249 +1,367 @@
-
-import React, { useState, useMemo } from 'react';
-import { Building2, DollarSign, Calendar, X } from 'lucide-react';
-import { useDealerships, useOrders } from '../hooks';
+import React, { useMemo, useState } from 'react';
+import { Building2, Calendar, DollarSign, Rocket, TrendingUp, UserPlus, X } from 'lucide-react';
+import { useDealerships, useEnterpriseGroups, useOrders } from '../hooks';
 import { DealershipStatus, ProductCode } from '../types';
 
 const DashboardPage: React.FC = () => {
-  const [dateRange, setDateRange] = useState({ start: '', end: '' });
+  const [orderDateRange, setOrderDateRange] = useState({ start: '', end: '' });
+  const [reportingMonth, setReportingMonth] = useState(new Date().toISOString().slice(0, 7));
   // Default: Cancelled is excluded
   const [excludedStatuses, setExcludedStatuses] = useState<DealershipStatus[]>([DealershipStatus.CANCELLED]);
-  
-  // Fetch all data
+
   const { dealerships } = useDealerships();
   const { orders } = useOrders();
+  const { groups } = useEnterpriseGroups();
 
-  // Metrics Calculation
   const dashboardMetrics = useMemo(() => {
-    // 1. Status Counts (Universe) - Used for the toggle buttons
-    // This counts ALL dealerships in the DB regardless of filters, so the buttons show accurate "Total" counts available.
+    const getMonthKey = (dateValue?: string) => {
+      if (!dateValue) return '';
+
+      // Keep month derivation in local calendar terms and avoid UTC shifts.
+      const rawMonth = dateValue.slice(0, 7);
+      if (/^\d{4}-\d{2}$/.test(rawMonth)) return rawMonth;
+
+      const parsed = new Date(dateValue);
+      if (Number.isNaN(parsed.getTime())) return '';
+      const year = parsed.getFullYear();
+      const month = String(parsed.getMonth() + 1).padStart(2, '0');
+      return `${year}-${month}`;
+    };
+
+    const getTimestamp = (value?: string) => {
+      if (!value) return null;
+      const parsed = new Date(value);
+      if (Number.isNaN(parsed.getTime())) return null;
+      return parsed.getTime();
+    };
+
+    const startTimestamp = orderDateRange.start ? getTimestamp(`${orderDateRange.start}T00:00:00`) : null;
+    const endTimestamp = orderDateRange.end ? getTimestamp(`${orderDateRange.end}T23:59:59.999`) : null;
+
     const statusCounts = dealerships.reduce((acc, d) => {
       acc[d.status] = (acc[d.status] || 0) + 1;
       return acc;
     }, {} as Record<DealershipStatus, number>);
 
-    // 2. Filter Dealerships by Status (The "Active" set for the dashboard view)
     const activeDealerships = dealerships.filter(d => !excludedStatuses.includes(d.status));
     const activeDealershipIds = new Set(activeDealerships.map(d => d.id));
 
-    // 3. Filter Orders (by Date AND by Active Dealerships)
-    // We only count revenue/products from dealerships that are currently "visible" (not excluded).
-    let filteredOrders = orders.filter(o => activeDealershipIds.has(o.dealership_id));
+    const filteredOrders = orders.filter(order => {
+      if (!activeDealershipIds.has(order.dealership_id)) return false;
 
-    if (dateRange.start) {
-        filteredOrders = filteredOrders.filter(o => o.received_date >= dateRange.start);
-    }
-    if (dateRange.end) {
-        filteredOrders = filteredOrders.filter(o => o.received_date <= dateRange.end);
-    }
+      const orderTimestamp = getTimestamp(order.received_date);
+      if (orderTimestamp === null) return false;
+      if (startTimestamp !== null && orderTimestamp < startTimestamp) return false;
+      if (endTimestamp !== null && orderTimestamp > endTimestamp) return false;
 
-    // 4. Calculate Aggregate Metrics
-    
-    // Total Dealerships: Represents the "Portfolio Size" currently viewed.
-    // We do NOT filter this by date, because "Total Dealerships" usually means "Current Active Accounts".
-    const totalDealershipsCount = activeDealerships.length;
-    
-    // Revenue: Represents "Sales Volume" or "Booked Revenue" from the filtered orders.
+      return true;
+    });
+
     const totalRevenue = filteredOrders.reduce((sum, order) => {
-        const orderTotal = order.products?.reduce((pSum, p) => pSum + (Number(p.amount) || 0), 0) || 0;
-        return sum + orderTotal;
+      const orderTotal = order.products?.reduce((pSum, p) => pSum + (Number(p.amount) || 0), 0) || 0;
+      return sum + orderTotal;
     }, 0);
 
-    // Product Breakdown: Counts number of products sold/active in the filtered orders.
     const productBreakdown = filteredOrders.reduce((acc, order) => {
-        order.products?.forEach(p => {
-             if (p.product_code) {
-                 acc[p.product_code] = (acc[p.product_code] || 0) + 1;
-             }
-        });
-        return acc;
+      order.products?.forEach(p => {
+        if (p.product_code) {
+          acc[p.product_code] = (acc[p.product_code] || 0) + 1;
+        }
+      });
+      return acc;
     }, {} as Record<string, number>);
 
+    const lifecycle = activeDealerships.reduce(
+      (acc, dealership) => {
+        if (getMonthKey(dealership.onboarding_date) === reportingMonth) acc.onboardingThisMonth += 1;
+        if (getMonthKey(dealership.go_live_date) === reportingMonth) acc.goLiveThisMonth += 1;
+        if (getMonthKey(dealership.term_date) === reportingMonth) acc.termedThisMonth += 1;
+        return acc;
+      },
+      { onboardingThisMonth: 0, goLiveThisMonth: 0, termedThisMonth: 0 }
+    );
+
+    const receivedThisMonth = orders.reduce((sum, order) => {
+      if (!activeDealershipIds.has(order.dealership_id)) return sum;
+      return getMonthKey(order.received_date) === reportingMonth ? sum + 1 : sum;
+    }, 0);
+
+    const enterpriseMap = new Map<string, { name: string; total: number; onboarding: number; goLive: number; live: number }>();
+    const groupNameById = new Map(groups.map(group => [group.id, group.name]));
+
+    activeDealerships.forEach(dealership => {
+      const groupId = dealership.enterprise_group_id || 'independent';
+      const groupName = groupNameById.get(dealership.enterprise_group_id || '') || 'Independent / Unassigned';
+      const current = enterpriseMap.get(groupId) || { name: groupName, total: 0, onboarding: 0, goLive: 0, live: 0 };
+
+      current.total += 1;
+      if (getMonthKey(dealership.onboarding_date) === reportingMonth) current.onboarding += 1;
+      if (getMonthKey(dealership.go_live_date) === reportingMonth) current.goLive += 1;
+      if ([DealershipStatus.LIVE, DealershipStatus.LEGACY].includes(dealership.status)) current.live += 1;
+
+      enterpriseMap.set(groupId, current);
+    });
+
+    const enterpriseInsights = Array.from(enterpriseMap.values())
+      .map(entry => ({
+        ...entry,
+        goLiveRate: entry.total ? Math.round((entry.goLive / entry.total) * 100) : 0,
+      }))
+      .sort((a, b) => {
+        if (b.goLive !== a.goLive) return b.goLive - a.goLive;
+        if (b.onboarding !== a.onboarding) return b.onboarding - a.onboarding;
+        return a.name.localeCompare(b.name);
+      });
+
     return {
-        statusCounts,
-        totalDealershipsCount,
-        totalRevenue,
-        productBreakdown,
-        isDateFiltered: !!(dateRange.start || dateRange.end)
+      statusCounts,
+      totalDealershipsCount: activeDealerships.length,
+      totalRevenue,
+      productBreakdown,
+      lifecycle,
+      receivedThisMonth,
+      netLiveChangeThisMonth: lifecycle.goLiveThisMonth - lifecycle.termedThisMonth,
+      enterpriseInsights,
+      isOrderDateFiltered: !!(orderDateRange.start || orderDateRange.end),
     };
-  }, [dealerships, orders, excludedStatuses, dateRange]);
+  }, [dealerships, orders, excludedStatuses, orderDateRange, reportingMonth, groups]);
 
   const toggleStatus = (statuses: DealershipStatus[]) => {
     setExcludedStatuses(prev => {
-        const isAllExcluded = statuses.every(s => prev.includes(s));
-        if (isAllExcluded) {
-            // Include them (remove from excluded list)
-            return prev.filter(s => !statuses.includes(s));
-        } else {
-            // Exclude them (add to excluded list, avoiding duplicates)
-            const newExcluded = [...prev];
-            statuses.forEach(s => {
-                if (!newExcluded.includes(s)) newExcluded.push(s);
-            });
-            return newExcluded;
-        }
+      const isAllExcluded = statuses.every(s => prev.includes(s));
+      if (isAllExcluded) {
+        return prev.filter(s => !statuses.includes(s));
+      }
+
+      const newExcluded = [...prev];
+      statuses.forEach(s => {
+        if (!newExcluded.includes(s)) newExcluded.push(s);
+      });
+      return newExcluded;
     });
   };
 
   const isExcluded = (statuses: DealershipStatus[]) => statuses.every(s => excludedStatuses.includes(s));
 
-  const formatCurrency = (val: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
+  const formatCurrency = (val: number) =>
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
 
-  // Status Groups for the UI Cards
   const statusGroups = [
-    { 
-        label: 'Live', 
-        statuses: [DealershipStatus.LIVE, DealershipStatus.LEGACY], 
-        color: 'text-emerald-600 dark:text-emerald-400', 
-        bg: 'bg-white dark:bg-slate-900',
-        border: 'border-slate-200 dark:border-slate-800' 
+    {
+      label: 'Live',
+      statuses: [DealershipStatus.LIVE, DealershipStatus.LEGACY],
+      color: 'text-emerald-600 dark:text-emerald-400',
+      bg: 'bg-white dark:bg-slate-900',
+      border: 'border-slate-200 dark:border-slate-800',
     },
-    { 
-        label: 'Onboarding', 
-        statuses: [DealershipStatus.ONBOARDING], 
-        color: 'text-indigo-600 dark:text-indigo-400', 
-        bg: 'bg-white dark:bg-slate-900',
-        border: 'border-slate-200 dark:border-slate-800'
+    {
+      label: 'Onboarding',
+      statuses: [DealershipStatus.ONBOARDING],
+      color: 'text-indigo-600 dark:text-indigo-400',
+      bg: 'bg-white dark:bg-slate-900',
+      border: 'border-slate-200 dark:border-slate-800',
     },
-    { 
-        label: 'Pending', 
-        statuses: [DealershipStatus.DMT_PENDING, DealershipStatus.DMT_APPROVED], 
-        color: 'text-slate-600 dark:text-slate-400', 
-        bg: 'bg-white dark:bg-slate-900',
-        border: 'border-slate-200 dark:border-slate-800'
+    {
+      label: 'Pending',
+      statuses: [DealershipStatus.DMT_PENDING, DealershipStatus.DMT_APPROVED],
+      color: 'text-slate-600 dark:text-slate-400',
+      bg: 'bg-white dark:bg-slate-900',
+      border: 'border-slate-200 dark:border-slate-800',
     },
-    { 
-        label: 'Hold', 
-        statuses: [DealershipStatus.HOLD], 
-        color: 'text-orange-600 dark:text-orange-400', 
-        bg: 'bg-white dark:bg-slate-900',
-        border: 'border-slate-200 dark:border-slate-800'
+    {
+      label: 'Hold',
+      statuses: [DealershipStatus.HOLD],
+      color: 'text-orange-600 dark:text-orange-400',
+      bg: 'bg-white dark:bg-slate-900',
+      border: 'border-slate-200 dark:border-slate-800',
     },
-    { 
-        label: 'Cancelled', 
-        statuses: [DealershipStatus.CANCELLED], 
-        color: 'text-red-600 dark:text-red-400', 
-        bg: 'bg-white dark:bg-slate-900',
-        border: 'border-slate-200 dark:border-slate-800'
+    {
+      label: 'Cancelled',
+      statuses: [DealershipStatus.CANCELLED],
+      color: 'text-red-600 dark:text-red-400',
+      bg: 'bg-white dark:bg-slate-900',
+      border: 'border-slate-200 dark:border-slate-800',
     },
   ];
 
   return (
     <div className="animate-in fade-in duration-700">
-      
-      {/* Header & Filter */}
       <div className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-4 mb-8">
         <div>
           <h1 className="text-2xl font-extrabold text-slate-800 dark:text-slate-100 tracking-tight">Dashboard</h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Overview of dealership performance and order metrics.</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            Monthly insights by lifecycle date: received (initial), onboarding start, go-live, and term.
+          </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-            <div className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mr-2 hidden md:block">
-                Filters:
+          <div className="flex items-center gap-2 bg-white dark:bg-slate-900 p-2 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
+            <div className="flex items-center gap-2 px-2 border-r border-slate-100 dark:border-slate-800">
+              <Calendar size={16} className="text-slate-400" />
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Order Date</span>
             </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="date"
+                value={orderDateRange.start}
+                onChange={e => setOrderDateRange({ ...orderDateRange, start: e.target.value })}
+                className="text-xs border-none outline-none bg-transparent text-slate-600 dark:text-slate-300 font-medium dark:color-scheme-dark"
+              />
+              <span className="text-slate-300 dark:text-slate-600">-</span>
+              <input
+                type="date"
+                value={orderDateRange.end}
+                onChange={e => setOrderDateRange({ ...orderDateRange, end: e.target.value })}
+                className="text-xs border-none outline-none bg-transparent text-slate-600 dark:text-slate-300 font-medium dark:color-scheme-dark"
+              />
+            </div>
+            {(orderDateRange.start || orderDateRange.end) && (
+              <button
+                onClick={() => setOrderDateRange({ start: '', end: '' })}
+                className="ml-2 px-2 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1"
+              >
+                <X size={12} /> Clear
+              </button>
+            )}
+          </div>
 
-            {/* Date Range Filter */}
-            <div className="flex items-center gap-2 bg-white dark:bg-slate-900 p-2 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
-                <div className="flex items-center gap-2 px-2 border-r border-slate-100 dark:border-slate-800">
-                    <Calendar size={16} className="text-slate-400" />
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Date Range</span>
-                </div>
-                <div className="flex items-center gap-2">
-                    <input 
-                    type="date" 
-                    value={dateRange.start} 
-                    onChange={(e) => setDateRange({...dateRange, start: e.target.value})}
-                    className="text-xs border-none outline-none bg-transparent text-slate-600 dark:text-slate-300 font-medium dark:color-scheme-dark"
-                    />
-                    <span className="text-slate-300 dark:text-slate-600">-</span>
-                    <input 
-                    type="date" 
-                    value={dateRange.end} 
-                    onChange={(e) => setDateRange({...dateRange, end: e.target.value})}
-                    className="text-xs border-none outline-none bg-transparent text-slate-600 dark:text-slate-300 font-medium dark:color-scheme-dark"
-                    />
-                </div>
-                {(dateRange.start || dateRange.end) && (
-                    <button 
-                    onClick={() => setDateRange({ start: '', end: '' })}
-                    className="ml-2 px-2 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1"
-                    >
-                    <X size={12} /> Clear
-                    </button>
-                )}
-            </div>
+          <div className="flex items-center gap-2 bg-white dark:bg-slate-900 p-2 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Lifecycle Month</span>
+            <input
+              type="month"
+              value={reportingMonth}
+              onChange={e => setReportingMonth(e.target.value)}
+              className="text-xs border-none outline-none bg-transparent text-slate-600 dark:text-slate-300 font-medium dark:color-scheme-dark"
+            />
+          </div>
         </div>
       </div>
 
-      {/* Main Metrics Section */}
       <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-9 gap-3 mb-3">
-        {/* Total Card */}
         <div className="col-span-1 md:col-span-2 xl:col-span-2 bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between h-24 transition-colors">
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-300"><Building2 size={16} /></div>
+            <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-300">
+              <Building2 size={16} />
+            </div>
             <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Dealerships</span>
           </div>
-          <div className="text-2xl font-extrabold text-slate-800 dark:text-slate-100">
-            {dashboardMetrics.totalDealershipsCount}
-          </div>
+          <div className="text-2xl font-extrabold text-slate-800 dark:text-slate-100">{dashboardMetrics.totalDealershipsCount}</div>
         </div>
 
-        {/* Revenue Card */}
         <div className="col-span-1 md:col-span-2 xl:col-span-2 bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between h-24 transition-colors">
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-emerald-50 dark:bg-emerald-900/30 rounded-lg text-emerald-600 dark:text-emerald-400"><DollarSign size={16} /></div>
+            <div className="p-2 bg-emerald-50 dark:bg-emerald-900/30 rounded-lg text-emerald-600 dark:text-emerald-400">
+              <DollarSign size={16} />
+            </div>
             <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Revenue Booked</span>
           </div>
           <div className="text-2xl font-extrabold text-slate-800 dark:text-slate-100">{formatCurrency(dashboardMetrics.totalRevenue)}</div>
         </div>
 
-        {/* Interactive Status Cards */}
-        {statusGroups.map((group) => {
-            const excluded = isExcluded(group.statuses);
-            // Sum up counts for statuses in this group
-            const count = group.statuses.reduce((sum, s) => sum + (dashboardMetrics.statusCounts[s] || 0), 0);
-            
-            return (
-                <button 
-                    key={group.label}
-                    onClick={() => toggleStatus(group.statuses)}
-                    className={`col-span-1 p-3 rounded-xl border shadow-sm flex flex-col justify-center h-24 transition-all duration-200 text-left relative overflow-hidden group
-                        ${group.bg} ${group.border}
-                        ${excluded ? 'opacity-40 grayscale hover:opacity-60' : 'hover:-translate-y-1 hover:shadow-md ring-1 ring-transparent hover:ring-indigo-100 dark:hover:ring-indigo-900'}
-                    `}
-                >
-                    <div className="flex items-center justify-between w-full mb-1">
-                        <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase">{group.label}</span>
-                        {excluded && <span className="text-[8px] font-bold text-red-400 uppercase bg-red-50 dark:bg-red-900/30 px-1.5 py-0.5 rounded">Excluded</span>}
-                    </div>
-                    <span className={`text-xl font-bold ${group.color}`}>
-                        {count}
-                    </span>
-                    {!excluded && (
-                        <div className={`absolute bottom-0 left-0 h-1 bg-current opacity-20 w-full ${group.color.replace('text-', 'bg-')}`}></div>
-                    )}
-                </button>
-            );
+        <div className="col-span-1 bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm h-24">
+          <div className="flex items-center gap-2 text-[10px] text-slate-400 uppercase font-bold"><Calendar size={13} /> Received</div>
+          <div className="text-2xl font-extrabold text-cyan-600 dark:text-cyan-400 mt-2">{dashboardMetrics.receivedThisMonth}</div>
+        </div>
+
+        <div className="col-span-1 bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm h-24">
+          <div className="flex items-center gap-2 text-[10px] text-slate-400 uppercase font-bold"><UserPlus size={13} /> Onboarding</div>
+          <div className="text-2xl font-extrabold text-indigo-600 dark:text-indigo-400 mt-2">{dashboardMetrics.lifecycle.onboardingThisMonth}</div>
+        </div>
+
+        <div className="col-span-1 bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm h-24">
+          <div className="flex items-center gap-2 text-[10px] text-slate-400 uppercase font-bold"><Rocket size={13} /> Go-Live</div>
+          <div className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-2">{dashboardMetrics.lifecycle.goLiveThisMonth}</div>
+        </div>
+
+        <div className="col-span-1 bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm h-24">
+          <div className="flex items-center gap-2 text-[10px] text-slate-400 uppercase font-bold"><X size={13} /> Termed</div>
+          <div className="text-2xl font-extrabold text-red-600 dark:text-red-400 mt-2">{dashboardMetrics.lifecycle.termedThisMonth}</div>
+        </div>
+
+        <div className="col-span-1 bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm h-24">
+          <div className="flex items-center gap-2 text-[10px] text-slate-400 uppercase font-bold"><TrendingUp size={13} /> Net Live</div>
+          <div className="text-2xl font-extrabold text-slate-800 dark:text-slate-200 mt-2">{dashboardMetrics.netLiveChangeThisMonth}</div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-9 gap-3 mb-4">
+        {statusGroups.map(group => {
+          const excluded = isExcluded(group.statuses);
+          const count = group.statuses.reduce((sum, status) => sum + (dashboardMetrics.statusCounts[status] || 0), 0);
+
+          return (
+            <button
+              key={group.label}
+              onClick={() => toggleStatus(group.statuses)}
+              className={`col-span-1 p-3 rounded-xl border shadow-sm flex flex-col justify-center h-24 transition-all duration-200 text-left relative overflow-hidden group
+                ${group.bg} ${group.border}
+                ${excluded ? 'opacity-40 grayscale hover:opacity-60' : 'hover:-translate-y-1 hover:shadow-md ring-1 ring-transparent hover:ring-indigo-100 dark:hover:ring-indigo-900'}
+              `}
+            >
+              <div className="flex items-center justify-between w-full mb-1">
+                <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase">{group.label}</span>
+                {excluded && (
+                  <span className="text-[8px] font-bold text-red-400 uppercase bg-red-50 dark:bg-red-900/30 px-1.5 py-0.5 rounded">
+                    Excluded
+                  </span>
+                )}
+              </div>
+              <span className={`text-xl font-bold ${group.color}`}>{count}</span>
+              {!excluded && (
+                <div className={`absolute bottom-0 left-0 h-1 bg-current opacity-20 w-full ${group.color.replace('text-', 'bg-')}`}></div>
+              )}
+            </button>
+          );
         })}
       </div>
 
-      {/* Product Metrics Section */}
       <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3 mt-6">
-        Product Breakdown 
-        {dashboardMetrics.isDateFiltered && <span className="font-normal text-slate-300 dark:text-slate-600 ml-2">(In Date Range)</span>}
+        Enterprise Monthly Insights ({reportingMonth})
+      </h3>
+      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm mb-6 overflow-hidden">
+        <div className="grid grid-cols-12 px-4 py-2 text-[10px] font-bold uppercase text-slate-400 border-b border-slate-200 dark:border-slate-800">
+          <div className="col-span-4">Enterprise</div>
+          <div className="col-span-2 text-center">Total</div>
+          <div className="col-span-2 text-center">Onboarding</div>
+          <div className="col-span-2 text-center">Go-Live</div>
+          <div className="col-span-2 text-center">Go-Live Rate</div>
+        </div>
+        {dashboardMetrics.enterpriseInsights.length === 0 ? (
+          <div className="px-4 py-5 text-xs text-slate-500 dark:text-slate-400">No enterprise data available.</div>
+        ) : (
+          dashboardMetrics.enterpriseInsights.map((insight, index) => (
+            <div
+              key={`${insight.name}-${index}`}
+              className="grid grid-cols-12 px-4 py-2.5 text-xs border-b border-slate-100 dark:border-slate-800 last:border-b-0"
+            >
+              <div className="col-span-4 font-semibold text-slate-700 dark:text-slate-200">{insight.name}</div>
+              <div className="col-span-2 text-center text-slate-600 dark:text-slate-300">{insight.total}</div>
+              <div className="col-span-2 text-center text-indigo-600 dark:text-indigo-400 font-bold">{insight.onboarding}</div>
+              <div className="col-span-2 text-center text-emerald-600 dark:text-emerald-400 font-bold">{insight.goLive}</div>
+              <div className="col-span-2 text-center text-slate-600 dark:text-slate-300">{insight.goLiveRate}%</div>
+            </div>
+          ))
+        )}
+      </div>
+
+      <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3 mt-6">
+        Product Breakdown
+        {dashboardMetrics.isOrderDateFiltered && <span className="font-normal text-slate-300 dark:text-slate-600 ml-2">(In Order Date Range)</span>}
       </h3>
       <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3 mb-6">
-        {Object.values(ProductCode).map((code) => {
-            const count = dashboardMetrics.productBreakdown[code] || 0;
-            return (
-              <div key={code} className="bg-slate-50 dark:bg-slate-900 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 flex flex-col justify-center items-center text-center transition-colors">
-                  <span className="text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-1 break-words w-full">
-                    {code.replace(/^\d+\s*-?\s*/, '')}
-                  </span>
-                  <span className="text-lg font-bold text-slate-700 dark:text-slate-200">{count}</span>
-              </div>
-            );
+        {Object.values(ProductCode).map(code => {
+          const count = dashboardMetrics.productBreakdown[code] || 0;
+          return (
+            <div
+              key={code}
+              className="bg-slate-50 dark:bg-slate-900 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 flex flex-col justify-center items-center text-center transition-colors"
+            >
+              <span className="text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-1 break-words w-full">
+                {code.replace(/^\d+\s*-?\s*/, '')}
+              </span>
+              <span className="text-lg font-bold text-slate-700 dark:text-slate-200">{count}</span>
+            </div>
+          );
         })}
       </div>
     </div>
