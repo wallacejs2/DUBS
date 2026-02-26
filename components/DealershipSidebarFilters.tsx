@@ -13,10 +13,10 @@ const DealershipSidebarFilters: React.FC<DealershipSidebarFiltersProps> = ({ fil
   const { groups } = useEnterpriseGroups();
 
   const handleResetFilters = () => {
-    setFilters({ search: '', status: '', group: '', issue: '', managed: '', addl_web: '', cif: '', sms: '' });
+    setFilters({ search: '', status: '', group: '', issue: '', managed: '', addl_web: '', cif: '', client_id: '', sms: '' });
   };
 
-  const hasActiveFilters = !!(filters.search || filters.cif || filters.status || filters.group || filters.issue || filters.managed || filters.addl_web || filters.sms);
+  const hasActiveFilters = !!(filters.search || filters.cif || filters.client_id || filters.status || filters.group || filters.issue || filters.managed || filters.addl_web || filters.sms);
 
   return (
     <div className="px-3 py-4 mt-2 border-t border-white/10 animate-in fade-in duration-300">
@@ -65,6 +65,21 @@ const DealershipSidebarFilters: React.FC<DealershipSidebarFiltersProps> = ({ fil
                       <button onClick={() => setFilters({...filters, search: ''})} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300">
                           <X size={10} />
                       </button>
+                  )}
+              </div>
+
+              <div className="relative group">
+                  <Hash className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 transition-colors" size={12} />
+                  <input
+                      value={filters.client_id}
+                      onChange={(e) => setFilters({...filters, client_id: e.target.value})}
+                      placeholder="Client ID"
+                      className="w-full pl-8 pr-6 py-1.5 bg-[#1e293b] border border-slate-700 rounded-lg text-[11px] text-slate-200 placeholder:text-slate-500 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+                  />
+                  {filters.client_id && (
+                    <button onClick={() => setFilters({...filters, client_id: ''})} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300">
+                        <X size={10} />
+                    </button>
                   )}
               </div>
           </div>

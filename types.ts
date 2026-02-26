@@ -289,5 +289,6 @@ export interface DealershipFilterState {
   managed: string;
   addl_web: string;
   cif: string;
+  client_id: string;
   sms: string;
 }
