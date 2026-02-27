@@ -4,7 +4,7 @@ import { db } from './db.ts';
 import {
   Dealership, DealershipWithRelations, EnterpriseGroup,
   Shopper, Order, ProductCode, NewFeature, TeamMember,
-  ProviderProduct, Meeting
+  ProviderProduct, Meeting, Note, Task
 } from './types.ts';
 
 export function useEnterpriseGroups() {
@@ -370,5 +370,84 @@ export function useMeetings(filters?: { search?: string }) {
     loading,
     upsert: (m: Partial<Meeting>) => db.upsertMeeting(m),
     remove: (id: string) => db.deleteMeeting(id)
+  };
+}
+
+export function useNotes(filters?: { search?: string }) {
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetch = useCallback(() => {
+    let data = db.getNotes();
+
+    if (filters?.search) {
+      const s = filters.search.toLowerCase();
+      data = data.filter(n =>
+        n.title.toLowerCase().includes(s) ||
+        (n.content && n.content.toLowerCase().includes(s))
+      );
+    }
+
+    data.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+    setNotes(data);
+    setLoading(false);
+  }, [filters]);
+
+  useEffect(() => {
+    fetch();
+    db.addEventListener('change', fetch);
+    return () => db.removeEventListener('change', fetch);
+  }, [fetch]);
+
+  return {
+    notes,
+    loading,
+    upsert: (n: Partial<Note>) => db.upsertNote(n),
+    remove: (id: string) => db.deleteNote(id)
+  };
+}
+
+export function useTasks(filters?: { search?: string; completed?: boolean }) {
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetch = useCallback(() => {
+    let data = db.getTasks();
+
+    if (filters?.search) {
+      const s = filters.search.toLowerCase();
+      data = data.filter(t =>
+        t.title.toLowerCase().includes(s) ||
+        (t.description && t.description.toLowerCase().includes(s))
+      );
+    }
+
+    if (filters?.completed !== undefined) {
+      data = data.filter(t => t.completed === filters.completed);
+    }
+
+    // Sort: incomplete first, then by created_at desc
+    data.sort((a, b) => {
+      if (a.completed !== b.completed) return a.completed ? 1 : -1;
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+
+    setTasks(data);
+    setLoading(false);
+  }, [filters]);
+
+  useEffect(() => {
+    fetch();
+    db.addEventListener('change', fetch);
+    return () => db.removeEventListener('change', fetch);
+  }, [fetch]);
+
+  return {
+    tasks,
+    loading,
+    upsert: (t: Partial<Task>) => db.upsertTask(t),
+    remove: (id: string) => db.deleteTask(id),
+    toggleComplete: (id: string) => db.toggleTaskComplete(id)
   };
 }

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Building2, Users, ClipboardCheck, LayoutDashboard,
   Menu, Search, Sparkles, Moon, Sun, Briefcase, Package,
-  ChevronRight, ChevronLeft, CalendarDays
+  ChevronRight, ChevronLeft, CalendarDays, NotebookPen
 } from 'lucide-react';
 import DealershipsPage from './pages/DealershipsPage.tsx';
 import EnterpriseGroupsPage from './pages/EnterpriseGroupsPage.tsx';
@@ -13,10 +13,11 @@ import NewFeaturesPage from './pages/NewFeaturesPage.tsx';
 import TeamMembersPage from './pages/TeamMembersPage.tsx';
 import ProvidersProductsPage from './pages/ProvidersProductsPage.tsx';
 import MeetingsPage from './pages/MeetingsPage.tsx';
+import NotesPage from './pages/NotesPage.tsx';
 import DealershipSidebarFilters from './components/DealershipSidebarFilters.tsx';
 import { DealershipFilterState } from './types.ts';
 
-type NavPage = 'dealerships' | 'groups' | 'qa' | 'dashboard' | 'features' | 'team' | 'providers_products' | 'meetings';
+type NavPage = 'dealerships' | 'groups' | 'qa' | 'dashboard' | 'features' | 'team' | 'providers_products' | 'meetings' | 'notes';
 
 const App: React.FC = () => {
   const [activePage, setActivePage] = useState<NavPage>('dashboard');
@@ -57,6 +58,7 @@ const App: React.FC = () => {
     { id: 'providers_products', label: 'Providers & Products', icon: Package },
     { id: 'features', label: 'New Features', icon: Sparkles },
     { id: 'meetings', label: 'Meetings', icon: CalendarDays },
+    { id: 'notes', label: 'Notes & Tasks', icon: NotebookPen },
   ];
 
   const renderPage = () => {
@@ -68,6 +70,7 @@ const App: React.FC = () => {
       case 'team': return <TeamMembersPage />;
       case 'providers_products': return <ProvidersProductsPage />;
       case 'meetings': return <MeetingsPage />;
+      case 'notes': return <NotesPage />;
       case 'dashboard': return <DashboardPage />;
       default: return <DashboardPage />;
     }

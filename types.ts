@@ -281,6 +281,29 @@ export interface Meeting {
   created_at: string;
 }
 
+export interface Note {
+  id: string;
+  title: string;
+  content: string;
+  created_at: string;
+}
+
+export enum TaskPriority {
+  HIGH = 'High',
+  MEDIUM = 'Medium',
+  LOW = 'Low'
+}
+
+export interface Task {
+  id: string;
+  title: string;
+  description?: string;
+  completed: boolean;
+  priority?: TaskPriority;
+  due_date?: string;
+  created_at: string;
+}
+
 export interface DealershipFilterState {
   search: string;
   status: string;
