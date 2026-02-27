@@ -314,4 +314,9 @@ export interface DealershipFilterState {
   cif: string;
   client_id: string;
   sms: string;
+  // Lifecycle month filters (set by Dashboard click-through)
+  purchase_month: string;
+  onboarding_month: string;
+  go_live_month: string;
+  term_month: string;
 }
