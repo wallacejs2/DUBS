@@ -262,6 +262,7 @@ export interface NewFeature {
   type?: 'New' | 'Updated';
   status?: 'Pending' | 'Launched';
   platform?: string;
+  area?: string;
   navigation?: string;
   location?: string;
   launch_date?: string;

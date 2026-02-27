@@ -56,6 +56,12 @@ const platformColors: Record<string, string> = {
   'FOCUS': 'bg-orange-50 text-orange-700 border-orange-100 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800',
 };
 
+const platformAreaOptions: Record<string, string[]> = {
+  'UCP': ['Link', 'Overview', 'Business Value', 'Timeline', 'Opportunities', 'Garage', 'Web Activity', 'Curator SE+AI'],
+  'FOCUS': ['Reporting', 'ADF', 'Record', 'Prospects'],
+  'Curator': ['Data', 'Audiences', 'Activation', 'ADF', 'Shopper Profile'],
+};
+
 const NewFeatureDetailPanel: React.FC<NewFeatureDetailPanelProps> = ({ 
   feature, onClose, onUpdate, onDelete
 }) => {
@@ -305,18 +311,20 @@ const NewFeatureDetailPanel: React.FC<NewFeatureDetailPanelProps> = ({
                    )}
                 </div>
                 
-                {/* Platform and Location */}
+                {/* Platform and Area */}
                 <div className="col-span-1 md:col-span-2">
                    <Label icon={Monitor}>Platform</Label>
                    {isEditing ? (
-                      <Select 
-                        value={formData.platform} 
-                        onChange={(v) => updateField('platform', v)}
+                      <Select
+                        value={formData.platform}
+                        onChange={(v) => {
+                          setFormData(prev => ({ ...prev, platform: v, area: '' }));
+                        }}
                         placeholder="Select Platform"
                         options={[
                           { label: 'UCP', value: 'UCP' },
-                          { label: 'Curator', value: 'Curator' },
-                          { label: 'FOCUS', value: 'FOCUS' }
+                          { label: 'FOCUS', value: 'FOCUS' },
+                          { label: 'Curator', value: 'Curator' }
                         ]}
                       />
                    ) : (
@@ -327,6 +335,19 @@ const NewFeatureDetailPanel: React.FC<NewFeatureDetailPanelProps> = ({
                            </span>
                         ) : '---'}
                       </DataValue>
+                   )}
+                </div>
+                <div className="col-span-1 md:col-span-2">
+                   <Label icon={Compass}>Area</Label>
+                   {isEditing ? (
+                      <Select
+                        value={formData.area}
+                        onChange={(v) => updateField('area', v)}
+                        placeholder={formData.platform ? 'Select Area' : 'Select a Platform first'}
+                        options={(platformAreaOptions[formData.platform || ''] || []).map(a => ({ label: a, value: a }))}
+                      />
+                   ) : (
+                      <DataValue value={formData.area} />
                    )}
                 </div>
                 <div className="col-span-1 md:col-span-2">
