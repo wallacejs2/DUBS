@@ -63,9 +63,9 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
   };
 
   const checkHasZeroPrice = (dealerId: string) => {
-    return orders.some(o => 
-      o.dealership_id === dealerId && 
-      o.products.some(p => !p.amount)
+    return orders.some(o =>
+      o.dealership_id === dealerId &&
+      o.products.some(p => p.amount == null)
     );
   };
 
