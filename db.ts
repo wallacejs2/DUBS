@@ -5,7 +5,7 @@ import {
   ReynoldsSolution, DealershipStatus, CRMProvider, ProductCode,
   OrderStatus, ShopperStatus, ShopperPriority, TeamRole,
   ProviderProduct, ProviderProductCategory, ProviderType,
-  Meeting
+  Meeting, Note, Task
 } from './types';
 
 // Pure LocalStorage implementation for a seamless offline-first experience
@@ -25,6 +25,8 @@ class CuratorLocalDB extends EventTarget {
     teamMembers: TeamMember[];
     providersProducts: ProviderProduct[];
     meetings: Meeting[];
+    notes: Note[];
+    tasks: Task[];
   } = {
     dealerships: [],
     enterpriseGroups: [],
@@ -36,7 +38,9 @@ class CuratorLocalDB extends EventTarget {
     newFeatures: [],
     teamMembers: [],
     providersProducts: [],
-    meetings: []
+    meetings: [],
+    notes: [],
+    tasks: []
   };
 
   private constructor() {
@@ -75,7 +79,9 @@ class CuratorLocalDB extends EventTarget {
           newFeatures: parsed.newFeatures || [],
           teamMembers: parsed.teamMembers || [],
           providersProducts: parsed.providersProducts || [],
-          meetings: parsed.meetings || []
+          meetings: parsed.meetings || [],
+          notes: parsed.notes || [],
+          tasks: parsed.tasks || []
         };
       } catch (e) {
         console.error("Failed to parse LocalDB data", e);
@@ -530,6 +536,55 @@ class CuratorLocalDB extends EventTarget {
   deleteMeeting(id: string) {
     this.data.meetings = this.data.meetings.filter(m => m.id !== id);
     this.save();
+  }
+
+  // Notes
+  getNotes() { return [...this.data.notes]; }
+  upsertNote(note: Partial<Note>) {
+    const id = note.id || this.generateId();
+    const existingIndex = this.data.notes.findIndex(n => n.id === id);
+    const newNote = {
+      ...this.data.notes[existingIndex],
+      ...note,
+      id,
+      created_at: existingIndex >= 0 ? this.data.notes[existingIndex].created_at : new Date().toISOString()
+    } as Note;
+    if (existingIndex >= 0) this.data.notes[existingIndex] = newNote;
+    else this.data.notes.push(newNote);
+    this.save();
+    return id;
+  }
+  deleteNote(id: string) {
+    this.data.notes = this.data.notes.filter(n => n.id !== id);
+    this.save();
+  }
+
+  // Tasks
+  getTasks() { return [...this.data.tasks]; }
+  upsertTask(task: Partial<Task>) {
+    const id = task.id || this.generateId();
+    const existingIndex = this.data.tasks.findIndex(t => t.id === id);
+    const newTask = {
+      ...this.data.tasks[existingIndex],
+      ...task,
+      id,
+      created_at: existingIndex >= 0 ? this.data.tasks[existingIndex].created_at : new Date().toISOString()
+    } as Task;
+    if (existingIndex >= 0) this.data.tasks[existingIndex] = newTask;
+    else this.data.tasks.push(newTask);
+    this.save();
+    return id;
+  }
+  deleteTask(id: string) {
+    this.data.tasks = this.data.tasks.filter(t => t.id !== id);
+    this.save();
+  }
+  toggleTaskComplete(id: string) {
+    const task = this.data.tasks.find(t => t.id === id);
+    if (task) {
+      task.completed = !task.completed;
+      this.save();
+    }
   }
 }
 
