@@ -73,7 +73,7 @@ const DealershipSidebarFilters: React.FC<DealershipSidebarFiltersProps> = ({ fil
                   <input
                       value={filters.client_id}
                       onChange={(e) => setFilters({...filters, client_id: e.target.value})}
-                      placeholder="Client ID"
+                      placeholder="40NM"
                       className="w-full pl-8 pr-6 py-1.5 bg-[#1e293b] border border-slate-700 rounded-lg text-[11px] text-slate-200 placeholder:text-slate-500 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
                   />
                   {filters.client_id && (
