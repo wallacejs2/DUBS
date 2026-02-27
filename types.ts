@@ -118,7 +118,7 @@ export interface ReynoldsSolution {
 export interface OrderProduct {
   id: string;
   product_code: ProductCode;
-  amount: number;
+  amount: number | null;
 }
 
 export interface Order {

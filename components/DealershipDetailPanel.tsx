@@ -283,7 +283,7 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
      orders[orderIdx].products.push({
         id: crypto.randomUUID(),
         product_code: ProductCode.P15391_SE,
-        amount: 0
+        amount: null
      });
      updateField('orders', orders);
   };
@@ -1075,10 +1075,10 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                                     onChange={(v) => updateProductInOrder(orderIdx, prodIdx, 'product_code', v)} 
                                     options={Object.values(ProductCode).map(p => ({ label: p, value: p }))}
                                   />
-                                  <Input 
-                                    type="number" 
-                                    value={product.amount} 
-                                    onChange={(v) => updateProductInOrder(orderIdx, prodIdx, 'amount', parseFloat(v))} 
+                                  <Input
+                                    type="number"
+                                    value={product.amount !== null && product.amount !== undefined ? String(product.amount) : ''}
+                                    onChange={(v) => updateProductInOrder(orderIdx, prodIdx, 'amount', v === '' ? null : parseFloat(v))}
                                     placeholder="0.00"
                                   />
                                   <button type="button" onClick={() => removeProductFromOrder(orderIdx, prodIdx)} className="text-slate-300 hover:text-red-500 p-1"><Minus size={14} /></button>

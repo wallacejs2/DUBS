@@ -93,13 +93,29 @@ export function useDealerships(filters?: { search?: string; status?: string; gro
         }
 
         if (filters.issue === 'zero_price') {
-           return details.orders?.some(o => o.products?.some(p => !p.amount));
+           return details.orders?.some(o => o.products?.some(p => p.amount == null));
         }
 
         if (filters.issue === 'no_csm') {
            return !details.contacts?.assigned_specialist_name || details.contacts.assigned_specialist_name.trim().length === 0;
         }
-        
+
+        if (filters.issue === 'no_enrollment') {
+           return !details.contacts?.enrollment_contact_name || details.contacts.enrollment_contact_name.trim().length === 0;
+        }
+
+        if (filters.issue === 'no_poc') {
+           return !details.contacts?.poc_email || details.contacts.poc_email.trim().length === 0;
+        }
+
+        if (filters.issue === 'no_web_provider') {
+           return !d.website_provider || d.website_provider.trim().length === 0;
+        }
+
+        if (filters.issue === 'no_inv_provider') {
+           return !d.inventory_provider || d.inventory_provider.trim().length === 0;
+        }
+
         return true;
       });
     }
