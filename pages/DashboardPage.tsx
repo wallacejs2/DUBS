@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { BarChart3, Building2, Calendar, Clock, DollarSign, Rocket, TrendingUp, UserPlus, X } from 'lucide-react';
-import { useDealerships, useEnterpriseGroups, useOrders } from '../hooks';
+import { useDealerships, useOrders } from '../hooks';
 import { DealershipFilterState, DealershipStatus, ProductCode } from '../types';
 
 interface DashboardPageProps {
@@ -25,7 +25,6 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
 
   const { dealerships } = useDealerships();
   const { orders } = useOrders();
-  const { groups } = useEnterpriseGroups();
 
   const dashboardMetrics = useMemo(() => {
     const getMonthKey = (dateValue?: string) => {
@@ -139,33 +138,6 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
     const avgRecvToOnb = avgDaysAcc.recvToOnbCount > 0 ? Math.round(avgDaysAcc.recvToOnbTotal / avgDaysAcc.recvToOnbCount) : null;
     const avgOnbToLive = avgDaysAcc.onbToLiveCount > 0 ? Math.round(avgDaysAcc.onbToLiveTotal / avgDaysAcc.onbToLiveCount) : null;
 
-    const enterpriseMap = new Map<string, { name: string; total: number; onboarding: number; goLive: number; live: number }>();
-    const groupNameById = new Map(groups.map(group => [group.id, group.name]));
-
-    activeDealerships.forEach(dealership => {
-      const groupId = dealership.enterprise_group_id || 'independent';
-      const groupName = groupNameById.get(dealership.enterprise_group_id || '') || 'Independent / Unassigned';
-      const current = enterpriseMap.get(groupId) || { name: groupName, total: 0, onboarding: 0, goLive: 0, live: 0 };
-
-      current.total += 1;
-      if (getMonthKey(dealership.onboarding_date) === reportingMonth) current.onboarding += 1;
-      if (getMonthKey(dealership.go_live_date) === reportingMonth) current.goLive += 1;
-      if ([DealershipStatus.LIVE, DealershipStatus.LEGACY].includes(dealership.status)) current.live += 1;
-
-      enterpriseMap.set(groupId, current);
-    });
-
-    const enterpriseInsights = Array.from(enterpriseMap.values())
-      .map(entry => ({
-        ...entry,
-        goLiveRate: entry.total ? Math.round((entry.goLive / entry.total) * 100) : 0,
-      }))
-      .sort((a, b) => {
-        if (b.goLive !== a.goLive) return b.goLive - a.goLive;
-        if (b.onboarding !== a.onboarding) return b.onboarding - a.onboarding;
-        return a.name.localeCompare(b.name);
-      });
-
     // 18-month pipeline with conversion rates (all dealerships, newest first)
     const pipelineMonths = (() => {
       const months: Array<{
@@ -207,14 +179,13 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
       lifecycle,
       prevLifecycle,
       netLiveChangeThisMonth: lifecycle.goLiveThisMonth - lifecycle.termedThisMonth,
-      enterpriseInsights,
       pipelineMonths,
       maxPipelineReceived,
       avgRecvToOnb,
       avgOnbToLive,
       isOrderDateFiltered: !!(orderDateRange.start || orderDateRange.end),
     };
-  }, [dealerships, orders, excludedStatuses, orderDateRange, reportingMonth, groups]);
+  }, [dealerships, orders, excludedStatuses, orderDateRange, reportingMonth]);
 
   const toggleStatus = (statuses: DealershipStatus[]) => {
     setExcludedStatuses(prev => {
@@ -438,32 +409,24 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
       </div>
 
       <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3 mt-6">
-        Enterprise Monthly Insights ({reportingMonth})
+        Product Breakdown
+        {dashboardMetrics.isOrderDateFiltered && <span className="font-normal text-slate-300 dark:text-slate-600 ml-2">(In Order Date Range)</span>}
       </h3>
-      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm mb-6 overflow-hidden">
-        <div className="grid grid-cols-12 px-4 py-2 text-[10px] font-bold uppercase text-slate-400 border-b border-slate-200 dark:border-slate-800">
-          <div className="col-span-4">Enterprise</div>
-          <div className="col-span-2 text-center">Total</div>
-          <div className="col-span-2 text-center">Onboarding</div>
-          <div className="col-span-2 text-center">Go-Live</div>
-          <div className="col-span-2 text-center">Go-Live Rate</div>
-        </div>
-        {dashboardMetrics.enterpriseInsights.length === 0 ? (
-          <div className="px-4 py-5 text-xs text-slate-500 dark:text-slate-400">No enterprise data available.</div>
-        ) : (
-          dashboardMetrics.enterpriseInsights.map((insight, index) => (
+      <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3 mb-6">
+        {Object.values(ProductCode).map(code => {
+          const count = dashboardMetrics.productBreakdown[code] || 0;
+          return (
             <div
-              key={`${insight.name}-${index}`}
-              className="grid grid-cols-12 px-4 py-2.5 text-xs border-b border-slate-100 dark:border-slate-800 last:border-b-0"
+              key={code}
+              className="bg-slate-50 dark:bg-slate-900 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 flex flex-col justify-center items-center text-center transition-colors"
             >
-              <div className="col-span-4 font-semibold text-slate-700 dark:text-slate-200">{insight.name}</div>
-              <div className="col-span-2 text-center text-slate-600 dark:text-slate-300">{insight.total}</div>
-              <div className="col-span-2 text-center text-indigo-600 dark:text-indigo-400 font-bold">{insight.onboarding}</div>
-              <div className="col-span-2 text-center text-emerald-600 dark:text-emerald-400 font-bold">{insight.goLive}</div>
-              <div className="col-span-2 text-center text-slate-600 dark:text-slate-300">{insight.goLiveRate}%</div>
+              <span className="text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-1 break-words w-full">
+                {code.replace(/^\d+\s*-?\s*/, '')}
+              </span>
+              <span className="text-lg font-bold text-slate-700 dark:text-slate-200">{count}</span>
             </div>
-          ))
-        )}
+          );
+        })}
       </div>
 
       <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3 mt-6 flex items-center gap-2">
@@ -538,26 +501,6 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
         })}
       </div>
 
-      <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3 mt-6">
-        Product Breakdown
-        {dashboardMetrics.isOrderDateFiltered && <span className="font-normal text-slate-300 dark:text-slate-600 ml-2">(In Order Date Range)</span>}
-      </h3>
-      <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3 mb-6">
-        {Object.values(ProductCode).map(code => {
-          const count = dashboardMetrics.productBreakdown[code] || 0;
-          return (
-            <div
-              key={code}
-              className="bg-slate-50 dark:bg-slate-900 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 flex flex-col justify-center items-center text-center transition-colors"
-            >
-              <span className="text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-1 break-words w-full">
-                {code.replace(/^\d+\s*-?\s*/, '')}
-              </span>
-              <span className="text-lg font-bold text-slate-700 dark:text-slate-200">{count}</span>
-            </div>
-          );
-        })}
-      </div>
     </div>
   );
 };
