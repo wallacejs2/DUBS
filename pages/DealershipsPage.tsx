@@ -22,9 +22,9 @@ type SubPanel =
   | { type: 'member'; id: string };
 
 const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }) => {
-  const { dealerships, loading, upsert, remove, getDetails, toggleFavorite } = useDealerships(filters);
-  const { groups } = useEnterpriseGroups();
   const { orders } = useOrders();
+  const { dealerships, loading, upsert, remove, getDetails, toggleFavorite } = useDealerships(filters, orders);
+  const { groups } = useEnterpriseGroups();
   const { items: providerProducts, upsert: upsertPP, remove: removePP } = useProvidersProducts();
   const { members: teamMembers, upsert: upsertTM, remove: removeTM } = useTeamMembers();
   

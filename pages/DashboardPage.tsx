@@ -138,6 +138,15 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
     const avgRecvToOnb = avgDaysAcc.recvToOnbCount > 0 ? Math.round(avgDaysAcc.recvToOnbTotal / avgDaysAcc.recvToOnbCount) : null;
     const avgOnbToLive = avgDaysAcc.onbToLiveCount > 0 ? Math.round(avgDaysAcc.onbToLiveTotal / avgDaysAcc.onbToLiveCount) : null;
 
+    // Build per-month sets of dealership IDs keyed by order received_date
+    const receivedByMonth = new Map<string, Set<string>>();
+    orders.forEach(o => {
+      const mk = getMonthKey(o.received_date);
+      if (!mk) return;
+      if (!receivedByMonth.has(mk)) receivedByMonth.set(mk, new Set());
+      receivedByMonth.get(mk)!.add(o.dealership_id);
+    });
+
     // 18-month pipeline with conversion rates (all dealerships, newest first)
     const pipelineMonths = (() => {
       const months: Array<{
@@ -150,9 +159,10 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
         const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
         const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
         const label = d.toLocaleString('default', { month: 'short', year: 'numeric' });
+        const receivedSet = receivedByMonth.get(monthKey) ?? new Set<string>();
         const row = dealerships.reduce(
           (acc, dl) => {
-            if (getMonthKey(dl.purchase_date) === monthKey) acc.received += 1;
+            if (receivedSet.has(dl.id)) acc.received += 1;
             if (getMonthKey(dl.onboarding_date) === monthKey) acc.onboarding += 1;
             if (getMonthKey(dl.go_live_date) === monthKey) acc.goLive += 1;
             if (getMonthKey(dl.term_date) === monthKey) acc.termed += 1;

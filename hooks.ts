@@ -40,7 +40,7 @@ export function useEnterpriseGroups() {
   };
 }
 
-export function useDealerships(filters?: { search?: string; status?: string; group?: string; issue?: string; managed?: string; addl_web?: string; cif?: string; client_id?: string; sms?: string; purchase_month?: string; onboarding_month?: string; go_live_month?: string; term_month?: string }) {
+export function useDealerships(filters?: { search?: string; status?: string; group?: string; issue?: string; managed?: string; addl_web?: string; cif?: string; client_id?: string; sms?: string; purchase_month?: string; onboarding_month?: string; go_live_month?: string; term_month?: string }, orders?: Order[]) {
   const [dealerships, setDealerships] = useState<Dealership[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -130,7 +130,16 @@ export function useDealerships(filters?: { search?: string; status?: string; gro
     }
 
     if (filters?.purchase_month) {
-      data = data.filter(d => getMonthKey(d.purchase_date) === filters.purchase_month);
+      if (orders) {
+        const receivedIds = new Set(
+          orders
+            .filter(o => getMonthKey(o.received_date) === filters.purchase_month)
+            .map(o => o.dealership_id)
+        );
+        data = data.filter(d => receivedIds.has(d.id));
+      } else {
+        data = data.filter(d => getMonthKey(d.purchase_date) === filters.purchase_month);
+      }
     }
     if (filters?.onboarding_month) {
       data = data.filter(d => getMonthKey(d.onboarding_date) === filters.onboarding_month);
@@ -152,7 +161,7 @@ export function useDealerships(filters?: { search?: string; status?: string; gro
 
     setDealerships(data);
     setLoading(false);
-  }, [filters]);
+  }, [filters, orders]);
 
   useEffect(() => {
     fetch();
