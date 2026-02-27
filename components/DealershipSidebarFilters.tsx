@@ -13,7 +13,7 @@ const DealershipSidebarFilters: React.FC<DealershipSidebarFiltersProps> = ({ fil
   const { groups } = useEnterpriseGroups();
 
   const handleResetFilters = () => {
-    setFilters({ search: '', status: '', group: '', issue: '', managed: '', addl_web: '', cif: '', client_id: '', sms: '' });
+    setFilters({ search: '', status: '', group: '', issue: '', managed: '', addl_web: '', cif: '', client_id: '', sms: '', purchase_month: '', onboarding_month: '', go_live_month: '', term_month: '' });
   };
 
   const hasActiveFilters = !!(filters.search || filters.cif || filters.client_id || filters.status || filters.group || filters.issue || filters.managed || filters.addl_web || filters.sms);

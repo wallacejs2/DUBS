@@ -24,8 +24,9 @@ const App: React.FC = () => {
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
   
   // Lifted Dealership Filter State
-  const [dealershipFilters, setDealershipFilters] = useState<DealershipFilterState>({ 
-    search: '', status: '', group: '', issue: '', managed: '', addl_web: '', cif: '', client_id: '', sms: '' 
+  const [dealershipFilters, setDealershipFilters] = useState<DealershipFilterState>({
+    search: '', status: '', group: '', issue: '', managed: '', addl_web: '', cif: '', client_id: '', sms: '',
+    purchase_month: '', onboarding_month: '', go_live_month: '', term_month: ''
   });
   
   // Dark Mode State
@@ -71,8 +72,22 @@ const App: React.FC = () => {
       case 'providers_products': return <ProvidersProductsPage />;
       case 'meetings': return <MeetingsPage />;
       case 'notes': return <NotesPage />;
-      case 'dashboard': return <DashboardPage />;
-      default: return <DashboardPage />;
+      case 'dashboard': return (
+        <DashboardPage
+          onNavigateToDealerships={(filters) => {
+            setDealershipFilters(prev => ({ ...prev, ...filters }));
+            setActivePage('dealerships');
+          }}
+        />
+      );
+      default: return (
+        <DashboardPage
+          onNavigateToDealerships={(filters) => {
+            setDealershipFilters(prev => ({ ...prev, ...filters }));
+            setActivePage('dealerships');
+          }}
+        />
+      );
     }
   };
 

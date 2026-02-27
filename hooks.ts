@@ -40,11 +40,20 @@ export function useEnterpriseGroups() {
   };
 }
 
-export function useDealerships(filters?: { search?: string; status?: string; group?: string; issue?: string; managed?: string; addl_web?: string; cif?: string; client_id?: string; sms?: string }) {
+export function useDealerships(filters?: { search?: string; status?: string; group?: string; issue?: string; managed?: string; addl_web?: string; cif?: string; client_id?: string; sms?: string; purchase_month?: string; onboarding_month?: string; go_live_month?: string; term_month?: string }) {
   const [dealerships, setDealerships] = useState<Dealership[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetch = useCallback(() => {
+    const getMonthKey = (dateValue?: string): string => {
+      if (!dateValue) return '';
+      const raw = dateValue.slice(0, 7);
+      if (/^\d{4}-\d{2}$/.test(raw)) return raw;
+      const parsed = new Date(dateValue);
+      if (Number.isNaN(parsed.getTime())) return '';
+      return `${parsed.getFullYear()}-${String(parsed.getMonth() + 1).padStart(2, '0')}`;
+    };
+
     let data = db.getDealerships();
     if (filters?.search) {
       const s = filters.search.toLowerCase();
@@ -118,6 +127,19 @@ export function useDealerships(filters?: { search?: string; status?: string; gro
 
         return true;
       });
+    }
+
+    if (filters?.purchase_month) {
+      data = data.filter(d => getMonthKey(d.purchase_date) === filters.purchase_month);
+    }
+    if (filters?.onboarding_month) {
+      data = data.filter(d => getMonthKey(d.onboarding_date) === filters.onboarding_month);
+    }
+    if (filters?.go_live_month) {
+      data = data.filter(d => getMonthKey(d.go_live_date) === filters.go_live_month);
+    }
+    if (filters?.term_month) {
+      data = data.filter(d => getMonthKey(d.term_date) === filters.term_month);
     }
 
     // Sort: Favorites first, then alphabetical
