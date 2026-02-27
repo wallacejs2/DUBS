@@ -248,9 +248,14 @@ const DealershipCard: React.FC<DealershipCardProps> = ({
                <span className="font-mono">{dealership.pp_sys_id || '--'} / {dealership.era_system_id || '--'}</span>
             </div>
 
-            <div className="flex items-center gap-1.5 ml-auto" title="Received Date">
-               <span className="font-bold text-slate-400 uppercase tracking-wider">Date:</span>
-               <span>{formatDate(dealership.created_at)}</span>
+            <div className="flex items-center gap-1.5 ml-auto" title="Onboarding Date">
+               <span className="font-bold text-slate-400 uppercase tracking-wider">Onb:</span>
+               <span>{formatDate(dealership.onboarding_date)}</span>
+            </div>
+
+            <div className="flex items-center gap-1.5" title="Go Live Date">
+               <span className="font-bold text-slate-400 uppercase tracking-wider">Live:</span>
+               <span>{formatDate(dealership.go_live_date)}</span>
             </div>
         </div>
 
