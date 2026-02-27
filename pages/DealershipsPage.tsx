@@ -236,16 +236,24 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
                     const details = getDetails(dealer.id);
                     const hasClientId = details?.website_links?.some(l => l.client_id && l.client_id.trim().length > 0) ?? false;
                     const hasCSM = details?.contacts?.assigned_specialist_name && details.contacts.assigned_specialist_name.trim().length > 0;
+                    const missingEnrollment = !details?.contacts?.enrollment_contact_name || details.contacts.enrollment_contact_name.trim().length === 0;
+                    const missingPOC = !details?.contacts?.poc_email || details.contacts.poc_email.trim().length === 0;
+                    const missingWebProvider = !dealer.website_provider || dealer.website_provider.trim().length === 0;
+                    const missingInvProvider = !dealer.inventory_provider || dealer.inventory_provider.trim().length === 0;
                     return (
-                    <DealershipCard 
-                        key={dealer.id} 
-                        dealership={dealer} 
+                    <DealershipCard
+                        key={dealer.id}
+                        dealership={dealer}
                         groupName={groups.find(g => g.id === dealer.enterprise_group_id)?.name}
                         isManaged={checkIsManaged(dealer.id)}
                         hasClientId={hasClientId}
                         hasAddlWeb={checkHasAddlWeb(dealer.id)}
                         hasZeroPrice={checkHasZeroPrice(dealer.id)}
                         missingCSM={!hasCSM}
+                        missingEnrollment={missingEnrollment}
+                        missingPOC={missingPOC}
+                        missingWebProvider={missingWebProvider}
+                        missingInvProvider={missingInvProvider}
                         onClick={() => setSelectedDealerId(dealer.id)}
                         onToggleFavorite={() => toggleFavorite(dealer.id)}
                     />

@@ -117,9 +117,13 @@ const DealershipSidebarFilters: React.FC<DealershipSidebarFiltersProps> = ({ fil
                       className="w-full pl-2 pr-6 py-1.5 bg-[#1e293b] border border-slate-700 rounded-lg text-[11px] text-slate-300 appearance-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 outline-none cursor-pointer"
                   >
                       <option value="">No Issues</option>
-                      <option value="no_id">Missing Client ID</option>
+                      <option value="no_id">Missing 40NM</option>
                       <option value="zero_price">$0 Product Price</option>
                       <option value="no_csm">Missing CSM</option>
+                      <option value="no_enrollment">Missing Enrollment</option>
+                      <option value="no_poc">Missing POC Email</option>
+                      <option value="no_web_provider">Missing Web Provider</option>
+                      <option value="no_inv_provider">Missing Inv. Provider</option>
                   </select>
                   <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={10} />
               </div>

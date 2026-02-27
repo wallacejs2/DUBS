@@ -11,6 +11,10 @@ interface DealershipCardProps {
   hasAddlWeb?: boolean;
   hasZeroPrice?: boolean;
   missingCSM?: boolean;
+  missingEnrollment?: boolean;
+  missingPOC?: boolean;
+  missingWebProvider?: boolean;
+  missingInvProvider?: boolean;
   onClick: () => void;
   onToggleFavorite?: (e: React.MouseEvent) => void;
 }
@@ -25,9 +29,10 @@ const statusColors: Record<DealershipStatus, string> = {
   [DealershipStatus.CANCELLED]: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800',
 };
 
-const DealershipCard: React.FC<DealershipCardProps> = ({ 
+const DealershipCard: React.FC<DealershipCardProps> = ({
   dealership, groupName, isManaged, hasClientId = true, hasAddlWeb, hasZeroPrice, missingCSM,
-  onClick, onToggleFavorite 
+  missingEnrollment, missingPOC, missingWebProvider, missingInvProvider,
+  onClick, onToggleFavorite
 }) => {
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
@@ -101,7 +106,7 @@ const DealershipCard: React.FC<DealershipCardProps> = ({
               
               {!hasClientId && (
                 <span className="text-[10px] font-bold text-red-600 bg-red-50 dark:bg-red-900/30 dark:text-red-300 px-1.5 py-0.5 rounded uppercase tracking-wider">
-                  NO ID
+                  40NM
                 </span>
               )}
 
@@ -113,7 +118,31 @@ const DealershipCard: React.FC<DealershipCardProps> = ({
 
               {missingCSM && (
                 <span className="text-[10px] font-bold text-red-600 bg-red-50 dark:bg-red-900/30 dark:text-red-300 px-1.5 py-0.5 rounded uppercase tracking-wider">
-                  NO CSM
+                  CSM
+                </span>
+              )}
+
+              {missingEnrollment && (
+                <span className="text-[10px] font-bold text-red-600 bg-red-50 dark:bg-red-900/30 dark:text-red-300 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                  ENR
+                </span>
+              )}
+
+              {missingPOC && (
+                <span className="text-[10px] font-bold text-red-600 bg-red-50 dark:bg-red-900/30 dark:text-red-300 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                  POC
+                </span>
+              )}
+
+              {missingWebProvider && (
+                <span className="text-[10px] font-bold text-red-600 bg-red-50 dark:bg-red-900/30 dark:text-red-300 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                  WEB
+                </span>
+              )}
+
+              {missingInvProvider && (
+                <span className="text-[10px] font-bold text-red-600 bg-red-50 dark:bg-red-900/30 dark:text-red-300 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                  INV
                 </span>
               )}
 
