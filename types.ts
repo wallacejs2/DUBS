@@ -153,7 +153,8 @@ export interface Dealership {
   store_number?: string;
   branch_number?: string;
   bu_id?: string;
-  
+  mms_id?: string;
+
   // Address
   address_line1: string;
   address_line2?: string;
@@ -168,6 +169,10 @@ export interface Dealership {
   
   // New Field
   sms_activated?: boolean;
+
+  // Fullpath
+  fullpath_products?: string[];
+  fp_solutions_visible?: boolean;
   
   // Favorites
   is_favorite?: boolean;
