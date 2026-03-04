@@ -203,7 +203,9 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
     setFormData({
       ...dealership,
       orders: initialOrders,
-      products: dealership.products || []
+      products: dealership.products || [],
+      fullpath_products: dealership.fullpath_products || [],
+      fp_solutions_visible: dealership.fp_solutions_visible || false,
     });
   }, [dealership]);
 
@@ -213,8 +215,8 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
   };
 
   const handleCancel = () => {
-    const initialOrders = dealership.orders && dealership.orders.length > 0 
-      ? dealership.orders 
+    const initialOrders = dealership.orders && dealership.orders.length > 0
+      ? dealership.orders
       : [{
           id: crypto.randomUUID(),
           dealership_id: dealership.id,
@@ -227,7 +229,9 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
     setFormData({
       ...dealership,
       orders: initialOrders,
-      products: dealership.products || []
+      products: dealership.products || [],
+      fullpath_products: dealership.fullpath_products || [],
+      fp_solutions_visible: dealership.fp_solutions_visible || false,
     });
     setIsEditing(false);
   };
@@ -242,6 +246,15 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
       updateField('products', current.filter(p => p !== productName));
     } else {
       updateField('products', [...current, productName]);
+    }
+  };
+
+  const toggleFullpathProduct = (productName: string) => {
+    const current = formData.fullpath_products || [];
+    if (current.includes(productName)) {
+      updateField('fullpath_products', current.filter(p => p !== productName));
+    } else {
+      updateField('fullpath_products', [...current, productName]);
     }
   };
 
@@ -727,7 +740,7 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                     </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-4 gap-4">
                     <div>
                         <Label>PP Sys ID</Label>
                         {isEditing ? <Input value={formData.pp_sys_id} onChange={(v) => updateField('pp_sys_id', v)} placeholder="PP-###" /> : <DataValue mono value={dealership.pp_sys_id} />}
@@ -740,17 +753,14 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                         <Label>BU ID</Label>
                         {isEditing ? <Input value={formData.bu_id} onChange={(v) => updateField('bu_id', v)} placeholder="BU-###" /> : <DataValue mono value={dealership.bu_id} />}
                     </div>
+                    <div>
+                        <Label>MMS ID</Label>
+                        {isEditing ? <Input value={formData.mms_id} onChange={(v) => updateField('mms_id', v)} placeholder="MMS-###" /> : <DataValue mono value={dealership.mms_id} />}
+                    </div>
                 </div>
-            </div>
 
-            <hr className="border-slate-100 dark:border-slate-800" />
-
-            {/* Location & Providers */}
-            <div className="space-y-6">
-                <h3 className="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">Location & Providers</h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="md:col-span-2">
+                <div className="grid grid-cols-4 gap-4">
+                    <div>
                         <Label>Address</Label>
                         {isEditing ? (
                             <Input value={formData.address_line1} onChange={(v) => updateField('address_line1', v)} placeholder="Street Address" required />
@@ -759,10 +769,18 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                         )}
                     </div>
                     <div>
+                        <Label>City</Label>
+                        {isEditing ? (
+                            <Input value={formData.city} onChange={(v) => updateField('city', v)} placeholder="City" />
+                        ) : (
+                            <DataValue value={dealership.city} />
+                        )}
+                    </div>
+                    <div>
                         <Label>State</Label>
                         {isEditing ? (
-                            <Select 
-                                value={formData.state} 
+                            <Select
+                                value={formData.state}
                                 onChange={(v) => updateField('state', v)}
                                 options={STATES.map(s => ({ label: s, value: s }))}
                             />
@@ -770,7 +788,22 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                             <DataValue value={dealership.state} />
                         )}
                     </div>
+                    <div>
+                        <Label>Zip</Label>
+                        {isEditing ? (
+                            <Input value={formData.zip_code} onChange={(v) => updateField('zip_code', v)} placeholder="Zip Code" />
+                        ) : (
+                            <DataValue value={dealership.zip_code} />
+                        )}
+                    </div>
                 </div>
+            </div>
+
+            <hr className="border-slate-100 dark:border-slate-800" />
+
+            {/* Providers */}
+            <div className="space-y-6">
+                <h3 className="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">Providers</h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
@@ -880,6 +913,58 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                         </div>
                     )}
                 </div>
+
+                <div>
+                    <Label>Fullpath Products</Label>
+                    {isEditing ? (
+                        <MultiSelect
+                            options={[
+                                { name: 'DigAds', id: 'digads' },
+                                { name: 'Web', id: 'web' },
+                                { name: 'Vin', id: 'vin' },
+                                { name: 'Dyn', id: 'dyn' },
+                            ]}
+                            selected={formData.fullpath_products || []}
+                            onToggle={toggleFullpathProduct}
+                            placeholder="Fullpath Products"
+                        />
+                    ) : (
+                        <div className="flex flex-wrap gap-1.5 mt-1">
+                            {(dealership.fullpath_products || []).length === 0 ? (
+                                <DataValue value="No products selected" />
+                            ) : (
+                                dealership.fullpath_products?.map((p, idx) => (
+                                    <span
+                                        key={idx}
+                                        className="px-2 py-0.5 bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 border border-teal-100 dark:border-teal-800 rounded-md text-[10px] font-bold uppercase tracking-wider"
+                                    >
+                                        {p}
+                                    </span>
+                                ))
+                            )}
+                        </div>
+                    )}
+                </div>
+
+                {isEditing ? (
+                    <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+                        <input
+                          type="checkbox"
+                          id="fp_solutions_visible"
+                          checked={!!formData.fp_solutions_visible}
+                          onChange={(e) => updateField('fp_solutions_visible', e.target.checked)}
+                          className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                        />
+                        <label htmlFor="fp_solutions_visible" className="text-[12px] font-medium text-slate-700 dark:text-slate-300 cursor-pointer select-none">
+                            FP Solutions Visible
+                        </label>
+                    </div>
+                ) : (
+                    <div>
+                        <Label>FP Solutions Visible</Label>
+                        <DataValue value={dealership.fp_solutions_visible ? 'Yes' : 'No'} />
+                    </div>
+                )}
             </div>
 
             <hr className="border-slate-100 dark:border-slate-800" />

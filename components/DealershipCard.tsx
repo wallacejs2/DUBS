@@ -164,6 +164,11 @@ const DealershipCard: React.FC<DealershipCardProps> = ({
                   SMS
                 </span>
               )}
+              {dealership.fp_solutions_visible && dealership.fullpath_products?.map((p, idx) => (
+                <span key={`fp-${idx}`} className="text-[10px] font-bold text-teal-600 bg-teal-50 dark:bg-teal-900/30 dark:text-teal-300 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                  {p}
+                </span>
+              ))}
             </div>
 
             <div className="flex items-center gap-2">

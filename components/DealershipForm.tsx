@@ -137,6 +137,8 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
     crm_provider: 'FOCUS',
     enterprise_group_id: '',
     products: [],
+    fullpath_products: [],
+    fp_solutions_visible: false,
     website_links: [{ id: crypto.randomUUID(), dealership_id: '', primary_url: '', client_id: '' }],
     contacts: {
       id: '', dealership_id: '', sales_contact_name: '', enrollment_contact_name: '', 
@@ -178,6 +180,15 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
       updateField('products', current.filter(p => p !== productName));
     } else {
       updateField('products', [...current, productName]);
+    }
+  };
+
+  const toggleFullpathProduct = (productName: string) => {
+    const current = formData.fullpath_products || [];
+    if (current.includes(productName)) {
+      updateField('fullpath_products', current.filter(p => p !== productName));
+    } else {
+      updateField('fullpath_products', [...current, productName]);
     }
   };
 
@@ -485,7 +496,7 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
                     </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-4 gap-4">
                     <div>
                         <Label>PP Sys ID</Label>
                         <Input value={formData.pp_sys_id} onChange={(v) => updateField('pp_sys_id', v)} placeholder="PP-###" />
@@ -498,29 +509,41 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
                         <Label>BU ID</Label>
                         <Input value={formData.bu_id} onChange={(v) => updateField('bu_id', v)} placeholder="BU-###" />
                     </div>
+                    <div>
+                        <Label>MMS ID</Label>
+                        <Input value={formData.mms_id} onChange={(v) => updateField('mms_id', v)} placeholder="MMS-###" />
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-4 gap-4">
+                    <div>
+                        <Label>Address</Label>
+                        <Input value={formData.address_line1} onChange={(v) => updateField('address_line1', v)} placeholder="Street Address" required />
+                    </div>
+                    <div>
+                        <Label>City</Label>
+                        <Input value={formData.city} onChange={(v) => updateField('city', v)} placeholder="City" />
+                    </div>
+                    <div>
+                        <Label>State</Label>
+                        <Select
+                            value={formData.state}
+                            onChange={(v) => updateField('state', v)}
+                            options={STATES.map(s => ({ label: s, value: s }))}
+                        />
+                    </div>
+                    <div>
+                        <Label>Zip</Label>
+                        <Input value={formData.zip_code} onChange={(v) => updateField('zip_code', v)} placeholder="Zip Code" />
+                    </div>
                 </div>
             </div>
 
             <hr className="border-slate-100 dark:border-slate-800" />
 
-            {/* Location & Providers */}
+            {/* Providers */}
             <div className="space-y-6">
-                <h3 className="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">Location & Providers</h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="md:col-span-2">
-                        <Label>Address</Label>
-                        <Input value={formData.address_line1} onChange={(v) => updateField('address_line1', v)} placeholder="Street Address" required />
-                    </div>
-                    <div>
-                        <Label>State</Label>
-                        <Select 
-                            value={formData.state} 
-                            onChange={(v) => updateField('state', v)}
-                            options={STATES.map(s => ({ label: s, value: s }))}
-                        />
-                    </div>
-                </div>
+                <h3 className="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">Providers</h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
@@ -564,12 +587,40 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
 
                 <div>
                     <Label>Internal Products</Label>
-                    <MultiSelect 
+                    <MultiSelect
                         options={availableProducts}
                         selected={formData.products || []}
                         onToggle={toggleProduct}
                         placeholder="Internal Products"
                     />
+                </div>
+
+                <div>
+                    <Label>Fullpath Products</Label>
+                    <MultiSelect
+                        options={[
+                            { name: 'DigAds', id: 'digads' },
+                            { name: 'Web', id: 'web' },
+                            { name: 'Vin', id: 'vin' },
+                            { name: 'Dyn', id: 'dyn' },
+                        ]}
+                        selected={formData.fullpath_products || []}
+                        onToggle={toggleFullpathProduct}
+                        placeholder="Fullpath Products"
+                    />
+                </div>
+
+                <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+                    <input
+                      type="checkbox"
+                      id="fp_solutions_visible"
+                      checked={!!formData.fp_solutions_visible}
+                      onChange={(e) => updateField('fp_solutions_visible', e.target.checked)}
+                      className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                    />
+                    <label htmlFor="fp_solutions_visible" className="text-[12px] font-medium text-slate-700 dark:text-slate-300 cursor-pointer select-none">
+                        FP Solutions Visible
+                    </label>
                 </div>
             </div>
 
