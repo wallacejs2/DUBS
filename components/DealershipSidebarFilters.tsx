@@ -13,10 +13,10 @@ const DealershipSidebarFilters: React.FC<DealershipSidebarFiltersProps> = ({ fil
   const { groups } = useEnterpriseGroups();
 
   const handleResetFilters = () => {
-    setFilters({ search: '', status: '', group: '', issue: '', managed: '', addl_web: '', cif: '', client_id: '', sms: '', purchase_month: '', onboarding_month: '', go_live_month: '', term_month: '' });
+    setFilters({ search: '', status: '', group: '', issue: '', managed: '', addl_web: '', cif: '', client_id: '', sms: '', received_month: '', onboarding_month: '', go_live_month: '', term_month: '' });
   };
 
-  const hasActiveFilters = !!(filters.search || filters.cif || filters.client_id || filters.status || filters.group || filters.issue || filters.managed || filters.addl_web || filters.sms || filters.purchase_month || filters.onboarding_month || filters.go_live_month || filters.term_month);
+  const hasActiveFilters = !!(filters.search || filters.cif || filters.client_id || filters.status || filters.group || filters.issue || filters.managed || filters.addl_web || filters.sms || filters.received_month || filters.onboarding_month || filters.go_live_month || filters.term_month);
 
   return (
     <div className="px-3 py-4 mt-2 border-t border-white/10 animate-in fade-in duration-300">
@@ -36,16 +36,16 @@ const DealershipSidebarFilters: React.FC<DealershipSidebarFiltersProps> = ({ fil
       </div>
       
       {/* Dashboard lifecycle month filter indicator */}
-      {(filters.purchase_month || filters.onboarding_month || filters.go_live_month || filters.term_month) && (
+      {(filters.received_month || filters.onboarding_month || filters.go_live_month || filters.term_month) && (
         <div className="mb-3 px-2 py-1.5 bg-cyan-900/40 border border-cyan-700/50 rounded-lg flex items-center justify-between gap-2">
           <span className="text-[9px] text-cyan-300 font-bold uppercase tracking-wider leading-snug">
-            {filters.purchase_month && `Received: ${filters.purchase_month}`}
+            {filters.received_month && `Received: ${filters.received_month}`}
             {filters.onboarding_month && `Onboarding: ${filters.onboarding_month}`}
             {filters.go_live_month && `Go-Live: ${filters.go_live_month}`}
             {filters.term_month && `Termed: ${filters.term_month}`}
           </span>
           <button
-            onClick={() => setFilters({ ...filters, purchase_month: '', onboarding_month: '', go_live_month: '', term_month: '' })}
+            onClick={() => setFilters({ ...filters, received_month: '', onboarding_month: '', go_live_month: '', term_month: '' })}
             className="text-cyan-400 hover:text-cyan-200 flex-shrink-0"
           >
             <X size={10} />

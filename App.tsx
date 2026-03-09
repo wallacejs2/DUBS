@@ -26,7 +26,7 @@ const App: React.FC = () => {
   // Lifted Dealership Filter State
   const [dealershipFilters, setDealershipFilters] = useState<DealershipFilterState>({
     search: '', status: '', group: '', issue: '', managed: '', addl_web: '', cif: '', client_id: '', sms: '',
-    purchase_month: '', onboarding_month: '', go_live_month: '', term_month: ''
+    received_month: '', onboarding_month: '', go_live_month: '', term_month: ''
   });
   
   // Dark Mode State
