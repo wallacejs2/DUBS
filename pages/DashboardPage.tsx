@@ -181,9 +181,6 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
         receivedByMonth.get(mk)!.add(order.dealership_id);
       }
 
-      // Pre-compute dealership lookup
-      const dealershipMap = new Map(dealerships.map(d => [d.id, d]));
-
       // Pre-compute dealership date month keys for quick lookup
       const dlMonthKeys = new Map(dealerships.map(d => [d.id, {
         onboarding: getMonthKey(d.onboarding_date),
@@ -200,28 +197,22 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
         const receivedSet = receivedByMonth.get(monthKey) || new Set<string>();
         const row = { received: 0, onboarding: 0, goLive: 0, termed: 0 };
 
-        // Collect all dealership IDs with any activity this month
-        const relevantIds = new Set<string>(receivedSet);
+        // Received is always an independent count (not part of flow)
+        row.received = receivedSet.size;
+
+        // Flow logic: onboarding/go-live/termed — each dealership at its furthest stage only
         for (const dl of dealerships) {
           const mk = dlMonthKeys.get(dl.id)!;
-          if (mk.onboarding === monthKey || mk.goLive === monthKey || mk.term === monthKey) {
-            relevantIds.add(dl.id);
-          }
-        }
+          const hasOnboarding = mk.onboarding === monthKey;
+          const hasGoLive = mk.goLive === monthKey;
+          const hasTerm = mk.term === monthKey;
 
-        // Assign each dealership to its furthest stage this month
-        for (const dlId of relevantIds) {
-          const mk = dlMonthKeys.get(dlId);
-          const hasReceived = receivedSet.has(dlId);
-          const hasOnboarding = mk?.onboarding === monthKey;
-          const hasGoLive = mk?.goLive === monthKey;
-          const hasTerm = mk?.term === monthKey;
+          if (!hasOnboarding && !hasGoLive && !hasTerm) continue;
 
-          // Furthest stage wins (termed > goLive > onboarding > received)
+          // Furthest stage wins (termed > goLive > onboarding)
           if (hasTerm) row.termed += 1;
           else if (hasGoLive) row.goLive += 1;
           else if (hasOnboarding) row.onboarding += 1;
-          else if (hasReceived) row.received += 1;
         }
 
         months.push({
