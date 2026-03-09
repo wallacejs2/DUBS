@@ -40,7 +40,7 @@ export function useEnterpriseGroups() {
   };
 }
 
-export function useDealerships(filters?: { search?: string; status?: string; group?: string; issue?: string; managed?: string; addl_web?: string; cif?: string; client_id?: string; sms?: string; purchase_month?: string; onboarding_month?: string; go_live_month?: string; term_month?: string }) {
+export function useDealerships(filters?: { search?: string; status?: string; group?: string; issue?: string; managed?: string; addl_web?: string; cif?: string; client_id?: string; sms?: string; received_month?: string; onboarding_month?: string; go_live_month?: string; term_month?: string }) {
   const [dealerships, setDealerships] = useState<Dealership[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -129,8 +129,14 @@ export function useDealerships(filters?: { search?: string; status?: string; gro
       });
     }
 
-    if (filters?.purchase_month) {
-      data = data.filter(d => getMonthKey(d.purchase_date) === filters.purchase_month);
+    if (filters?.received_month) {
+      const allOrders = db.getOrders();
+      const dealerIdsWithReceivedInMonth = new Set(
+        allOrders
+          .filter(o => getMonthKey(o.received_date) === filters.received_month)
+          .map(o => o.dealership_id)
+      );
+      data = data.filter(d => dealerIdsWithReceivedInMonth.has(d.id));
     }
     if (filters?.onboarding_month) {
       data = data.filter(d => getMonthKey(d.onboarding_date) === filters.onboarding_month);

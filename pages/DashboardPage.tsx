@@ -91,15 +91,22 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
     }, {} as Record<string, number>);
 
     // Lifecycle metrics: use ALL dealerships (not just active) so historical data is complete
+    // Received count now comes from orders' received_date (unique dealerships)
+    const receivedThisMonthSet = new Set<string>();
+    for (const order of orders) {
+      if (getMonthKey(order.received_date) === reportingMonth) {
+        receivedThisMonthSet.add(order.dealership_id);
+      }
+    }
+
     const lifecycle = dealerships.reduce(
       (acc, d) => {
-        if (getMonthKey(d.purchase_date) === reportingMonth) acc.receivedThisMonth += 1;
         if (getMonthKey(d.onboarding_date) === reportingMonth) acc.onboardingThisMonth += 1;
         if (getMonthKey(d.go_live_date) === reportingMonth) acc.goLiveThisMonth += 1;
         if (getMonthKey(d.term_date) === reportingMonth) acc.termedThisMonth += 1;
         return acc;
       },
-      { receivedThisMonth: 0, onboardingThisMonth: 0, goLiveThisMonth: 0, termedThisMonth: 0 }
+      { receivedThisMonth: receivedThisMonthSet.size, onboardingThisMonth: 0, goLiveThisMonth: 0, termedThisMonth: 0 }
     );
 
     // Previous month lifecycle (for delta indicators)
@@ -109,22 +116,41 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
       return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
     })();
 
+    const receivedPrevMonthSet = new Set<string>();
+    for (const order of orders) {
+      if (getMonthKey(order.received_date) === prevMonth) {
+        receivedPrevMonthSet.add(order.dealership_id);
+      }
+    }
+
     const prevLifecycle = dealerships.reduce(
       (acc, d) => {
-        if (getMonthKey(d.purchase_date) === prevMonth) acc.receivedThisMonth += 1;
         if (getMonthKey(d.onboarding_date) === prevMonth) acc.onboardingThisMonth += 1;
         if (getMonthKey(d.go_live_date) === prevMonth) acc.goLiveThisMonth += 1;
         if (getMonthKey(d.term_date) === prevMonth) acc.termedThisMonth += 1;
         return acc;
       },
-      { receivedThisMonth: 0, onboardingThisMonth: 0, goLiveThisMonth: 0, termedThisMonth: 0 }
+      { receivedThisMonth: receivedPrevMonthSet.size, onboardingThisMonth: 0, goLiveThisMonth: 0, termedThisMonth: 0 }
     );
+
+    // Pre-compute earliest order received_date per dealership for avg days
+    const earliestReceivedByDealership = new Map<string, number>();
+    for (const order of orders) {
+      if (!order.received_date) continue;
+      const ts = new Date(order.received_date).getTime();
+      if (Number.isNaN(ts)) continue;
+      const existing = earliestReceivedByDealership.get(order.dealership_id);
+      if (existing === undefined || ts < existing) {
+        earliestReceivedByDealership.set(order.dealership_id, ts);
+      }
+    }
 
     // Average days: Received → Onboarding, Onboarding → Live (all-time averages)
     const avgDaysAcc = dealerships.reduce(
       (acc, d) => {
-        if (d.purchase_date && d.onboarding_date) {
-          const diff = new Date(d.onboarding_date).getTime() - new Date(d.purchase_date).getTime();
+        const earliestReceived = earliestReceivedByDealership.get(d.id);
+        if (earliestReceived !== undefined && d.onboarding_date) {
+          const diff = new Date(d.onboarding_date).getTime() - earliestReceived;
           if (diff >= 0) { acc.recvToOnbTotal += Math.round(diff / 86400000); acc.recvToOnbCount += 1; }
         }
         if (d.onboarding_date && d.go_live_date) {
@@ -138,28 +164,66 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
     const avgRecvToOnb = avgDaysAcc.recvToOnbCount > 0 ? Math.round(avgDaysAcc.recvToOnbTotal / avgDaysAcc.recvToOnbCount) : null;
     const avgOnbToLive = avgDaysAcc.onbToLiveCount > 0 ? Math.round(avgDaysAcc.onbToLiveTotal / avgDaysAcc.onbToLiveCount) : null;
 
-    // 18-month pipeline with conversion rates (all dealerships, newest first)
+    // 18-month pipeline with flow-based counts (each dealership at its furthest stage per month)
     const pipelineMonths = (() => {
       const months: Array<{
         monthKey: string; label: string;
         received: number; onboarding: number; goLive: number; termed: number;
         recvToOnbPct: number | null; onbToLivePct: number | null;
       }> = [];
+
+      // Pre-compute: for each month, which dealership IDs have a received order
+      const receivedByMonth = new Map<string, Set<string>>();
+      for (const order of orders) {
+        const mk = getMonthKey(order.received_date);
+        if (!mk) continue;
+        if (!receivedByMonth.has(mk)) receivedByMonth.set(mk, new Set());
+        receivedByMonth.get(mk)!.add(order.dealership_id);
+      }
+
+      // Pre-compute dealership lookup
+      const dealershipMap = new Map(dealerships.map(d => [d.id, d]));
+
+      // Pre-compute dealership date month keys for quick lookup
+      const dlMonthKeys = new Map(dealerships.map(d => [d.id, {
+        onboarding: getMonthKey(d.onboarding_date),
+        goLive: getMonthKey(d.go_live_date),
+        term: getMonthKey(d.term_date),
+      }]));
+
       const now = new Date();
       for (let i = 0; i < 18; i++) {
         const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
         const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
         const label = d.toLocaleString('default', { month: 'short', year: 'numeric' });
-        const row = dealerships.reduce(
-          (acc, dl) => {
-            if (getMonthKey(dl.purchase_date) === monthKey) acc.received += 1;
-            if (getMonthKey(dl.onboarding_date) === monthKey) acc.onboarding += 1;
-            if (getMonthKey(dl.go_live_date) === monthKey) acc.goLive += 1;
-            if (getMonthKey(dl.term_date) === monthKey) acc.termed += 1;
-            return acc;
-          },
-          { received: 0, onboarding: 0, goLive: 0, termed: 0 }
-        );
+
+        const receivedSet = receivedByMonth.get(monthKey) || new Set<string>();
+        const row = { received: 0, onboarding: 0, goLive: 0, termed: 0 };
+
+        // Collect all dealership IDs with any activity this month
+        const relevantIds = new Set<string>(receivedSet);
+        for (const dl of dealerships) {
+          const mk = dlMonthKeys.get(dl.id)!;
+          if (mk.onboarding === monthKey || mk.goLive === monthKey || mk.term === monthKey) {
+            relevantIds.add(dl.id);
+          }
+        }
+
+        // Assign each dealership to its furthest stage this month
+        for (const dlId of relevantIds) {
+          const mk = dlMonthKeys.get(dlId);
+          const hasReceived = receivedSet.has(dlId);
+          const hasOnboarding = mk?.onboarding === monthKey;
+          const hasGoLive = mk?.goLive === monthKey;
+          const hasTerm = mk?.term === monthKey;
+
+          // Furthest stage wins (termed > goLive > onboarding > received)
+          if (hasTerm) row.termed += 1;
+          else if (hasGoLive) row.goLive += 1;
+          else if (hasOnboarding) row.onboarding += 1;
+          else if (hasReceived) row.received += 1;
+        }
+
         months.push({
           monthKey, label, ...row,
           recvToOnbPct: row.received > 0 ? Math.round((row.onboarding / row.received) * 100) : null,
@@ -251,7 +315,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
         <div>
           <h1 className="text-2xl font-extrabold text-slate-800 dark:text-slate-100 tracking-tight">Dashboard</h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Monthly insights by dealership date: purchase (received), onboarding start, go-live, and term/cancelled.
+            Monthly pipeline flow: order received, onboarding, go-live, and term/cancelled.
           </p>
         </div>
 
@@ -463,28 +527,28 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
               <div
                 className="col-span-1 text-center py-2 font-bold text-cyan-700 dark:text-cyan-300 hover:underline"
                 style={{ backgroundColor: row.received > 0 ? `rgba(6,182,212,${heatIntensity * 0.25})` : undefined }}
-                onClick={e => { e.stopPropagation(); onNavigateToDealerships?.({ purchase_month: row.monthKey, status: '', onboarding_month: '', go_live_month: '', term_month: '' }); }}
+                onClick={e => { e.stopPropagation(); onNavigateToDealerships?.({ received_month: row.monthKey, status: '', onboarding_month: '', go_live_month: '', term_month: '' }); }}
               >
                 {row.received || '—'}
               </div>
               {/* Onboarding — click-through */}
               <div
                 className="col-span-1 text-center py-2 font-bold text-indigo-600 dark:text-indigo-400 hover:underline"
-                onClick={e => { e.stopPropagation(); onNavigateToDealerships?.({ onboarding_month: row.monthKey, status: '', purchase_month: '', go_live_month: '', term_month: '' }); }}
+                onClick={e => { e.stopPropagation(); onNavigateToDealerships?.({ onboarding_month: row.monthKey, status: '', received_month: '', go_live_month: '', term_month: '' }); }}
               >
                 {row.onboarding || '—'}
               </div>
               {/* Go-Live — click-through */}
               <div
                 className="col-span-1 text-center py-2 font-bold text-emerald-600 dark:text-emerald-400 hover:underline"
-                onClick={e => { e.stopPropagation(); onNavigateToDealerships?.({ go_live_month: row.monthKey, status: '', purchase_month: '', onboarding_month: '', term_month: '' }); }}
+                onClick={e => { e.stopPropagation(); onNavigateToDealerships?.({ go_live_month: row.monthKey, status: '', received_month: '', onboarding_month: '', term_month: '' }); }}
               >
                 {row.goLive || '—'}
               </div>
               {/* Termed — click-through */}
               <div
                 className="col-span-1 text-center py-2 font-bold text-red-600 dark:text-red-400 hover:underline"
-                onClick={e => { e.stopPropagation(); onNavigateToDealerships?.({ term_month: row.monthKey, status: '', purchase_month: '', onboarding_month: '', go_live_month: '' }); }}
+                onClick={e => { e.stopPropagation(); onNavigateToDealerships?.({ term_month: row.monthKey, status: '', received_month: '', onboarding_month: '', go_live_month: '' }); }}
               >
                 {row.termed || '—'}
               </div>
