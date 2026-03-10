@@ -92,8 +92,12 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
          PP_ID: fullD.pp_sys_id || '',
          ERA_ID: fullD.era_system_id || '',
          BU_ID: fullD.bu_id || '',
+         MMS_ID: fullD.mms_id || '',
          Address: fullD.address_line1 || '',
+         Address_Line2: fullD.address_line2 || '',
+         City: fullD.city || '',
          State: fullD.state || '',
+         Zip_Code: fullD.zip_code || '',
          CRM: fullD.crm_provider,
          Sales_Contact: fullD.contacts?.sales_contact_name || '',
          Enrollment_Contact: fullD.contacts?.enrollment_contact_name || '',
@@ -152,7 +156,7 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
 
     const columns = [
       'Status', 'Hold_Reason', 'Cancellation_Reason', 'CIF', 'Name', 'Group', 'Store', 'Branch', 
-      'PP_ID', 'ERA_ID', 'BU_ID', 'Address', 'State', 'CRM', 
+      'PP_ID', 'ERA_ID', 'BU_ID', 'MMS_ID', 'Address', 'Address_Line2', 'City', 'State', 'Zip_Code', 'CRM',
       'Sales_Contact', 'Enrollment_Contact', 'CSM', 'POC_Name', 'POC_Email', 'POC_Phone', 
       'Received_Date', 'Order_Number', 'Onboarding_Date',
       'Go_Live_Date', 'Term_Date',
