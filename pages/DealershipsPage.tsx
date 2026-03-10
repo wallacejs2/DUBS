@@ -97,7 +97,7 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
          Address_Line2: fullD.address_line2 || '',
          City: fullD.city || '',
          State: fullD.state || '',
-         Zip_Code: fullD.zip_code || '',
+         Zip_Code: fullD.zip_code ? `="${fullD.zip_code}"` : '',
          CRM: fullD.crm_provider,
          Sales_Contact: fullD.contacts?.sales_contact_name || '',
          Enrollment_Contact: fullD.contacts?.enrollment_contact_name || '',
