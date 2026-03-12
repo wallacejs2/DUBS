@@ -99,11 +99,16 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
       }
     }
 
+    // Onboarding / Go-Live / Termed are flow-based: each dealership in only its furthest stage
     const lifecycle = dealerships.reduce(
       (acc, d) => {
-        if (getMonthKey(d.onboarding_date) === reportingMonth) acc.onboardingThisMonth += 1;
-        if (getMonthKey(d.go_live_date) === reportingMonth) acc.goLiveThisMonth += 1;
-        if (getMonthKey(d.term_date) === reportingMonth) acc.termedThisMonth += 1;
+        const hasOnboarding = getMonthKey(d.onboarding_date) === reportingMonth;
+        const hasGoLive = getMonthKey(d.go_live_date) === reportingMonth;
+        const hasTerm = getMonthKey(d.term_date) === reportingMonth;
+
+        if (hasTerm) acc.termedThisMonth += 1;
+        else if (hasGoLive) acc.goLiveThisMonth += 1;
+        else if (hasOnboarding) acc.onboardingThisMonth += 1;
         return acc;
       },
       { receivedThisMonth: receivedThisMonthSet.size, onboardingThisMonth: 0, goLiveThisMonth: 0, termedThisMonth: 0 }
@@ -125,9 +130,13 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
 
     const prevLifecycle = dealerships.reduce(
       (acc, d) => {
-        if (getMonthKey(d.onboarding_date) === prevMonth) acc.onboardingThisMonth += 1;
-        if (getMonthKey(d.go_live_date) === prevMonth) acc.goLiveThisMonth += 1;
-        if (getMonthKey(d.term_date) === prevMonth) acc.termedThisMonth += 1;
+        const hasOnboarding = getMonthKey(d.onboarding_date) === prevMonth;
+        const hasGoLive = getMonthKey(d.go_live_date) === prevMonth;
+        const hasTerm = getMonthKey(d.term_date) === prevMonth;
+
+        if (hasTerm) acc.termedThisMonth += 1;
+        else if (hasGoLive) acc.goLiveThisMonth += 1;
+        else if (hasOnboarding) acc.onboardingThisMonth += 1;
         return acc;
       },
       { receivedThisMonth: receivedPrevMonthSet.size, onboardingThisMonth: 0, goLiveThisMonth: 0, termedThisMonth: 0 }
@@ -198,30 +207,20 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
         const label = d.toLocaleString('default', { month: 'short', year: 'numeric' });
 
         const receivedSet = receivedByMonth.get(monthKey) || new Set<string>();
-        const row = { received: 0, onboarding: 0, goLive: 0, termed: 0 };
+        const row = { received: receivedSet.size, onboarding: 0, goLive: 0, termed: 0 };
 
-        // Collect all dealership IDs with any activity this month
-        const relevantIds = new Set<string>(receivedSet);
+        // Received is an independent count (unique dealerships with an order received_date this month).
+        // Onboarding / Go-Live / Termed are flow-based: each dealership appears in only its furthest stage.
         for (const dl of dealerships) {
           const mk = dlMonthKeys.get(dl.id)!;
-          if (mk.onboarding === monthKey || mk.goLive === monthKey || mk.term === monthKey) {
-            relevantIds.add(dl.id);
-          }
-        }
+          const hasOnboarding = mk.onboarding === monthKey;
+          const hasGoLive = mk.goLive === monthKey;
+          const hasTerm = mk.term === monthKey;
 
-        // Assign each dealership to its furthest stage this month
-        for (const dlId of relevantIds) {
-          const mk = dlMonthKeys.get(dlId);
-          const hasReceived = receivedSet.has(dlId);
-          const hasOnboarding = mk?.onboarding === monthKey;
-          const hasGoLive = mk?.goLive === monthKey;
-          const hasTerm = mk?.term === monthKey;
-
-          // Furthest stage wins (termed > goLive > onboarding > received)
+          // Furthest stage wins (termed > goLive > onboarding)
           if (hasTerm) row.termed += 1;
           else if (hasGoLive) row.goLive += 1;
           else if (hasOnboarding) row.onboarding += 1;
-          else if (hasReceived) row.received += 1;
         }
 
         months.push({
