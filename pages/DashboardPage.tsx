@@ -22,7 +22,6 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
   const [reportingMonth, setReportingMonth] = useState(new Date().toISOString().slice(0, 7));
   // Default: Cancelled is excluded
   const [excludedStatuses, setExcludedStatuses] = useState<DealershipStatus[]>([DealershipStatus.CANCELLED]);
-  const [excludedRevenueStatuses, setExcludedRevenueStatuses] = useState<DealershipStatus[]>([DealershipStatus.CANCELLED]);
 
   const { dealerships } = useDealerships();
   const { orders } = useOrders();
@@ -60,13 +59,8 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
     const activeDealerships = dealerships.filter(d => !excludedStatuses.includes(d.status));
     const activeDealershipIds = new Set(activeDealerships.map(d => d.id));
 
-    // Revenue: from dealerships matching revenue status filter (not date-filtered)
-    const revenueDealershipIds = new Set(
-      dealerships
-        .filter(d => !excludedRevenueStatuses.includes(d.status))
-        .map(d => d.id)
-    );
-    const revenueOrders = orders.filter(o => revenueDealershipIds.has(o.dealership_id));
+    // Revenue: from active (non-excluded) dealerships (not date-filtered)
+    const revenueOrders = orders.filter(o => activeDealershipIds.has(o.dealership_id));
     const totalRevenue = revenueOrders.reduce((sum, order) => {
       const orderTotal = order.products?.reduce((pSum, p) => pSum + (Number(p.amount) || 0), 0) || 0;
       return sum + orderTotal;
@@ -266,7 +260,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
       avgOnbToLive,
       isOrderDateFiltered: !!(orderDateRange.start || orderDateRange.end),
     };
-  }, [dealerships, orders, excludedStatuses, excludedRevenueStatuses, orderDateRange, reportingMonth]);
+  }, [dealerships, orders, excludedStatuses, orderDateRange, reportingMonth]);
 
   const toggleStatus = (statuses: DealershipStatus[]) => {
     setExcludedStatuses(prev => {
@@ -284,22 +278,6 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
   };
 
   const isExcluded = (statuses: DealershipStatus[]) => statuses.every(s => excludedStatuses.includes(s));
-
-  const toggleRevenueStatus = (statuses: DealershipStatus[]) => {
-    setExcludedRevenueStatuses(prev => {
-      const isAllExcluded = statuses.every(s => prev.includes(s));
-      if (isAllExcluded) {
-        return prev.filter(s => !statuses.includes(s));
-      }
-      const newExcluded = [...prev];
-      statuses.forEach(s => {
-        if (!newExcluded.includes(s)) newExcluded.push(s);
-      });
-      return newExcluded;
-    });
-  };
-
-  const isRevenueExcluded = (statuses: DealershipStatus[]) => statuses.every(s => excludedRevenueStatuses.includes(s));
 
   const formatCurrency = (val: number) =>
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
@@ -397,27 +375,26 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
 
       {/* Top metric cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-9 gap-3 mb-3">
-        <div className="col-span-1 md:col-span-2 xl:col-span-2 bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between h-24 transition-colors">
-          <div className="flex items-center gap-3 mb-2">
+        <div className="col-span-2 md:col-span-4 xl:col-span-4 bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between h-24 transition-colors">
+          <div className="flex items-center gap-3">
             <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-300">
               <Building2 size={16} />
             </div>
-            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Dealerships</span>
+            <div>
+              <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Dealerships</span>
+              <div className="text-2xl font-extrabold text-slate-800 dark:text-slate-100">{dashboardMetrics.totalDealershipsCount}</div>
+            </div>
           </div>
-          <div className="text-2xl font-extrabold text-slate-800 dark:text-slate-100">{dashboardMetrics.totalDealershipsCount}</div>
-        </div>
-
-        <div className="col-span-1 md:col-span-2 xl:col-span-2 bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between h-24 transition-colors">
-          <div className="flex items-center gap-3 mb-2">
+          <div className="h-10 w-px bg-slate-200 dark:bg-slate-700 mx-4"></div>
+          <div className="flex items-center gap-3">
             <div className="p-2 bg-emerald-50 dark:bg-emerald-900/30 rounded-lg text-emerald-600 dark:text-emerald-400">
               <DollarSign size={16} />
             </div>
             <div>
               <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Revenue Booked</span>
-              <span className="text-[8px] text-slate-400 dark:text-slate-500 block -mt-0.5">{statusGroups.filter(g => !isRevenueExcluded(g.statuses)).map(g => g.label).join(' / ') || 'None'}</span>
+              <div className="text-2xl font-extrabold text-slate-800 dark:text-slate-100">{formatCurrency(dashboardMetrics.totalRevenue)}</div>
             </div>
           </div>
-          <div className="text-2xl font-extrabold text-slate-800 dark:text-slate-100">{formatCurrency(dashboardMetrics.totalRevenue)}</div>
         </div>
 
         <div className="col-span-1 bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm h-24">
@@ -458,42 +435,6 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
         </div>
       </div>
 
-      {/* Revenue status filter buttons */}
-      <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-9 gap-3 mb-3">
-        <div className="col-span-2 md:col-span-4 xl:col-span-9 flex items-center gap-2">
-          <DollarSign size={12} className="text-slate-400" />
-          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Revenue By Status</span>
-        </div>
-        {statusGroups.map(group => {
-          const excluded = isRevenueExcluded(group.statuses);
-          const groupRevenue = dashboardMetrics.revenueByStatusGroup[group.label] || 0;
-
-          return (
-            <button
-              key={`rev-${group.label}`}
-              onClick={() => toggleRevenueStatus(group.statuses)}
-              className={`col-span-1 p-3 rounded-xl border shadow-sm flex flex-col justify-center h-24 transition-all duration-200 text-left relative overflow-hidden group
-                ${group.bg} ${group.border}
-                ${excluded ? 'opacity-40 grayscale hover:opacity-60' : 'hover:-translate-y-1 hover:shadow-md ring-1 ring-transparent hover:ring-indigo-100 dark:hover:ring-indigo-900'}
-              `}
-            >
-              <div className="flex items-center justify-between w-full mb-1">
-                <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase">{group.label}</span>
-                {excluded && (
-                  <span className="text-[8px] font-bold text-red-400 uppercase bg-red-50 dark:bg-red-900/30 px-1.5 py-0.5 rounded">
-                    Excluded
-                  </span>
-                )}
-              </div>
-              <span className={`text-lg font-bold ${group.color}`}>{formatCurrency(groupRevenue)}</span>
-              {!excluded && (
-                <div className={`absolute bottom-0 left-0 h-1 bg-current opacity-20 w-full ${group.color.replace('text-', 'bg-')}`}></div>
-              )}
-            </button>
-          );
-        })}
-      </div>
-
       {/* Average days KPI cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-9 gap-3 mb-3">
         <div className="col-span-1 md:col-span-2 xl:col-span-3 bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm h-20 flex flex-col justify-between">
@@ -514,6 +455,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
         {statusGroups.map(group => {
           const excluded = isExcluded(group.statuses);
           const count = group.statuses.reduce((sum, status) => sum + (dashboardMetrics.statusCounts[status] || 0), 0);
+          const groupRevenue = dashboardMetrics.revenueByStatusGroup[group.label] || 0;
 
           return (
             <button
@@ -533,6 +475,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
                 )}
               </div>
               <span className={`text-xl font-bold ${group.color}`}>{count}</span>
+              <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500">{formatCurrency(groupRevenue)}</span>
               {!excluded && (
                 <div className={`absolute bottom-0 left-0 h-1 bg-current opacity-20 w-full ${group.color.replace('text-', 'bg-')}`}></div>
               )}
