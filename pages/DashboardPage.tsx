@@ -375,8 +375,8 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
 
       {/* Top metric cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-9 gap-3 mb-3">
-        <div className="col-span-2 md:col-span-4 xl:col-span-4 bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between h-24 transition-colors">
-          <div className="flex items-center gap-3">
+        <div className="col-span-2 md:col-span-4 xl:col-span-4 bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center h-24 transition-colors">
+          <div className="flex-1 flex items-center justify-center gap-3">
             <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-300">
               <Building2 size={16} />
             </div>
@@ -385,8 +385,8 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
               <div className="text-2xl font-extrabold text-slate-800 dark:text-slate-100">{dashboardMetrics.totalDealershipsCount}</div>
             </div>
           </div>
-          <div className="h-10 w-px bg-slate-200 dark:bg-slate-700 mx-4"></div>
-          <div className="flex items-center gap-3">
+          <div className="h-10 w-px bg-slate-200 dark:bg-slate-700"></div>
+          <div className="flex-1 flex items-center justify-center gap-3">
             <div className="p-2 bg-emerald-50 dark:bg-emerald-900/30 rounded-lg text-emerald-600 dark:text-emerald-400">
               <DollarSign size={16} />
             </div>
