@@ -59,17 +59,28 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
     const activeDealerships = dealerships.filter(d => !excludedStatuses.includes(d.status));
     const activeDealershipIds = new Set(activeDealerships.map(d => d.id));
 
-    // Revenue: only from Live/Legacy dealerships (not date-filtered)
-    const liveOrLegacyIds = new Set(
-      dealerships
-        .filter(d => d.status === DealershipStatus.LIVE || d.status === DealershipStatus.LEGACY)
-        .map(d => d.id)
-    );
-    const revenueOrders = orders.filter(o => liveOrLegacyIds.has(o.dealership_id));
+    // Revenue: from active (non-excluded) dealerships (not date-filtered)
+    const revenueOrders = orders.filter(o => activeDealershipIds.has(o.dealership_id));
     const totalRevenue = revenueOrders.reduce((sum, order) => {
       const orderTotal = order.products?.reduce((pSum, p) => pSum + (Number(p.amount) || 0), 0) || 0;
       return sum + orderTotal;
     }, 0);
+
+    // Revenue per status group (for display on revenue filter buttons)
+    const revenueByStatusGroup: Record<string, number> = {};
+    const statusGroupDefs = [
+      { label: 'Live', statuses: [DealershipStatus.LIVE, DealershipStatus.LEGACY] },
+      { label: 'Onboarding', statuses: [DealershipStatus.ONBOARDING] },
+      { label: 'Pending', statuses: [DealershipStatus.DMT_PENDING, DealershipStatus.DMT_APPROVED] },
+      { label: 'Hold', statuses: [DealershipStatus.HOLD] },
+      { label: 'Cancelled', statuses: [DealershipStatus.CANCELLED] },
+    ];
+    for (const sg of statusGroupDefs) {
+      const ids = new Set(dealerships.filter(d => sg.statuses.includes(d.status)).map(d => d.id));
+      revenueByStatusGroup[sg.label] = orders
+        .filter(o => ids.has(o.dealership_id))
+        .reduce((sum, order) => sum + (order.products?.reduce((pSum, p) => pSum + (Number(p.amount) || 0), 0) || 0), 0);
+    }
 
     // Product breakdown: uses date-range filtered orders from active dealerships
     const filteredOrders = orders.filter(order => {
@@ -238,6 +249,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
       statusCounts,
       totalDealershipsCount: activeDealerships.length,
       totalRevenue,
+      revenueByStatusGroup,
       productBreakdown,
       lifecycle,
       prevLifecycle,
@@ -378,10 +390,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
             <div className="p-2 bg-emerald-50 dark:bg-emerald-900/30 rounded-lg text-emerald-600 dark:text-emerald-400">
               <DollarSign size={16} />
             </div>
-            <div>
-              <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Revenue Booked</span>
-              <span className="text-[8px] text-slate-400 dark:text-slate-500 block -mt-0.5">Live / Legacy</span>
-            </div>
+            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Revenue Booked</span>
           </div>
           <div className="text-2xl font-extrabold text-slate-800 dark:text-slate-100">{formatCurrency(dashboardMetrics.totalRevenue)}</div>
         </div>
@@ -444,6 +453,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
         {statusGroups.map(group => {
           const excluded = isExcluded(group.statuses);
           const count = group.statuses.reduce((sum, status) => sum + (dashboardMetrics.statusCounts[status] || 0), 0);
+          const groupRevenue = dashboardMetrics.revenueByStatusGroup[group.label] || 0;
 
           return (
             <button
@@ -463,6 +473,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
                 )}
               </div>
               <span className={`text-xl font-bold ${group.color}`}>{count}</span>
+              <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500">{formatCurrency(groupRevenue)}</span>
               {!excluded && (
                 <div className={`absolute bottom-0 left-0 h-1 bg-current opacity-20 w-full ${group.color.replace('text-', 'bg-')}`}></div>
               )}
