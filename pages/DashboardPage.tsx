@@ -22,6 +22,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
   const [reportingMonth, setReportingMonth] = useState(new Date().toISOString().slice(0, 7));
   // Default: Cancelled is excluded
   const [excludedStatuses, setExcludedStatuses] = useState<DealershipStatus[]>([DealershipStatus.CANCELLED]);
+  const [excludedRevenueStatuses, setExcludedRevenueStatuses] = useState<DealershipStatus[]>([DealershipStatus.CANCELLED]);
 
   const { dealerships } = useDealerships();
   const { orders } = useOrders();
@@ -59,17 +60,33 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
     const activeDealerships = dealerships.filter(d => !excludedStatuses.includes(d.status));
     const activeDealershipIds = new Set(activeDealerships.map(d => d.id));
 
-    // Revenue: only from Live/Legacy dealerships (not date-filtered)
-    const liveOrLegacyIds = new Set(
+    // Revenue: from dealerships matching revenue status filter (not date-filtered)
+    const revenueDealershipIds = new Set(
       dealerships
-        .filter(d => d.status === DealershipStatus.LIVE || d.status === DealershipStatus.LEGACY)
+        .filter(d => !excludedRevenueStatuses.includes(d.status))
         .map(d => d.id)
     );
-    const revenueOrders = orders.filter(o => liveOrLegacyIds.has(o.dealership_id));
+    const revenueOrders = orders.filter(o => revenueDealershipIds.has(o.dealership_id));
     const totalRevenue = revenueOrders.reduce((sum, order) => {
       const orderTotal = order.products?.reduce((pSum, p) => pSum + (Number(p.amount) || 0), 0) || 0;
       return sum + orderTotal;
     }, 0);
+
+    // Revenue per status group (for display on revenue filter buttons)
+    const revenueByStatusGroup: Record<string, number> = {};
+    const statusGroupDefs = [
+      { label: 'Live', statuses: [DealershipStatus.LIVE, DealershipStatus.LEGACY] },
+      { label: 'Onboarding', statuses: [DealershipStatus.ONBOARDING] },
+      { label: 'Pending', statuses: [DealershipStatus.DMT_PENDING, DealershipStatus.DMT_APPROVED] },
+      { label: 'Hold', statuses: [DealershipStatus.HOLD] },
+      { label: 'Cancelled', statuses: [DealershipStatus.CANCELLED] },
+    ];
+    for (const sg of statusGroupDefs) {
+      const ids = new Set(dealerships.filter(d => sg.statuses.includes(d.status)).map(d => d.id));
+      revenueByStatusGroup[sg.label] = orders
+        .filter(o => ids.has(o.dealership_id))
+        .reduce((sum, order) => sum + (order.products?.reduce((pSum, p) => pSum + (Number(p.amount) || 0), 0) || 0), 0);
+    }
 
     // Product breakdown: uses date-range filtered orders from active dealerships
     const filteredOrders = orders.filter(order => {
@@ -238,6 +255,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
       statusCounts,
       totalDealershipsCount: activeDealerships.length,
       totalRevenue,
+      revenueByStatusGroup,
       productBreakdown,
       lifecycle,
       prevLifecycle,
@@ -248,7 +266,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
       avgOnbToLive,
       isOrderDateFiltered: !!(orderDateRange.start || orderDateRange.end),
     };
-  }, [dealerships, orders, excludedStatuses, orderDateRange, reportingMonth]);
+  }, [dealerships, orders, excludedStatuses, excludedRevenueStatuses, orderDateRange, reportingMonth]);
 
   const toggleStatus = (statuses: DealershipStatus[]) => {
     setExcludedStatuses(prev => {
@@ -266,6 +284,22 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
   };
 
   const isExcluded = (statuses: DealershipStatus[]) => statuses.every(s => excludedStatuses.includes(s));
+
+  const toggleRevenueStatus = (statuses: DealershipStatus[]) => {
+    setExcludedRevenueStatuses(prev => {
+      const isAllExcluded = statuses.every(s => prev.includes(s));
+      if (isAllExcluded) {
+        return prev.filter(s => !statuses.includes(s));
+      }
+      const newExcluded = [...prev];
+      statuses.forEach(s => {
+        if (!newExcluded.includes(s)) newExcluded.push(s);
+      });
+      return newExcluded;
+    });
+  };
+
+  const isRevenueExcluded = (statuses: DealershipStatus[]) => statuses.every(s => excludedRevenueStatuses.includes(s));
 
   const formatCurrency = (val: number) =>
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
@@ -380,7 +414,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
             </div>
             <div>
               <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Revenue Booked</span>
-              <span className="text-[8px] text-slate-400 dark:text-slate-500 block -mt-0.5">Live / Legacy</span>
+              <span className="text-[8px] text-slate-400 dark:text-slate-500 block -mt-0.5">{statusGroups.filter(g => !isRevenueExcluded(g.statuses)).map(g => g.label).join(' / ') || 'None'}</span>
             </div>
           </div>
           <div className="text-2xl font-extrabold text-slate-800 dark:text-slate-100">{formatCurrency(dashboardMetrics.totalRevenue)}</div>
@@ -422,6 +456,42 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
           <div className="flex items-center gap-2 text-[10px] text-slate-400 uppercase font-bold"><TrendingUp size={13} /> Net Live</div>
           <div className="text-2xl font-extrabold text-slate-800 dark:text-slate-200 mt-2">{dashboardMetrics.netLiveChangeThisMonth}</div>
         </div>
+      </div>
+
+      {/* Revenue status filter buttons */}
+      <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-9 gap-3 mb-3">
+        <div className="col-span-2 md:col-span-4 xl:col-span-9 flex items-center gap-2">
+          <DollarSign size={12} className="text-slate-400" />
+          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Revenue By Status</span>
+        </div>
+        {statusGroups.map(group => {
+          const excluded = isRevenueExcluded(group.statuses);
+          const groupRevenue = dashboardMetrics.revenueByStatusGroup[group.label] || 0;
+
+          return (
+            <button
+              key={`rev-${group.label}`}
+              onClick={() => toggleRevenueStatus(group.statuses)}
+              className={`col-span-1 p-3 rounded-xl border shadow-sm flex flex-col justify-center h-24 transition-all duration-200 text-left relative overflow-hidden group
+                ${group.bg} ${group.border}
+                ${excluded ? 'opacity-40 grayscale hover:opacity-60' : 'hover:-translate-y-1 hover:shadow-md ring-1 ring-transparent hover:ring-indigo-100 dark:hover:ring-indigo-900'}
+              `}
+            >
+              <div className="flex items-center justify-between w-full mb-1">
+                <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase">{group.label}</span>
+                {excluded && (
+                  <span className="text-[8px] font-bold text-red-400 uppercase bg-red-50 dark:bg-red-900/30 px-1.5 py-0.5 rounded">
+                    Excluded
+                  </span>
+                )}
+              </div>
+              <span className={`text-lg font-bold ${group.color}`}>{formatCurrency(groupRevenue)}</span>
+              {!excluded && (
+                <div className={`absolute bottom-0 left-0 h-1 bg-current opacity-20 w-full ${group.color.replace('text-', 'bg-')}`}></div>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {/* Average days KPI cards */}
