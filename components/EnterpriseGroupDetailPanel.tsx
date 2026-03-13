@@ -107,7 +107,16 @@ const EnterpriseGroupDetailPanel: React.FC<EnterpriseGroupDetailPanelProps> = ({
             )}
             <div className="flex flex-col">
               <span className="text-[8px] font-bold text-slate-400 uppercase tracking-[0.2em] leading-none mb-1">Group Detail</span>
-              <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">{group.name}</h2>
+              {isEditing ? (
+                <input
+                  value={formData.name || ''}
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  className="text-sm font-bold text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 outline-none focus:ring-1 focus:ring-indigo-500 min-w-[200px]"
+                  placeholder="Group name"
+                />
+              ) : (
+                <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">{group.name}</h2>
+              )}
             </div>
           </div>
 
