@@ -235,10 +235,12 @@ export function useShoppers(filters?: { search?: string; status?: string; priori
 
 export function useNewFeatures(filters?: { search?: string; quarter?: string; year?: string; type?: string; status?: string; platform?: string; source?: string }) {
   const [features, setFeatures] = useState<NewFeature[]>([]);
+  const [allFeatures, setAllFeatures] = useState<NewFeature[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetch = useCallback(() => {
     let data = db.getNewFeatures();
+    setAllFeatures(data);
     
     if (filters?.search) {
       const s = filters.search.toLowerCase();
@@ -298,6 +300,7 @@ export function useNewFeatures(filters?: { search?: string; quarter?: string; ye
 
   return {
     features,
+    allFeatures,
     loading,
     upsert: (f: Partial<NewFeature>) => db.upsertNewFeature(f),
     remove: (id: string) => db.deleteNewFeature(id)

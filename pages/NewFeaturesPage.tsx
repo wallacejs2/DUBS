@@ -1,9 +1,8 @@
 
 import React, { useState, useMemo } from 'react';
-import { Plus, Sparkles, Search, Trash2, Edit3, ExternalLink, Copy, Check, ArrowUpDown, ChevronUp, ChevronDown, Layers, ChevronRight, FileSpreadsheet, Bell, Megaphone, Rocket, Navigation } from 'lucide-react';
+import { Plus, Sparkles, Trash2, Edit3, ExternalLink, Copy, Check, ArrowUpDown, ChevronUp, ChevronDown, Layers, ChevronRight, FileSpreadsheet, Bell, Megaphone, Rocket, Navigation, BarChart3 } from 'lucide-react';
 import { useNewFeatures } from '../hooks';
-import { NewFeature } from '../types';
-import FilterBar from '../components/FilterBar';
+import { NewFeature, NewFeatureFilterState } from '../types';
 import NewFeatureDetailPanel from '../components/NewFeatureDetailPanel';
 
 const formatCardDate = (dateStr: string): string => {
@@ -21,9 +20,13 @@ const platformColors: Record<string, string> = {
   'FOCUS': 'bg-orange-50 text-orange-700 border-orange-100 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800',
 };
 
-const NewFeaturesPage: React.FC = () => {
-  const [filters, setFilters] = useState({ search: '', quarter: '', year: '', type: '', status: '', platform: '', source: '' });
-  const { features, loading, upsert, remove } = useNewFeatures(filters);
+interface NewFeaturesPageProps {
+  filters: NewFeatureFilterState;
+  setFilters: React.Dispatch<React.SetStateAction<NewFeatureFilterState>>;
+}
+
+const NewFeaturesPage: React.FC<NewFeaturesPageProps> = ({ filters, setFilters }) => {
+  const { features, allFeatures, loading, upsert, remove } = useNewFeatures(filters);
   
   const [selectedFeatureId, setSelectedFeatureId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
@@ -32,6 +35,7 @@ const NewFeaturesPage: React.FC = () => {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [groupByQuarter, setGroupByQuarter] = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  const [quarterYear, setQuarterYear] = useState('2026');
 
   const activeFeature = useMemo(() => {
     if (isCreating) {
@@ -220,41 +224,22 @@ const NewFeaturesPage: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
-  const quarters = [
-    { label: 'Q1', value: 'Q1' },
-    { label: 'Q2', value: 'Q2' },
-    { label: 'Q3', value: 'Q3' },
-    { label: 'Q4', value: 'Q4' },
-  ];
+  const metrics = useMemo(() => {
+    const total = allFeatures.length;
+    const fullpathCount = allFeatures.filter(f => f.source === 'Fullpath').length;
+    const reynoldsCount = allFeatures.filter(f => f.source === 'Reynolds').length;
+    const ucpCount = allFeatures.filter(f => f.platform === 'UCP').length;
+    const curatorCount = allFeatures.filter(f => f.platform === 'Curator').length;
+    const focusCount = allFeatures.filter(f => f.platform === 'FOCUS').length;
+    return { total, fullpathCount, reynoldsCount, ucpCount, curatorCount, focusCount };
+  }, [allFeatures]);
 
-  const years = [
-    { label: '2024', value: '2024' },
-    { label: '2025', value: '2025' },
-    { label: '2026', value: '2026' },
-    { label: '2027', value: '2027' },
-    { label: '2028', value: '2028' },
-  ];
-
-  const sources = [
-    { label: 'Fullpath', value: 'Fullpath' },
-    { label: 'Reynolds', value: 'Reynolds' },
-  ];
-
-  const types = [
-    { label: 'New', value: 'New' },
-    { label: 'Updated', value: 'Updated' },
-  ];
-
-  const statuses = [
-    { label: 'Pending', value: 'Pending' },
-    { label: 'Launched', value: 'Launched' },
-  ];
-
-  const platforms = [
-    { label: 'UCP', value: 'UCP' },
-    { label: 'Curator', value: 'Curator' },
-    { label: 'FOCUS', value: 'FOCUS' },
-  ];
+  const quarterCounts = useMemo(() => {
+    return ['Q1', 'Q2', 'Q3', 'Q4'].map(q => ({
+      label: q,
+      count: allFeatures.filter(f => f.quarterly_release === `${q} ${quarterYear}`).length
+    }));
+  }, [allFeatures, quarterYear]);
 
   const renderFeatureCard = (feature: NewFeature) => {
     const displayPMRs = feature.pmrs && feature.pmrs.length > 0
@@ -449,50 +434,96 @@ const NewFeaturesPage: React.FC = () => {
         </div>
       </div>
 
-      <FilterBar 
-        searchValue={filters.search}
-        onSearchChange={(v) => setFilters({...filters, search: v})}
-        searchPlaceholder="Search features, PMRs, descriptions..."
-        filters={[
-          {
-            label: 'Source',
-            value: filters.source,
-            onChange: (v) => setFilters({ ...filters, source: v }),
-            options: sources
-          },
-          {
-            label: 'Type',
-            value: filters.type,
-            onChange: (v) => setFilters({ ...filters, type: v }),
-            options: types
-          },
-          {
-            label: 'Quarter',
-            value: filters.quarter,
-            onChange: (v) => setFilters({ ...filters, quarter: v }),
-            options: quarters
-          },
-          {
-            label: 'Year',
-            value: filters.year,
-            onChange: (v) => setFilters({ ...filters, year: v }),
-            options: years
-          },
-          {
-            label: 'Status',
-            value: filters.status,
-            onChange: (v) => setFilters({ ...filters, status: v }),
-            options: statuses
-          },
-          {
-            label: 'Platform',
-            value: filters.platform,
-            onChange: (v) => setFilters({ ...filters, platform: v }),
-            options: platforms
-          }
-        ]}
-        onClear={() => setFilters({ search: '', quarter: '', year: '', type: '', status: '', platform: '', source: '' })}
-      />
+      {/* Metrics Cards */}
+      <div className="grid grid-cols-3 gap-3">
+        {/* Total Features */}
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between h-24 transition-colors">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg text-indigo-600 dark:text-indigo-400">
+              <Sparkles size={16} />
+            </div>
+            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Total Features</span>
+          </div>
+          <div className="text-2xl font-extrabold text-slate-800 dark:text-slate-100">{metrics.total}</div>
+        </div>
+
+        {/* Source Breakdown */}
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between h-24 transition-colors">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 bg-purple-50 dark:bg-purple-900/30 rounded-lg text-purple-600 dark:text-purple-400">
+              <BarChart3 size={16} />
+            </div>
+            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">By Source</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1.5">
+              <span className="text-lg font-extrabold text-purple-600 dark:text-purple-400">{metrics.fullpathCount}</span>
+              <span className="text-[9px] font-bold text-slate-400 uppercase">Fullpath</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-lg font-extrabold text-blue-600 dark:text-blue-400">{metrics.reynoldsCount}</span>
+              <span className="text-[9px] font-bold text-slate-400 uppercase">Reynolds</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Platform Breakdown */}
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between h-24 transition-colors">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-300">
+              <Layers size={16} />
+            </div>
+            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">By Platform</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1">
+              <span className="text-lg font-extrabold text-blue-600 dark:text-blue-400">{metrics.ucpCount}</span>
+              <span className="text-[9px] font-bold text-slate-400 uppercase">UCP</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="text-lg font-extrabold text-purple-600 dark:text-purple-400">{metrics.curatorCount}</span>
+              <span className="text-[9px] font-bold text-slate-400 uppercase">Curator</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="text-lg font-extrabold text-orange-600 dark:text-orange-400">{metrics.focusCount}</span>
+              <span className="text-[9px] font-bold text-slate-400 uppercase">FOCUS</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Quarterly Breakdown */}
+      <div className="mt-3">
+        <div className="flex items-center gap-3 mb-3">
+          <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Quarterly Breakdown</h3>
+          <div className="flex items-center gap-1">
+            {['2024', '2025', '2026', '2027', '2028'].map(year => (
+              <button
+                key={year}
+                onClick={() => setQuarterYear(year)}
+                className={`px-2.5 py-0.5 text-[10px] font-bold rounded-full transition-all ${
+                  quarterYear === year
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-600 dark:hover:text-slate-300'
+                }`}
+              >
+                {year}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="grid grid-cols-4 gap-3">
+          {quarterCounts.map(q => (
+            <div
+              key={q.label}
+              className="bg-slate-50 dark:bg-slate-900 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 flex flex-col justify-center items-center text-center transition-colors"
+            >
+              <span className="text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-1">{q.label}</span>
+              <span className="text-lg font-bold text-slate-700 dark:text-slate-200">{q.count}</span>
+            </div>
+          ))}
+        </div>
+      </div>
 
       {/* Sort & Group Controls */}
       <div className="flex items-center justify-between mt-4 mb-3">
