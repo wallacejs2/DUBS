@@ -269,7 +269,11 @@ export interface NewFeature {
   platform?: string;
   navigation?: string;
   location?: string;
+  notified_date?: string;
+  announced_date?: string;
   launch_date?: string;
+  product_area?: string;
+  categories?: string;
   pmrs?: PMR[];
   pmr_number?: string; // Legacy
   pmr_link?: string;   // Legacy

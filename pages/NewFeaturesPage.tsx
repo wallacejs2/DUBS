@@ -65,10 +65,16 @@ const NewFeaturesPage: React.FC = () => {
         lines.push(metaParts.join(' | '));
     }
 
+    // Dates
+    if (feature.notified_date) lines.push(`Notified Date: ${feature.notified_date}`);
+    if (feature.announced_date) lines.push(`Announced Date: ${feature.announced_date}`);
+
     // Context Fields
     if (feature.platform) lines.push(`Platform: ${feature.platform}`);
+    if (feature.product_area) lines.push(`Product Area: ${feature.product_area}`);
     if (feature.location) lines.push(`Location: ${feature.location}`);
     if (feature.navigation) lines.push(`Navigation: ${feature.navigation}`);
+    if (feature.categories) lines.push(`Categories: ${feature.categories}`);
     
     // PMRs
     const displayPMRs = feature.pmrs && feature.pmrs.length > 0 

@@ -242,10 +242,12 @@ export function useNewFeatures(filters?: { search?: string; quarter?: string; ye
     
     if (filters?.search) {
       const s = filters.search.toLowerCase();
-      data = data.filter(f => 
-        f.title.toLowerCase().includes(s) || 
+      data = data.filter(f =>
+        f.title.toLowerCase().includes(s) ||
         (f.description && f.description.toLowerCase().includes(s)) ||
-        (f.pmr_number && f.pmr_number.toLowerCase().includes(s))
+        (f.pmr_number && f.pmr_number.toLowerCase().includes(s)) ||
+        (f.product_area && f.product_area.toLowerCase().includes(s)) ||
+        (f.categories && f.categories.toLowerCase().includes(s))
       );
     }
 

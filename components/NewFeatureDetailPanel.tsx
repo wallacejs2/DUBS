@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-  X, Trash2, Edit3, Save, RefreshCw, 
-  Sparkles, Calendar, MapPin, Monitor, Hash, Link, ExternalLink, FileText, Clock, AlertCircle, Activity, Compass, Plus
+  X, Trash2, Edit3, Save, RefreshCw,
+  Sparkles, Calendar, MapPin, Monitor, Hash, Link, ExternalLink, FileText, Clock, AlertCircle, Activity, Compass, Plus, Bell, Megaphone, Tag, Box
 } from 'lucide-react';
 import { NewFeature, PMR } from '../types';
 
@@ -295,7 +295,27 @@ const NewFeatureDetailPanel: React.FC<NewFeatureDetailPanelProps> = ({
                    )}
                 </div>
 
-                {/* 4. Launch Date */}
+                {/* 4. Notified Date */}
+                <div>
+                   <Label icon={Bell}>Notified Date</Label>
+                   {isEditing ? (
+                      <Input type="date" value={formatDateValue(formData.notified_date)} onChange={(v) => updateField('notified_date', v)} />
+                   ) : (
+                      <DataValue value={formData.notified_date} />
+                   )}
+                </div>
+
+                {/* 5. Announced Date */}
+                <div>
+                   <Label icon={Megaphone}>Announced Date</Label>
+                   {isEditing ? (
+                      <Input type="date" value={formatDateValue(formData.announced_date)} onChange={(v) => updateField('announced_date', v)} />
+                   ) : (
+                      <DataValue value={formData.announced_date} />
+                   )}
+                </div>
+
+                {/* 6. Launch Date */}
                 <div>
                    <Label icon={Calendar}>Launch Date</Label>
                    {isEditing ? (
@@ -304,13 +324,13 @@ const NewFeatureDetailPanel: React.FC<NewFeatureDetailPanelProps> = ({
                       <DataValue value={formData.launch_date} />
                    )}
                 </div>
-                
-                {/* Platform and Location */}
-                <div className="col-span-1 md:col-span-2">
+
+                {/* Platform, Product Area, and Location */}
+                <div>
                    <Label icon={Monitor}>Platform</Label>
                    {isEditing ? (
-                      <Select 
-                        value={formData.platform} 
+                      <Select
+                        value={formData.platform}
                         onChange={(v) => updateField('platform', v)}
                         placeholder="Select Platform"
                         options={[
@@ -330,12 +350,40 @@ const NewFeatureDetailPanel: React.FC<NewFeatureDetailPanelProps> = ({
                    )}
                 </div>
                 <div className="col-span-1 md:col-span-2">
+                   <Label icon={Box}>Product Area</Label>
+                   {isEditing ? (
+                      <Input value={formData.product_area} onChange={(v) => updateField('product_area', v)} placeholder="e.g. Inventory, CRM, Analytics" />
+                   ) : (
+                      <DataValue value={formData.product_area} />
+                   )}
+                </div>
+                <div>
                    <Label icon={MapPin}>Location</Label>
                    {isEditing ? (
                       <Input value={formData.location} onChange={(v) => updateField('location', v)} placeholder="e.g. Global, NA, EMEA" />
                    ) : (
                       <DataValue value={formData.location} />
                    )}
+                </div>
+
+                {/* Categories */}
+                <div className="col-span-1 md:col-span-4">
+                  <Label icon={Tag}>Categories</Label>
+                  {isEditing ? (
+                    <Input value={formData.categories} onChange={(v) => updateField('categories', v)} placeholder="e.g. Inventory, Performance, UX (comma-separated)" />
+                  ) : (
+                    <DataValue>
+                      {formData.categories ? (
+                        <div className="flex flex-wrap gap-1">
+                          {formData.categories.split(',').map((cat, idx) => (
+                            <span key={idx} className="px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">
+                              {cat.trim()}
+                            </span>
+                          ))}
+                        </div>
+                      ) : '---'}
+                    </DataValue>
+                  )}
                 </div>
 
                 {/* Navigation (Full Width) */}

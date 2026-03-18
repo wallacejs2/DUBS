@@ -193,9 +193,13 @@ class CuratorLocalDB extends EventTarget {
       type: 'New',
       status: 'Pending',
       platform: 'Curator',
+      product_area: 'Inventory',
       navigation: 'Inventory > Settings > Decoding',
       location: 'Global',
+      notified_date: '2025-01-10',
+      announced_date: '2025-02-01',
       launch_date: '2025-03-15',
+      categories: 'Inventory, VIN, Decoding',
       pmrs: [
         { id: this.generateId(), number: 'PMR-2025-001', link: 'https://jira.company.com/browse/PMR-001' }
       ],
