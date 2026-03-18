@@ -13,7 +13,7 @@ const platformColors: Record<string, string> = {
 };
 
 const NewFeaturesPage: React.FC = () => {
-  const [filters, setFilters] = useState({ search: '', quarter: '', year: '', type: '', status: '', platform: '' });
+  const [filters, setFilters] = useState({ search: '', quarter: '', year: '', type: '', status: '', platform: '', source: '' });
   const { features, loading, upsert, remove } = useNewFeatures(filters);
   
   const [selectedFeatureId, setSelectedFeatureId] = useState<string | null>(null);
@@ -138,6 +138,7 @@ const NewFeaturesPage: React.FC = () => {
     if (feature.announced_date) lines.push(`Announced Date: ${feature.announced_date}`);
 
     // Context Fields
+    if (feature.source) lines.push(`Source: ${feature.source}`);
     if (feature.platform) lines.push(`Platform: ${feature.platform}`);
     if (feature.product_area) lines.push(`Product Area: ${feature.product_area}`);
     if (feature.location) lines.push(`Location: ${feature.location}`);
@@ -182,9 +183,10 @@ const NewFeaturesPage: React.FC = () => {
       }
       return val;
     };
-    const headers = ['Title', 'Type', 'Status', 'Quarterly Release', 'Platform', 'Product Area', 'Location', 'Notified Date', 'Announced Date', 'Launch Date', 'Categories', 'Navigation', 'PMR Numbers', 'Support Material Link', 'Description'];
+    const headers = ['Title', 'Source', 'Type', 'Status', 'Quarterly Release', 'Platform', 'Product Area', 'Location', 'Notified Date', 'Announced Date', 'Launch Date', 'Categories', 'Navigation', 'PMR Numbers', 'Support Material Link', 'Description'];
     const rows = sortedFeatures.map(f => [
       f.title || '',
+      f.source || '',
       f.type || '',
       f.status || '',
       f.quarterly_release || '',
@@ -225,6 +227,11 @@ const NewFeaturesPage: React.FC = () => {
     { label: '2028', value: '2028' },
   ];
 
+  const sources = [
+    { label: 'Fullpath', value: 'Fullpath' },
+    { label: 'Reynolds', value: 'Reynolds' },
+  ];
+
   const types = [
     { label: 'New', value: 'New' },
     { label: 'Updated', value: 'Updated' },
@@ -258,6 +265,15 @@ const NewFeaturesPage: React.FC = () => {
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 mb-1">
+              {feature.source && (
+                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wide border ${
+                  feature.source === 'Fullpath'
+                    ? 'bg-teal-50 text-teal-700 border-teal-100 dark:bg-teal-900/30 dark:text-teal-300 dark:border-teal-800'
+                    : 'bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800'
+                }`}>
+                  {feature.source}
+                </span>
+              )}
               {feature.type && (
                 <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wide border ${
                   feature.type === 'New'
@@ -380,6 +396,12 @@ const NewFeaturesPage: React.FC = () => {
         searchPlaceholder="Search features, PMRs, descriptions..."
         filters={[
           {
+            label: 'Source',
+            value: filters.source,
+            onChange: (v) => setFilters({ ...filters, source: v }),
+            options: sources
+          },
+          {
             label: 'Type',
             value: filters.type,
             onChange: (v) => setFilters({ ...filters, type: v }),
@@ -410,7 +432,7 @@ const NewFeaturesPage: React.FC = () => {
             options: platforms
           }
         ]}
-        onClear={() => setFilters({ search: '', quarter: '', year: '', type: '', status: '', platform: '' })}
+        onClear={() => setFilters({ search: '', quarter: '', year: '', type: '', status: '', platform: '', source: '' })}
       />
 
       {/* Sort & Group Controls */}

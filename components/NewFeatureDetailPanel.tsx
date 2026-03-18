@@ -196,29 +196,52 @@ const NewFeatureDetailPanel: React.FC<NewFeatureDetailPanelProps> = ({
             
             {/* Metadata Section */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* 1. Type */}
+                {/* 1. Source & Type */}
                 <div>
-                   <Label icon={AlertCircle}>Type</Label>
+                   <Label icon={AlertCircle}>Source / Type</Label>
                    {isEditing ? (
-                      <Select 
-                        value={formData.type || 'New'} 
-                        onChange={(v) => updateField('type', v)}
-                        options={[
-                           { label: 'New', value: 'New' },
-                           { label: 'Updated', value: 'Updated' }
-                        ]}
-                      />
+                      <div className="flex gap-2">
+                        <Select
+                          value={formData.source || ''}
+                          onChange={(v) => updateField('source', v)}
+                          placeholder="Source"
+                          options={[
+                             { label: 'Fullpath', value: 'Fullpath' },
+                             { label: 'Reynolds', value: 'Reynolds' }
+                          ]}
+                        />
+                        <Select
+                          value={formData.type || 'New'}
+                          onChange={(v) => updateField('type', v)}
+                          options={[
+                             { label: 'New', value: 'New' },
+                             { label: 'Updated', value: 'Updated' }
+                          ]}
+                        />
+                      </div>
                    ) : (
                       <DataValue>
+                        <div className="flex items-center gap-1.5">
+                         {formData.source ? (
+                           <span className={`font-bold px-2 py-0.5 rounded-md border text-[11px] ${
+                             formData.source === 'Fullpath'
+                               ? 'bg-teal-50 text-teal-700 border-teal-100 dark:bg-teal-900/30 dark:text-teal-300 dark:border-teal-800'
+                               : 'bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800'
+                           }`}>
+                             {formData.source}
+                           </span>
+                         ) : null}
                          {formData.type ? (
                            <span className={`font-bold px-2 py-0.5 rounded-md border text-[11px] ${
-                             formData.type === 'New' 
-                               ? 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800' 
+                             formData.type === 'New'
+                               ? 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800'
                                : 'bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800'
                            }`}>
                              {formData.type}
                            </span>
-                         ) : '---'}
+                         ) : null}
+                         {!formData.source && !formData.type && '---'}
+                        </div>
                       </DataValue>
                    )}
                 </div>

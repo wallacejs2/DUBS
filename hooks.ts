@@ -233,7 +233,7 @@ export function useShoppers(filters?: { search?: string; status?: string; priori
   };
 }
 
-export function useNewFeatures(filters?: { search?: string; quarter?: string; year?: string; type?: string; status?: string; platform?: string }) {
+export function useNewFeatures(filters?: { search?: string; quarter?: string; year?: string; type?: string; status?: string; platform?: string; source?: string }) {
   const [features, setFeatures] = useState<NewFeature[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -269,6 +269,10 @@ export function useNewFeatures(filters?: { search?: string; quarter?: string; ye
 
     if (filters?.platform) {
       data = data.filter(f => f.platform === filters.platform);
+    }
+
+    if (filters?.source) {
+      data = data.filter(f => f.source === filters.source);
     }
 
     // Sort by launch_date desc (newest to oldest), fallback to created_at
