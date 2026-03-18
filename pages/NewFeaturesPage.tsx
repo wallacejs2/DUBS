@@ -6,6 +6,15 @@ import { NewFeature } from '../types';
 import FilterBar from '../components/FilterBar';
 import NewFeatureDetailPanel from '../components/NewFeatureDetailPanel';
 
+const formatCardDate = (dateStr: string): string => {
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return dateStr;
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  const yy = String(d.getFullYear()).slice(-2);
+  return `${mm}-${dd}-${yy}`;
+};
+
 const platformColors: Record<string, string> = {
   'UCP': 'bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800',
   'Curator': 'bg-purple-50 text-purple-700 border-purple-100 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800',
@@ -379,31 +388,35 @@ const NewFeaturesPage: React.FC = () => {
           {/* Divider + Row 4: Details */}
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[10px] text-slate-500 dark:text-slate-400 mt-1 pt-2 border-t border-slate-50 dark:border-slate-800/50">
             {feature.navigation && (
-              <div className="flex items-center gap-1.5" title="Navigation">
-                <Navigation size={10} className="text-slate-400" />
-                <span className="font-bold text-slate-400 uppercase tracking-wider">NAV:</span>
-                <span className="font-medium truncate max-w-[200px]">{feature.navigation}</span>
+              <div className="flex items-center gap-1.5 min-w-0" title="Navigation">
+                <Navigation size={10} className="text-slate-400 shrink-0" />
+                <span className="font-bold text-slate-400 uppercase tracking-wider shrink-0">NAV:</span>
+                <span className="font-medium break-words">{feature.navigation}</span>
               </div>
             )}
-            {feature.notified_date && (
-              <div className="flex items-center gap-1.5 ml-auto" title="Notified Date">
-                <Bell size={10} className="text-orange-500" />
-                <span className="font-bold text-orange-500 uppercase tracking-wider">Notified:</span>
-                <span className="text-orange-600 dark:text-orange-400">{feature.notified_date}</span>
-              </div>
-            )}
-            {feature.announced_date && (
-              <div className="flex items-center gap-1.5" title="Announced Date">
-                <Megaphone size={10} className="text-amber-500" />
-                <span className="font-bold text-amber-500 uppercase tracking-wider">Announced:</span>
-                <span className="text-amber-600 dark:text-amber-400">{feature.announced_date}</span>
-              </div>
-            )}
-            {feature.launch_date && (
-              <div className="flex items-center gap-1.5" title="Launch Date">
-                <Rocket size={10} className="text-emerald-500" />
-                <span className="font-bold text-emerald-500 uppercase tracking-wider">Launch:</span>
-                <span className="text-emerald-600 dark:text-emerald-400">{feature.launch_date}</span>
+            {(feature.notified_date || feature.announced_date || feature.launch_date) && (
+              <div className="flex items-center gap-x-4 gap-y-1 flex-wrap ml-auto">
+                {feature.notified_date && (
+                  <div className="flex items-center gap-1.5" title="Notified Date">
+                    <Bell size={10} className="text-orange-500" />
+                    <span className="font-bold text-orange-500 uppercase tracking-wider">Notified:</span>
+                    <span className="text-orange-600 dark:text-orange-400">{formatCardDate(feature.notified_date)}</span>
+                  </div>
+                )}
+                {feature.announced_date && (
+                  <div className="flex items-center gap-1.5" title="Announced Date">
+                    <Megaphone size={10} className="text-amber-500" />
+                    <span className="font-bold text-amber-500 uppercase tracking-wider">Announced:</span>
+                    <span className="text-amber-600 dark:text-amber-400">{formatCardDate(feature.announced_date)}</span>
+                  </div>
+                )}
+                {feature.launch_date && (
+                  <div className="flex items-center gap-1.5" title="Launch Date">
+                    <Rocket size={10} className="text-emerald-500" />
+                    <span className="font-bold text-emerald-500 uppercase tracking-wider">Launch:</span>
+                    <span className="text-emerald-600 dark:text-emerald-400">{formatCardDate(feature.launch_date)}</span>
+                  </div>
+                )}
               </div>
             )}
           </div>
