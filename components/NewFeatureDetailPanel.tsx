@@ -1,10 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-  X, Trash2, Edit3, Save, RefreshCw, 
-  Sparkles, Calendar, MapPin, Monitor, Hash, Link, ExternalLink, FileText, Clock, AlertCircle, Activity, Compass, Plus
+  X, Trash2, Edit3, Save, RefreshCw,
+  Sparkles, Calendar, MapPin, Monitor, Hash, Link, ExternalLink, FileText, Clock, AlertCircle, Activity, Compass, Plus, Bell, Megaphone, Tag, Box
 } from 'lucide-react';
 import { NewFeature, PMR } from '../types';
+import RichTextEditor from './RichTextEditor';
 
 interface NewFeatureDetailPanelProps {
   feature: Partial<NewFeature>;
@@ -194,30 +195,53 @@ const NewFeatureDetailPanel: React.FC<NewFeatureDetailPanelProps> = ({
           <form onSubmit={handleSave} className="space-y-6 mx-auto">
             
             {/* Metadata Section */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                {/* 1. Type */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* 1. Source & Type */}
                 <div>
-                   <Label icon={AlertCircle}>Type</Label>
+                   <Label icon={AlertCircle}>Source / Type</Label>
                    {isEditing ? (
-                      <Select 
-                        value={formData.type || 'New'} 
-                        onChange={(v) => updateField('type', v)}
-                        options={[
-                           { label: 'New', value: 'New' },
-                           { label: 'Updated', value: 'Updated' }
-                        ]}
-                      />
+                      <div className="flex gap-2">
+                        <Select
+                          value={formData.source || ''}
+                          onChange={(v) => updateField('source', v)}
+                          placeholder="Source"
+                          options={[
+                             { label: 'Fullpath', value: 'Fullpath' },
+                             { label: 'Reynolds', value: 'Reynolds' }
+                          ]}
+                        />
+                        <Select
+                          value={formData.type || 'New'}
+                          onChange={(v) => updateField('type', v)}
+                          options={[
+                             { label: 'New', value: 'New' },
+                             { label: 'Updated', value: 'Updated' }
+                          ]}
+                        />
+                      </div>
                    ) : (
                       <DataValue>
+                        <div className="flex items-center gap-1.5">
+                         {formData.source ? (
+                           <span className={`font-bold px-2 py-0.5 rounded-md border text-[11px] ${
+                             formData.source === 'Fullpath'
+                               ? 'bg-purple-50 text-purple-700 border-purple-100 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800'
+                               : 'bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800'
+                           }`}>
+                             {formData.source}
+                           </span>
+                         ) : null}
                          {formData.type ? (
                            <span className={`font-bold px-2 py-0.5 rounded-md border text-[11px] ${
-                             formData.type === 'New' 
-                               ? 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800' 
+                             formData.type === 'New'
+                               ? 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800'
                                : 'bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800'
                            }`}>
                              {formData.type}
                            </span>
-                         ) : '---'}
+                         ) : null}
+                         {!formData.source && !formData.type && '---'}
+                        </div>
                       </DataValue>
                    )}
                 </div>
@@ -295,51 +319,99 @@ const NewFeatureDetailPanel: React.FC<NewFeatureDetailPanelProps> = ({
                    )}
                 </div>
 
-                {/* 4. Launch Date */}
-                <div>
-                   <Label icon={Calendar}>Launch Date</Label>
-                   {isEditing ? (
-                      <Input type="date" value={formatDateValue(formData.launch_date)} onChange={(v) => updateField('launch_date', v)} />
-                   ) : (
-                      <DataValue value={formData.launch_date} />
-                   )}
+                {/* Dates Row: Notified, Announced, Launch */}
+                <div className="col-span-1 md:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div>
+                     <Label icon={Bell}>Notified Date</Label>
+                     {isEditing ? (
+                        <Input type="date" value={formatDateValue(formData.notified_date)} onChange={(v) => updateField('notified_date', v)} />
+                     ) : (
+                        <DataValue value={formData.notified_date} />
+                     )}
+                  </div>
+                  <div>
+                     <Label icon={Megaphone}>Announced Date</Label>
+                     {isEditing ? (
+                        <Input type="date" value={formatDateValue(formData.announced_date)} onChange={(v) => updateField('announced_date', v)} />
+                     ) : (
+                        <DataValue value={formData.announced_date} />
+                     )}
+                  </div>
+                  <div>
+                     <Label icon={Calendar}>Launch Date</Label>
+                     {isEditing ? (
+                        <Input type="date" value={formatDateValue(formData.launch_date)} onChange={(v) => updateField('launch_date', v)} />
+                     ) : (
+                        <DataValue value={formData.launch_date} />
+                     )}
+                  </div>
                 </div>
-                
-                {/* Platform and Location */}
-                <div className="col-span-1 md:col-span-2">
-                   <Label icon={Monitor}>Platform</Label>
-                   {isEditing ? (
-                      <Select 
-                        value={formData.platform} 
-                        onChange={(v) => updateField('platform', v)}
-                        placeholder="Select Platform"
-                        options={[
-                          { label: 'UCP', value: 'UCP' },
-                          { label: 'Curator', value: 'Curator' },
-                          { label: 'FOCUS', value: 'FOCUS' }
-                        ]}
-                      />
-                   ) : (
-                      <DataValue>
-                        {formData.platform ? (
-                           <span className={`px-2 py-0.5 rounded-md text-[11px] font-bold border ${platformColors[formData.platform] || 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'}`}>
-                             {formData.platform}
-                           </span>
-                        ) : '---'}
-                      </DataValue>
-                   )}
+
+                {/* Platform, Product Area, Location Row */}
+                <div className="col-span-1 md:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div>
+                     <Label icon={Monitor}>Platform</Label>
+                     {isEditing ? (
+                        <Select
+                          value={formData.platform}
+                          onChange={(v) => updateField('platform', v)}
+                          placeholder="Select Platform"
+                          options={[
+                            { label: 'UCP', value: 'UCP' },
+                            { label: 'Curator', value: 'Curator' },
+                            { label: 'FOCUS', value: 'FOCUS' }
+                          ]}
+                        />
+                     ) : (
+                        <DataValue>
+                          {formData.platform ? (
+                             <span className={`px-2 py-0.5 rounded-md text-[11px] font-bold border ${platformColors[formData.platform] || 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'}`}>
+                               {formData.platform}
+                             </span>
+                          ) : '---'}
+                        </DataValue>
+                     )}
+                  </div>
+                  <div>
+                     <Label icon={Box}>Product Area</Label>
+                     {isEditing ? (
+                        <Input value={formData.product_area} onChange={(v) => updateField('product_area', v)} placeholder="e.g. Inventory, CRM, Analytics" />
+                     ) : (
+                        <DataValue value={formData.product_area} />
+                     )}
+                  </div>
+                  <div>
+                     <Label icon={MapPin}>Location</Label>
+                     {isEditing ? (
+                        <Input value={formData.location} onChange={(v) => updateField('location', v)} placeholder="e.g. Global, NA, EMEA" />
+                     ) : (
+                        <DataValue value={formData.location} />
+                     )}
+                  </div>
                 </div>
-                <div className="col-span-1 md:col-span-2">
-                   <Label icon={MapPin}>Location</Label>
-                   {isEditing ? (
-                      <Input value={formData.location} onChange={(v) => updateField('location', v)} placeholder="e.g. Global, NA, EMEA" />
-                   ) : (
-                      <DataValue value={formData.location} />
-                   )}
+
+                {/* Categories */}
+                <div className="col-span-1 md:col-span-3">
+                  <Label icon={Tag}>Categories</Label>
+                  {isEditing ? (
+                    <Input value={formData.categories} onChange={(v) => updateField('categories', v)} placeholder="e.g. Inventory, Performance, UX (comma-separated)" />
+                  ) : (
+                    <DataValue>
+                      {formData.categories ? (
+                        <div className="flex flex-wrap gap-1">
+                          {formData.categories.split(',').map((cat, idx) => (
+                            <span key={idx} className="px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">
+                              {cat.trim()}
+                            </span>
+                          ))}
+                        </div>
+                      ) : '---'}
+                    </DataValue>
+                  )}
                 </div>
 
                 {/* Navigation (Full Width) */}
-                <div className="col-span-1 md:col-span-4">
+                <div className="col-span-1 md:col-span-3">
                   <Label icon={Compass}>Navigation</Label>
                   {isEditing ? (
                     <Input value={formData.navigation} onChange={(v) => updateField('navigation', v)} placeholder="Inventory > Settings > ..." />
@@ -424,20 +496,38 @@ const NewFeatureDetailPanel: React.FC<NewFeatureDetailPanelProps> = ({
                </div>
             </div>
 
+            {/* Summary Section */}
+            <div className="pt-2">
+               <Label icon={FileText}>Summary</Label>
+               {isEditing ? (
+                  <textarea
+                    value={formData.summary || ''}
+                    onChange={(e) => updateField('summary', e.target.value)}
+                    placeholder="Enter a brief summary of this feature..."
+                    rows={3}
+                    className="w-full px-3 py-1.5 text-[12px] border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-normal transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 resize-y"
+                  />
+               ) : (
+                  <div className="w-full px-4 py-3 text-[13px] border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 rounded-xl text-slate-700 dark:text-slate-300 leading-relaxed">
+                    {formData.summary || 'No summary provided.'}
+                  </div>
+               )}
+            </div>
+
             {/* Description Section */}
             <div className="pt-2">
                <Label icon={FileText}>Description</Label>
                {isEditing ? (
-                  <textarea 
+                  <RichTextEditor
                     value={formData.description || ''}
-                    onChange={(e) => updateField('description', e.target.value)}
-                    className="w-full px-4 py-3 text-[13px] border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-1 focus:ring-indigo-500 outline-none text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 placeholder:text-slate-300 dark:placeholder:text-slate-600 min-h-[300px] leading-relaxed resize-y"
+                    onChange={(html) => updateField('description', html)}
                     placeholder="Enter full feature description, requirements, and notes here..."
                   />
                ) : (
-                  <div className="w-full px-4 py-3 text-[13px] border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 rounded-xl text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed min-h-[100px]">
-                    {formData.description || 'No description provided.'}
-                  </div>
+                  <div
+                    className="w-full px-4 py-3 text-[13px] border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 rounded-xl text-slate-700 dark:text-slate-300 leading-relaxed min-h-[100px] [&_ul]:list-disc [&_ul]:ml-4 [&_ol]:list-decimal [&_ol]:ml-4 [&_li]:my-0.5"
+                    dangerouslySetInnerHTML={{ __html: formData.description || 'No description provided.' }}
+                  />
                )}
             </div>
 

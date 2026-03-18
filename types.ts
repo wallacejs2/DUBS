@@ -264,16 +264,22 @@ export interface NewFeature {
   id: string;
   title: string;
   quarterly_release?: string;
+  source?: 'Fullpath' | 'Reynolds';
   type?: 'New' | 'Updated';
   status?: 'Pending' | 'Launched';
   platform?: string;
   navigation?: string;
   location?: string;
+  notified_date?: string;
+  announced_date?: string;
   launch_date?: string;
+  product_area?: string;
+  categories?: string;
   pmrs?: PMR[];
   pmr_number?: string; // Legacy
   pmr_link?: string;   // Legacy
   support_material_link?: string;
+  summary?: string;
   description?: string;
   created_at: string;
 }

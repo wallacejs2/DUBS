@@ -233,7 +233,7 @@ export function useShoppers(filters?: { search?: string; status?: string; priori
   };
 }
 
-export function useNewFeatures(filters?: { search?: string; quarter?: string; year?: string; type?: string; status?: string }) {
+export function useNewFeatures(filters?: { search?: string; quarter?: string; year?: string; type?: string; status?: string; platform?: string; source?: string }) {
   const [features, setFeatures] = useState<NewFeature[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -242,10 +242,13 @@ export function useNewFeatures(filters?: { search?: string; quarter?: string; ye
     
     if (filters?.search) {
       const s = filters.search.toLowerCase();
-      data = data.filter(f => 
-        f.title.toLowerCase().includes(s) || 
+      data = data.filter(f =>
+        f.title.toLowerCase().includes(s) ||
+        (f.summary && f.summary.toLowerCase().includes(s)) ||
         (f.description && f.description.toLowerCase().includes(s)) ||
-        (f.pmr_number && f.pmr_number.toLowerCase().includes(s))
+        (f.pmr_number && f.pmr_number.toLowerCase().includes(s)) ||
+        (f.product_area && f.product_area.toLowerCase().includes(s)) ||
+        (f.categories && f.categories.toLowerCase().includes(s))
       );
     }
 
@@ -263,6 +266,14 @@ export function useNewFeatures(filters?: { search?: string; quarter?: string; ye
 
     if (filters?.status) {
       data = data.filter(f => f.status === filters.status);
+    }
+
+    if (filters?.platform) {
+      data = data.filter(f => f.platform === filters.platform);
+    }
+
+    if (filters?.source) {
+      data = data.filter(f => f.source === filters.source);
     }
 
     // Sort by launch_date desc (newest to oldest), fallback to created_at
