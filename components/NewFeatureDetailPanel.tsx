@@ -194,7 +194,7 @@ const NewFeatureDetailPanel: React.FC<NewFeatureDetailPanelProps> = ({
           <form onSubmit={handleSave} className="space-y-6 mx-auto">
             
             {/* Metadata Section */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* 1. Type */}
                 <div>
                    <Label icon={AlertCircle}>Type</Label>
@@ -296,7 +296,7 @@ const NewFeatureDetailPanel: React.FC<NewFeatureDetailPanelProps> = ({
                 </div>
 
                 {/* Dates Row: Notified, Announced, Launch */}
-                <div className="col-span-1 md:col-span-4 grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="col-span-1 md:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div>
                      <Label icon={Bell}>Notified Date</Label>
                      {isEditing ? (
@@ -324,7 +324,7 @@ const NewFeatureDetailPanel: React.FC<NewFeatureDetailPanelProps> = ({
                 </div>
 
                 {/* Platform, Product Area, Location Row */}
-                <div className="col-span-1 md:col-span-4 grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="col-span-1 md:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div>
                      <Label icon={Monitor}>Platform</Label>
                      {isEditing ? (
@@ -367,7 +367,7 @@ const NewFeatureDetailPanel: React.FC<NewFeatureDetailPanelProps> = ({
                 </div>
 
                 {/* Categories */}
-                <div className="col-span-1 md:col-span-4">
+                <div className="col-span-1 md:col-span-3">
                   <Label icon={Tag}>Categories</Label>
                   {isEditing ? (
                     <Input value={formData.categories} onChange={(v) => updateField('categories', v)} placeholder="e.g. Inventory, Performance, UX (comma-separated)" />
@@ -387,7 +387,7 @@ const NewFeatureDetailPanel: React.FC<NewFeatureDetailPanelProps> = ({
                 </div>
 
                 {/* Navigation (Full Width) */}
-                <div className="col-span-1 md:col-span-4">
+                <div className="col-span-1 md:col-span-3">
                   <Label icon={Compass}>Navigation</Label>
                   {isEditing ? (
                     <Input value={formData.navigation} onChange={(v) => updateField('navigation', v)} placeholder="Inventory > Settings > ..." />
