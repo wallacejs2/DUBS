@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
-import { Plus, Sparkles, Trash2, Edit3, ExternalLink, Copy, Check, ArrowUpDown, ChevronUp, ChevronDown, Layers, ChevronRight, FileSpreadsheet, Bell, Megaphone, Rocket, Navigation, BarChart3, CalendarDays } from 'lucide-react';
+import { Plus, Sparkles, Trash2, Edit3, ExternalLink, Copy, Check, ArrowUpDown, ChevronUp, ChevronDown, Layers, ChevronRight, FileSpreadsheet, Bell, Megaphone, Rocket, Navigation, BarChart3 } from 'lucide-react';
 import { useNewFeatures } from '../hooks';
 import { NewFeature, NewFeatureFilterState } from '../types';
 import NewFeatureDetailPanel from '../components/NewFeatureDetailPanel';
@@ -35,6 +35,7 @@ const NewFeaturesPage: React.FC<NewFeaturesPageProps> = ({ filters, setFilters }
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [groupByQuarter, setGroupByQuarter] = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  const [quarterYear, setQuarterYear] = useState('2026');
 
   const activeFeature = useMemo(() => {
     if (isCreating) {
@@ -230,11 +231,15 @@ const NewFeaturesPage: React.FC<NewFeaturesPageProps> = ({ filters, setFilters }
     const ucpCount = allFeatures.filter(f => f.platform === 'UCP').length;
     const curatorCount = allFeatures.filter(f => f.platform === 'Curator').length;
     const focusCount = allFeatures.filter(f => f.platform === 'FOCUS').length;
-    const now = new Date();
-    const currentQ = `Q${Math.ceil((now.getMonth() + 1) / 3)} ${now.getFullYear()}`;
-    const thisQuarterCount = allFeatures.filter(f => f.quarterly_release === currentQ).length;
-    return { total, fullpathCount, reynoldsCount, ucpCount, curatorCount, focusCount, thisQuarterCount, currentQ };
+    return { total, fullpathCount, reynoldsCount, ucpCount, curatorCount, focusCount };
   }, [allFeatures]);
+
+  const quarterCounts = useMemo(() => {
+    return ['Q1', 'Q2', 'Q3', 'Q4'].map(q => ({
+      label: q,
+      count: allFeatures.filter(f => f.quarterly_release === `${q} ${quarterYear}`).length
+    }));
+  }, [allFeatures, quarterYear]);
 
   const renderFeatureCard = (feature: NewFeature) => {
     const displayPMRs = feature.pmrs && feature.pmrs.length > 0
@@ -430,7 +435,7 @@ const NewFeaturesPage: React.FC<NewFeaturesPageProps> = ({ filters, setFilters }
       </div>
 
       {/* Metrics Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-3 gap-3">
         {/* Total Features */}
         <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between h-24 transition-colors">
           <div className="flex items-center gap-3 mb-2">
@@ -485,16 +490,38 @@ const NewFeaturesPage: React.FC<NewFeaturesPageProps> = ({ filters, setFilters }
             </div>
           </div>
         </div>
+      </div>
 
-        {/* This Quarter */}
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between h-24 transition-colors">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-emerald-50 dark:bg-emerald-900/30 rounded-lg text-emerald-600 dark:text-emerald-400">
-              <CalendarDays size={16} />
-            </div>
-            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{metrics.currentQ}</span>
+      {/* Quarterly Breakdown */}
+      <div className="mt-3">
+        <div className="flex items-center gap-3 mb-3">
+          <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Quarterly Breakdown</h3>
+          <div className="flex items-center gap-1">
+            {['2024', '2025', '2026', '2027', '2028'].map(year => (
+              <button
+                key={year}
+                onClick={() => setQuarterYear(year)}
+                className={`px-2.5 py-0.5 text-[10px] font-bold rounded-full transition-all ${
+                  quarterYear === year
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-600 dark:hover:text-slate-300'
+                }`}
+              >
+                {year}
+              </button>
+            ))}
           </div>
-          <div className="text-2xl font-extrabold text-slate-800 dark:text-slate-100">{metrics.thisQuarterCount}</div>
+        </div>
+        <div className="grid grid-cols-4 gap-3">
+          {quarterCounts.map(q => (
+            <div
+              key={q.label}
+              className="bg-slate-50 dark:bg-slate-900 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 flex flex-col justify-center items-center text-center transition-colors"
+            >
+              <span className="text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-1">{q.label}</span>
+              <span className="text-lg font-bold text-slate-700 dark:text-slate-200">{q.count}</span>
+            </div>
+          ))}
         </div>
       </div>
 
