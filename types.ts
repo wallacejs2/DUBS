@@ -331,3 +331,13 @@ export interface DealershipFilterState {
   go_live_month: string;
   term_month: string;
 }
+
+export interface NewFeatureFilterState {
+  search: string;
+  source: string;
+  type: string;
+  quarter: string;
+  year: string;
+  status: string;
+  platform: string;
+}

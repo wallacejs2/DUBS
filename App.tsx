@@ -15,7 +15,8 @@ import ProvidersProductsPage from './pages/ProvidersProductsPage.tsx';
 import MeetingsPage from './pages/MeetingsPage.tsx';
 import NotesPage from './pages/NotesPage.tsx';
 import DealershipSidebarFilters from './components/DealershipSidebarFilters.tsx';
-import { DealershipFilterState } from './types.ts';
+import NewFeaturesSidebarFilters from './components/NewFeaturesSidebarFilters.tsx';
+import { DealershipFilterState, NewFeatureFilterState } from './types.ts';
 
 type NavPage = 'dealerships' | 'groups' | 'qa' | 'dashboard' | 'features' | 'team' | 'providers_products' | 'meetings' | 'notes';
 
@@ -27,6 +28,11 @@ const App: React.FC = () => {
   const [dealershipFilters, setDealershipFilters] = useState<DealershipFilterState>({
     search: '', status: '', group: '', issue: '', managed: '', addl_web: '', cif: '', client_id: '', sms: '',
     received_month: '', onboarding_month: '', go_live_month: '', term_month: ''
+  });
+
+  // Lifted New Features Filter State
+  const [featureFilters, setFeatureFilters] = useState<NewFeatureFilterState>({
+    search: '', source: '', type: '', quarter: '', year: '', status: '', platform: ''
   });
   
   // Dark Mode State
@@ -67,7 +73,7 @@ const App: React.FC = () => {
       case 'dealerships': return <DealershipsPage filters={dealershipFilters} setFilters={setDealershipFilters} />;
       case 'groups': return <EnterpriseGroupsPage />;
       case 'qa': return <QAPage />;
-      case 'features': return <NewFeaturesPage />;
+      case 'features': return <NewFeaturesPage filters={featureFilters} setFilters={setFeatureFilters} />;
       case 'team': return <TeamMembersPage />;
       case 'providers_products': return <ProvidersProductsPage />;
       case 'meetings': return <MeetingsPage />;
@@ -133,7 +139,7 @@ const App: React.FC = () => {
              return (
                <button
                  key={item.id}
-                 onClick={() => { setActivePage(item.id as NavPage); if (item.id === 'dealerships') setIsSidebarExpanded(true); }}
+                 onClick={() => { setActivePage(item.id as NavPage); if (item.id === 'dealerships' || item.id === 'features') setIsSidebarExpanded(true); }}
                  className={`
                    relative flex items-center h-[38px] rounded-lg transition-all duration-200 group flex-shrink-0
                    ${isActive 
@@ -171,6 +177,11 @@ const App: React.FC = () => {
            {/* Integrated Filters for Dealership Page */}
            {activePage === 'dealerships' && isSidebarExpanded && (
               <DealershipSidebarFilters filters={dealershipFilters} setFilters={setDealershipFilters} />
+           )}
+
+           {/* Integrated Filters for New Features Page */}
+           {activePage === 'features' && isSidebarExpanded && (
+              <NewFeaturesSidebarFilters filters={featureFilters} setFilters={setFeatureFilters} />
            )}
         </nav>
 
