@@ -163,10 +163,9 @@ const NewFeaturesPage: React.FC = () => {
        lines.push(`Support Docs: ${feature.support_material_link}`);
     }
 
-    // Description
-    if (feature.description) {
-        const plainDesc = feature.description.replace(/<[^>]*>/g, '');
-        lines.push(`Description: ${plainDesc}`);
+    // Summary
+    if (feature.summary) {
+        lines.push(`Summary: ${feature.summary}`);
     }
 
     const text = lines.join('\n');
@@ -183,7 +182,7 @@ const NewFeaturesPage: React.FC = () => {
       }
       return val;
     };
-    const headers = ['Title', 'Source', 'Type', 'Status', 'Quarterly Release', 'Platform', 'Product Area', 'Location', 'Notified Date', 'Announced Date', 'Launch Date', 'Categories', 'Navigation', 'PMR Numbers', 'Support Material Link', 'Description'];
+    const headers = ['Title', 'Source', 'Type', 'Status', 'Quarterly Release', 'Platform', 'Product Area', 'Location', 'Notified Date', 'Announced Date', 'Launch Date', 'Categories', 'Navigation', 'PMR Numbers', 'Support Material Link', 'Summary'];
     const rows = sortedFeatures.map(f => [
       f.title || '',
       f.source || '',
@@ -200,7 +199,7 @@ const NewFeaturesPage: React.FC = () => {
       f.navigation || '',
       (f.pmrs || []).map(p => p.number).join('; '),
       f.support_material_link || '',
-      (f.description || '').replace(/<[^>]*>/g, '')
+      f.summary || ''
     ].map(v => escapeCSV(v)).join(','));
     const csv = [headers.join(','), ...rows].join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -323,8 +322,8 @@ const NewFeaturesPage: React.FC = () => {
                 </>
               )}
             </div>
-            {feature.description && (
-              <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1 line-clamp-1">{feature.description.replace(/<[^>]*>/g, '')}</p>
+            {(feature.summary || feature.description) && (
+              <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1 line-clamp-1">{feature.summary || feature.description!.replace(/<[^>]*>/g, '')}</p>
             )}
           </div>
         </div>

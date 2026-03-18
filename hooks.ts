@@ -244,6 +244,7 @@ export function useNewFeatures(filters?: { search?: string; quarter?: string; ye
       const s = filters.search.toLowerCase();
       data = data.filter(f =>
         f.title.toLowerCase().includes(s) ||
+        (f.summary && f.summary.toLowerCase().includes(s)) ||
         (f.description && f.description.toLowerCase().includes(s)) ||
         (f.pmr_number && f.pmr_number.toLowerCase().includes(s)) ||
         (f.product_area && f.product_area.toLowerCase().includes(s)) ||

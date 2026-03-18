@@ -496,6 +496,24 @@ const NewFeatureDetailPanel: React.FC<NewFeatureDetailPanelProps> = ({
                </div>
             </div>
 
+            {/* Summary Section */}
+            <div className="pt-2">
+               <Label icon={FileText}>Summary</Label>
+               {isEditing ? (
+                  <textarea
+                    value={formData.summary || ''}
+                    onChange={(e) => updateField('summary', e.target.value)}
+                    placeholder="Enter a brief summary of this feature..."
+                    rows={3}
+                    className="w-full px-3 py-1.5 text-[12px] border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-normal transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 resize-y"
+                  />
+               ) : (
+                  <div className="w-full px-4 py-3 text-[13px] border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 rounded-xl text-slate-700 dark:text-slate-300 leading-relaxed">
+                    {formData.summary || 'No summary provided.'}
+                  </div>
+               )}
+            </div>
+
             {/* Description Section */}
             <div className="pt-2">
                <Label icon={FileText}>Description</Label>

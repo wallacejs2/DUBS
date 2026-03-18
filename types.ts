@@ -279,6 +279,7 @@ export interface NewFeature {
   pmr_number?: string; // Legacy
   pmr_link?: string;   // Legacy
   support_material_link?: string;
+  summary?: string;
   description?: string;
   created_at: string;
 }
