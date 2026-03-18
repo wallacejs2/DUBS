@@ -252,115 +252,136 @@ const NewFeaturesPage: React.FC = () => {
       ? feature.pmrs
       : (feature.pmr_number ? [{ id: 'legacy', number: feature.pmr_number, link: feature.pmr_link || '' }] : []);
 
+    const isLaunched = feature.status === 'Launched';
+    const isPast = feature.launch_date ? new Date(feature.launch_date) < new Date() : false;
+
     return (
       <div
         key={feature.id}
         onClick={() => handleRowClick(feature.id)}
-        className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-indigo-200 dark:hover:border-indigo-700 transition-all cursor-pointer group flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
+        className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-indigo-200 dark:hover:border-indigo-700 transition-all cursor-pointer group flex overflow-hidden"
       >
-        <div className="flex items-start gap-4 flex-1 min-w-0">
-          <div className="w-10 h-10 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 flex-shrink-0 group-hover:bg-indigo-600 group-hover:text-white transition-all">
-            <Sparkles size={20} />
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 mb-1">
-              {feature.source && (
-                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wide border ${
-                  feature.source === 'Fullpath'
-                    ? 'bg-purple-50 text-purple-700 border-purple-100 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800'
-                    : 'bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800'
-                }`}>
-                  {feature.source}
-                </span>
-              )}
-              {feature.type && (
-                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wide border ${
-                  feature.type === 'New'
-                    ? 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800'
-                    : 'bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800'
-                }`}>
-                  {feature.type}
-                </span>
-              )}
-              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors leading-tight">{feature.title}</h3>
-              {feature.launch_date && (
-                <span className={new Date(feature.launch_date) < new Date() ? "text-[10px] text-emerald-600 dark:text-emerald-400 font-bold" : "text-[10px] text-slate-400 dark:text-slate-500 font-medium"}>
-                  {feature.launch_date}
-                </span>
-              )}
-            </div>
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500 dark:text-slate-400">
-              {feature.status && (
-                <span className={`font-bold px-1.5 rounded-md ${
-                  feature.status === 'Launched'
-                    ? 'text-emerald-700 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-300'
-                    : 'text-purple-700 bg-purple-50 dark:bg-purple-900/30 dark:text-purple-300'
-                }`}>
-                  {feature.status}
-                </span>
-              )}
-              {feature.quarterly_release && (
-                <span className="font-bold text-indigo-700 bg-indigo-50 dark:bg-indigo-900/30 dark:text-indigo-300 px-1.5 rounded-md">{feature.quarterly_release}</span>
-              )}
-              {displayPMRs.length > 0 && (
-                <div className="flex gap-1">
-                  {displayPMRs.slice(0, 2).map((pmr, idx) => (
-                    <span key={idx} className="font-mono bg-slate-100 dark:bg-slate-800 px-1.5 rounded text-slate-600 dark:text-slate-300">{pmr.number}</span>
-                  ))}
-                  {displayPMRs.length > 2 && <span className="font-mono bg-slate-100 dark:bg-slate-800 px-1.5 rounded text-slate-600 dark:text-slate-300">+{displayPMRs.length - 2}</span>}
-                </div>
-              )}
-              {feature.platform && (
-                <span className={`px-1.5 rounded-md font-bold ${platformColors[feature.platform] || 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'}`}>
-                  {feature.platform}
-                </span>
-              )}
-              {feature.location && (
-                <>
-                  <span className="text-slate-300 dark:text-slate-600">•</span>
-                  <span>{feature.location}</span>
-                </>
-              )}
-            </div>
-            {(feature.summary || feature.description) && (
-              <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1 line-clamp-1">{feature.summary || feature.description!.replace(/<[^>]*>/g, '')}</p>
-            )}
-          </div>
+        {/* Timeline left edge */}
+        <div className="flex flex-col items-center py-4 px-2 flex-shrink-0">
+          <div className={`w-3 h-3 rounded-full border-2 flex-shrink-0 ${
+            isLaunched
+              ? 'bg-emerald-500 border-emerald-300 dark:border-emerald-700'
+              : 'bg-purple-500 border-purple-300 dark:border-purple-700'
+          }`} />
+          <div className={`w-0.5 flex-1 mt-1 rounded-full ${
+            isLaunched
+              ? 'bg-emerald-200 dark:bg-emerald-800'
+              : 'bg-purple-200 dark:bg-purple-800'
+          }`} />
         </div>
 
-        <div className="flex items-center gap-1 self-end sm:self-center">
-          <button
-            onClick={(e) => handleCopyFeature(e, feature)}
-            className="p-2 text-slate-300 dark:text-slate-600 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 rounded-lg transition-all"
-            title="Copy details to clipboard"
-          >
-            {copiedFeatureId === feature.id ? <Check size={16} className="text-emerald-500" /> : <Copy size={16} />}
-          </button>
+        {/* Card content */}
+        <div className="flex-1 min-w-0 py-3 pr-3">
+          {/* Row 1: Badge bar */}
+          <div className="flex flex-wrap items-center gap-1.5 mb-2">
+            {feature.source && (
+              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wide border ${
+                feature.source === 'Fullpath'
+                  ? 'bg-purple-50 text-purple-700 border-purple-100 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800'
+                  : 'bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800'
+              }`}>
+                {feature.source}
+              </span>
+            )}
+            {feature.type && (
+              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wide border ${
+                feature.type === 'New'
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800'
+                  : 'bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800'
+              }`}>
+                {feature.type}
+              </span>
+            )}
+            {feature.status && (
+              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wide ${
+                isLaunched
+                  ? 'text-emerald-700 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-300'
+                  : 'text-purple-700 bg-purple-50 dark:bg-purple-900/30 dark:text-purple-300'
+              }`}>
+                {feature.status}
+              </span>
+            )}
+            {feature.platform && (
+              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wide border ${platformColors[feature.platform] || 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'}`}>
+                {feature.platform}
+              </span>
+            )}
+            {feature.quarterly_release && (
+              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md text-indigo-700 bg-indigo-50 dark:bg-indigo-900/30 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-800 uppercase tracking-wide">
+                {feature.quarterly_release}
+              </span>
+            )}
+            {displayPMRs.length > 0 && (
+              <div className="flex gap-1">
+                {displayPMRs.slice(0, 2).map((pmr, idx) => (
+                  <span key={idx} className="text-[9px] font-mono font-bold bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-md text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">{pmr.number}</span>
+                ))}
+                {displayPMRs.length > 2 && <span className="text-[9px] font-mono font-bold bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-md text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">+{displayPMRs.length - 2}</span>}
+              </div>
+            )}
 
-          {displayPMRs.length > 0 && displayPMRs[0].link && (
-            <a
-              href={displayPMRs[0].link}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
-              className="p-2 text-slate-300 dark:text-slate-600 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 rounded-lg transition-all"
-              title="Open PMR Link"
-            >
-              <ExternalLink size={16} />
-            </a>
+            {/* Actions pinned top-right */}
+            <div className="ml-auto flex items-center gap-0.5 flex-shrink-0">
+              <button
+                onClick={(e) => handleCopyFeature(e, feature)}
+                className="p-1.5 text-slate-300 dark:text-slate-600 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 rounded-lg transition-all"
+                title="Copy details to clipboard"
+              >
+                {copiedFeatureId === feature.id ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
+              </button>
+              {displayPMRs.length > 0 && displayPMRs[0].link && (
+                <a
+                  href={displayPMRs[0].link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="p-1.5 text-slate-300 dark:text-slate-600 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 rounded-lg transition-all"
+                  title="Open PMR Link"
+                >
+                  <ExternalLink size={14} />
+                </a>
+              )}
+              <button
+                onClick={(e) => { e.stopPropagation(); handleRowClick(feature.id); }}
+                className="p-1.5 text-slate-300 dark:text-slate-600 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 rounded-lg transition-all"
+              >
+                <Edit3 size={14} />
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); if(window.confirm('Delete feature?')) remove(feature.id); }}
+                className="p-1.5 text-slate-300 dark:text-slate-600 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-all"
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
+          </div>
+
+          {/* Row 2: Title + launch date */}
+          <div className="flex items-center justify-between gap-3 mb-1">
+            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors leading-tight truncate">
+              {feature.title}
+            </h3>
+            {feature.launch_date && (
+              <span className={`text-[10px] font-bold flex-shrink-0 ${isPast ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500'}`}>
+                {feature.launch_date}
+              </span>
+            )}
+          </div>
+
+          {/* Row 3: Summary */}
+          {(feature.summary || feature.description) && (
+            <p className="text-[11px] text-slate-400 dark:text-slate-500 line-clamp-1">
+              {feature.summary || feature.description!.replace(/<[^>]*>/g, '')}
+            </p>
           )}
-          <button
-            onClick={(e) => { e.stopPropagation(); handleRowClick(feature.id); }}
-            className="p-2 text-slate-300 dark:text-slate-600 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 rounded-lg transition-all"
-          >
-            <Edit3 size={16} />
-          </button>
-          <button
-            onClick={(e) => { e.stopPropagation(); if(window.confirm('Delete feature?')) remove(feature.id); }}
-            className="p-2 text-slate-300 dark:text-slate-600 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-all"
-          >
-            <Trash2 size={16} />
-          </button>
+          {feature.location && (
+            <span className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 inline-block">{feature.location}</span>
+          )}
         </div>
       </div>
     );
