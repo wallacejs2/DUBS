@@ -5,6 +5,7 @@ import {
   Sparkles, Calendar, MapPin, Monitor, Hash, Link, ExternalLink, FileText, Clock, AlertCircle, Activity, Compass, Plus, Bell, Megaphone, Tag, Box
 } from 'lucide-react';
 import { NewFeature, PMR } from '../types';
+import RichTextEditor from './RichTextEditor';
 
 interface NewFeatureDetailPanelProps {
   feature: Partial<NewFeature>;
@@ -476,16 +477,16 @@ const NewFeatureDetailPanel: React.FC<NewFeatureDetailPanelProps> = ({
             <div className="pt-2">
                <Label icon={FileText}>Description</Label>
                {isEditing ? (
-                  <textarea 
+                  <RichTextEditor
                     value={formData.description || ''}
-                    onChange={(e) => updateField('description', e.target.value)}
-                    className="w-full px-4 py-3 text-[13px] border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-1 focus:ring-indigo-500 outline-none text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 placeholder:text-slate-300 dark:placeholder:text-slate-600 min-h-[300px] leading-relaxed resize-y"
+                    onChange={(html) => updateField('description', html)}
                     placeholder="Enter full feature description, requirements, and notes here..."
                   />
                ) : (
-                  <div className="w-full px-4 py-3 text-[13px] border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 rounded-xl text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed min-h-[100px]">
-                    {formData.description || 'No description provided.'}
-                  </div>
+                  <div
+                    className="w-full px-4 py-3 text-[13px] border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 rounded-xl text-slate-700 dark:text-slate-300 leading-relaxed min-h-[100px] [&_ul]:list-disc [&_ul]:ml-4 [&_ol]:list-decimal [&_ol]:ml-4 [&_li]:my-0.5"
+                    dangerouslySetInnerHTML={{ __html: formData.description || 'No description provided.' }}
+                  />
                )}
             </div>
 
