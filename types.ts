@@ -265,7 +265,7 @@ export interface NewFeature {
   title: string;
   quarterly_release?: string;
   source?: 'Fullpath' | 'Reynolds';
-  type?: 'New' | 'Updated';
+  type?: 'New' | 'Updated' | 'Add';
   status?: 'Pending' | 'Launched';
   platform?: string;
   navigation?: string;

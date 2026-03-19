@@ -225,7 +225,8 @@ const NewFeatureDetailPanel: React.FC<NewFeatureDetailPanelProps> = ({
                           onChange={(v) => updateField('type', v)}
                           options={[
                              { label: 'New', value: 'New' },
-                             { label: 'Updated', value: 'Updated' }
+                             { label: 'Updated', value: 'Updated' },
+                             { label: 'Add', value: 'Add' }
                           ]}
                         />
                       </div>
@@ -245,6 +246,8 @@ const NewFeatureDetailPanel: React.FC<NewFeatureDetailPanelProps> = ({
                            <span className={`font-bold px-2 py-0.5 rounded-md border text-[11px] ${
                              formData.type === 'New'
                                ? 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800'
+                               : formData.type === 'Add'
+                               ? 'bg-orange-50 text-orange-700 border-orange-100 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800'
                                : 'bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800'
                            }`}>
                              {formData.type}

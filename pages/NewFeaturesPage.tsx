@@ -290,6 +290,8 @@ const NewFeaturesPage: React.FC<NewFeaturesPageProps> = ({ filters, setFilters }
                 <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider ${
                   feature.type === 'New'
                     ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
+                    : feature.type === 'Add'
+                    ? 'bg-orange-50 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300'
                     : 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
                 }`}>
                   {feature.type}
