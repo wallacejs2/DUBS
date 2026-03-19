@@ -85,7 +85,7 @@ export function useDealerships(filters?: { search?: string; status?: string; gro
     if (filters?.addl_web === 'yes') {
       data = data.filter(d => {
          const details = db.getDealershipWithRelations(d.id);
-         return details?.orders?.some(o => o.products?.some(p => p.product_code === ProductCode.P15435_ADDL_WEB));
+         return details?.orders?.some(o => o.products?.some(p => p.product_code === ProductCode.P15435_ADDL_WEB || p.product_code === ProductCode.P15436_MNGD_ADDL));
       });
     }
     if (filters?.sms === 'yes') {
