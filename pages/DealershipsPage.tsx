@@ -58,7 +58,7 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
   const checkHasAddlWeb = (dealerId: string) => {
     return orders.some(o => 
       o.dealership_id === dealerId && 
-      o.products.some(p => p.product_code === ProductCode.P15435_ADDL_WEB)
+      o.products.some(p => p.product_code === ProductCode.P15435_ADDL_WEB || p.product_code === ProductCode.P15436_MNGD_ADDL)
     );
   };
 

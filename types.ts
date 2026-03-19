@@ -26,7 +26,7 @@ export enum ProductCode {
   P15391_SE = '15391 - SE',
   P15392_MANAGED = '15392 - Managed',
   P15435_ADDL_WEB = '15435 - Addl. Web',
-  P15436_MNGD_ADDL = '15436 Mngd Addl. Web',
+  P15436_MNGD_ADDL = '15436 - Mngd Addl. Web',
   P15382_PREV_SE = '15382 - Prev. SE',
   P15381_PREV_AA = '15381 - Prev. AA',
   P15390_SMS = '15390 - SMS'
