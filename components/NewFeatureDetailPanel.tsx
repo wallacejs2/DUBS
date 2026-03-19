@@ -53,13 +53,21 @@ const Select = ({ value, onChange, options, className = "", placeholder }: { val
 );
 
 const NavigationChipInput = ({ value, onChange, allFeatures }: { value: string; onChange: (v: string) => void; allFeatures: NewFeature[] }) => {
+  const [segments, setSegments] = useState<string[]>(() => value ? value.split(' > ').map(s => s.trim()).filter(Boolean) : []);
   const [openIdx, setOpenIdx] = useState<number | null>(null);
   const [addingNew, setAddingNew] = useState(false);
   const [newText, setNewText] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
   const newInputRef = useRef<HTMLInputElement>(null);
 
-  const segments = value ? value.split(' > ').map(s => s.trim()).filter(Boolean) : [];
+  // Sync from parent when value changes externally
+  useEffect(() => {
+    const parsed = value ? value.split(' > ').map(s => s.trim()).filter(Boolean) : [];
+    const current = segments.filter(Boolean);
+    if (parsed.join(' > ') !== current.join(' > ')) {
+      setSegments(parsed);
+    }
+  }, [value]);
 
   const allKnownSegments = useMemo(() => {
     const segSet = new Set<string>();
@@ -77,6 +85,10 @@ const NavigationChipInput = ({ value, onChange, allFeatures }: { value: string; 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        // Remove any empty segments when clicking outside
+        const cleaned = segments.filter(Boolean);
+        setSegments(cleaned);
+        onChange(cleaned.join(' > '));
         setOpenIdx(null);
         setAddingNew(false);
         setNewText('');
@@ -84,20 +96,17 @@ const NavigationChipInput = ({ value, onChange, allFeatures }: { value: string; 
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [segments, onChange]);
 
   useEffect(() => {
     if (addingNew && newInputRef.current) newInputRef.current.focus();
   }, [addingNew]);
 
-  const updateSegments = (newSegments: string[]) => {
-    onChange(newSegments.filter(Boolean).join(' > '));
-  };
-
   const selectSegment = (idx: number, val: string) => {
     const updated = [...segments];
     updated[idx] = val;
-    updateSegments(updated);
+    setSegments(updated);
+    onChange(updated.filter(Boolean).join(' > '));
     setOpenIdx(null);
     setAddingNew(false);
     setNewText('');
@@ -105,13 +114,15 @@ const NavigationChipInput = ({ value, onChange, allFeatures }: { value: string; 
 
   const removeSegment = (idx: number) => {
     const updated = segments.filter((_, i) => i !== idx);
-    updateSegments(updated);
+    setSegments(updated);
+    onChange(updated.filter(Boolean).join(' > '));
     setOpenIdx(null);
   };
 
   const addSegment = () => {
     const updated = [...segments, ''];
-    updateSegments(updated);
+    setSegments(updated);
+    // Don't call onChange yet — empty segment is temporary until user picks a value
     setOpenIdx(updated.length - 1);
     setAddingNew(false);
     setNewText('');
