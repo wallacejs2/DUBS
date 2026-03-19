@@ -604,7 +604,7 @@ const NewFeaturesPage: React.FC<NewFeaturesPageProps> = ({ filters, setFilters }
       )}
 
       {activeFeature && (
-        <NewFeatureDetailPanel 
+        <NewFeatureDetailPanel
           feature={activeFeature}
           onClose={() => { setSelectedFeatureId(null); setIsCreating(false); }}
           onUpdate={(data) => upsert(data)}
@@ -614,6 +614,7 @@ const NewFeaturesPage: React.FC<NewFeaturesPageProps> = ({ filters, setFilters }
               setSelectedFeatureId(null);
             }
           }}
+          allFeatures={allFeatures}
         />
       )}
     </div>
