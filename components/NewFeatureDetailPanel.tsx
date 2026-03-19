@@ -1,8 +1,8 @@
 
-import React, { useState, useEffect } from 'react';
-import { 
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import {
   X, Trash2, Edit3, Save, RefreshCw,
-  Sparkles, Calendar, MapPin, Monitor, Hash, Link, ExternalLink, FileText, Clock, AlertCircle, Activity, Compass, Plus, Bell, Megaphone, Tag, Box
+  Sparkles, Calendar, MapPin, Monitor, Hash, Link, ExternalLink, FileText, Clock, AlertCircle, Activity, Compass, Plus, Bell, Megaphone, Tag, Box, ChevronRight, ChevronDown
 } from 'lucide-react';
 import { NewFeature, PMR } from '../types';
 import RichTextEditor from './RichTextEditor';
@@ -12,6 +12,7 @@ interface NewFeatureDetailPanelProps {
   onClose: () => void;
   onUpdate: (data: Partial<NewFeature>) => void;
   onDelete: () => void;
+  allFeatures?: NewFeature[];
 }
 
 const Label = ({ children, icon: Icon }: { children?: React.ReactNode, icon?: any }) => (
@@ -51,14 +52,178 @@ const Select = ({ value, onChange, options, className = "", placeholder }: { val
   </select>
 );
 
+const NavigationChipInput = ({ value, onChange, allFeatures }: { value: string; onChange: (v: string) => void; allFeatures: NewFeature[] }) => {
+  const [segments, setSegments] = useState<string[]>(() => value ? value.split(' > ').map(s => s.trim()).filter(Boolean) : []);
+  const [openIdx, setOpenIdx] = useState<number | null>(null);
+  const [addingNew, setAddingNew] = useState(false);
+  const [newText, setNewText] = useState('');
+  const containerRef = useRef<HTMLDivElement>(null);
+  const newInputRef = useRef<HTMLInputElement>(null);
+
+  // Sync from parent when value changes externally
+  useEffect(() => {
+    const parsed = value ? value.split(' > ').map(s => s.trim()).filter(Boolean) : [];
+    const current = segments.filter(Boolean);
+    if (parsed.join(' > ') !== current.join(' > ')) {
+      setSegments(parsed);
+    }
+  }, [value]);
+
+  const allKnownSegments = useMemo(() => {
+    const segSet = new Set<string>();
+    allFeatures.forEach(f => {
+      if (f.navigation) {
+        f.navigation.split(' > ').forEach(seg => {
+          const trimmed = seg.trim();
+          if (trimmed) segSet.add(trimmed);
+        });
+      }
+    });
+    return Array.from(segSet).sort();
+  }, [allFeatures]);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        // Remove any empty segments when clicking outside
+        const cleaned = segments.filter(Boolean);
+        setSegments(cleaned);
+        onChange(cleaned.join(' > '));
+        setOpenIdx(null);
+        setAddingNew(false);
+        setNewText('');
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [segments, onChange]);
+
+  useEffect(() => {
+    if (addingNew && newInputRef.current) newInputRef.current.focus();
+  }, [addingNew]);
+
+  const selectSegment = (idx: number, val: string) => {
+    const updated = [...segments];
+    updated[idx] = val;
+    setSegments(updated);
+    onChange(updated.filter(Boolean).join(' > '));
+    setOpenIdx(null);
+    setAddingNew(false);
+    setNewText('');
+  };
+
+  const removeSegment = (idx: number) => {
+    const updated = segments.filter((_, i) => i !== idx);
+    setSegments(updated);
+    onChange(updated.filter(Boolean).join(' > '));
+    setOpenIdx(null);
+  };
+
+  const addSegment = () => {
+    const updated = [...segments, ''];
+    setSegments(updated);
+    // Don't call onChange yet — empty segment is temporary until user picks a value
+    setOpenIdx(updated.length - 1);
+    setAddingNew(false);
+    setNewText('');
+  };
+
+  const confirmNewOption = (idx: number) => {
+    const trimmed = newText.trim();
+    if (trimmed) {
+      selectSegment(idx, trimmed);
+    }
+    setAddingNew(false);
+    setNewText('');
+  };
+
+  const filteredOptions = (idx: number) => {
+    const currentSegments = new Set(segments.filter((_, i) => i !== idx));
+    return allKnownSegments.filter(s => !currentSegments.has(s));
+  };
+
+  return (
+    <div ref={containerRef} className="flex flex-wrap items-center gap-1.5 min-h-[34px] w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800">
+      {segments.map((seg, idx) => (
+        <React.Fragment key={idx}>
+          {idx > 0 && <ChevronRight size={12} className="text-slate-400 shrink-0" />}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => { setOpenIdx(openIdx === idx ? null : idx); setAddingNew(false); setNewText(''); }}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-700 dark:hover:bg-indigo-900/50 transition-colors"
+            >
+              {seg || <span className="text-slate-400 italic">select...</span>}
+              <ChevronDown size={10} className={`transition-transform ${openIdx === idx ? 'rotate-180' : ''}`} />
+              <span
+                onClick={(e) => { e.stopPropagation(); removeSegment(idx); }}
+                className="ml-0.5 hover:text-red-600 dark:hover:text-red-400 cursor-pointer"
+              >
+                <X size={10} />
+              </span>
+            </button>
+
+            {openIdx === idx && (
+              <div className="absolute z-50 left-0 top-full mt-1 min-w-[180px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl max-h-48 overflow-y-auto custom-scrollbar animate-in fade-in slide-in-from-top-2 duration-150">
+                {filteredOptions(idx).map(opt => (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => selectSegment(idx, opt)}
+                    className={`w-full text-left px-3 py-1.5 text-[11px] hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors ${opt === seg ? 'bg-indigo-50 dark:bg-indigo-900/30 font-bold text-indigo-700 dark:text-indigo-300' : 'text-slate-700 dark:text-slate-300'}`}
+                  >
+                    {opt}
+                  </button>
+                ))}
+                {filteredOptions(idx).length > 0 && <div className="border-t border-slate-100 dark:border-slate-800" />}
+                {!addingNew ? (
+                  <button
+                    type="button"
+                    onClick={() => setAddingNew(true)}
+                    className="w-full text-left px-3 py-1.5 text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 flex items-center gap-1 transition-colors"
+                  >
+                    <Plus size={10} /> Add new...
+                  </button>
+                ) : (
+                  <div className="p-2 flex gap-1">
+                    <input
+                      ref={newInputRef}
+                      value={newText}
+                      onChange={(e) => setNewText(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); confirmNewOption(idx); } }}
+                      placeholder="Type name..."
+                      className="flex-1 px-2 py-1 text-[11px] border border-slate-200 dark:border-slate-700 rounded-md bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 outline-none focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400"
+                    />
+                    <button type="button" onClick={() => confirmNewOption(idx)} className="px-2 py-1 text-[10px] font-bold bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
+                      Save
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </React.Fragment>
+      ))}
+      <button
+        type="button"
+        onClick={addSegment}
+        className="flex items-center justify-center w-6 h-6 rounded-full border border-dashed border-slate-300 dark:border-slate-600 text-slate-400 hover:text-indigo-600 hover:border-indigo-400 dark:hover:text-indigo-400 dark:hover:border-indigo-500 transition-colors"
+        title="Add navigation segment"
+      >
+        <Plus size={12} />
+      </button>
+    </div>
+  );
+};
+
 const platformColors: Record<string, string> = {
   'UCP': 'bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800',
   'Curator': 'bg-purple-50 text-purple-700 border-purple-100 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800',
   'FOCUS': 'bg-orange-50 text-orange-700 border-orange-100 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800',
 };
 
-const NewFeatureDetailPanel: React.FC<NewFeatureDetailPanelProps> = ({ 
-  feature, onClose, onUpdate, onDelete
+const NewFeatureDetailPanel: React.FC<NewFeatureDetailPanelProps> = ({
+  feature, onClose, onUpdate, onDelete, allFeatures = []
 }) => {
   const isNew = !feature.id;
   const [isEditing, setIsEditing] = useState(isNew);
@@ -113,6 +278,16 @@ const NewFeatureDetailPanel: React.FC<NewFeatureDetailPanelProps> = ({
   const formatDateValue = (dateStr?: string) => {
     if (!dateStr) return '';
     return dateStr.split('T')[0];
+  };
+
+  const formatDateDisplay = (dateStr?: string) => {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const yy = String(d.getFullYear()).slice(-2);
+    return `${mm}-${dd}-${yy}`;
   };
 
   const parseRelease = (val: string = '') => {
@@ -215,7 +390,8 @@ const NewFeatureDetailPanel: React.FC<NewFeatureDetailPanelProps> = ({
                           onChange={(v) => updateField('type', v)}
                           options={[
                              { label: 'New', value: 'New' },
-                             { label: 'Updated', value: 'Updated' }
+                             { label: 'Updated', value: 'Updated' },
+                             { label: 'Add', value: 'Add' }
                           ]}
                         />
                       </div>
@@ -235,6 +411,8 @@ const NewFeatureDetailPanel: React.FC<NewFeatureDetailPanelProps> = ({
                            <span className={`font-bold px-2 py-0.5 rounded-md border text-[11px] ${
                              formData.type === 'New'
                                ? 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800'
+                               : formData.type === 'Add'
+                               ? 'bg-orange-50 text-orange-700 border-orange-100 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800'
                                : 'bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800'
                            }`}>
                              {formData.type}
@@ -326,7 +504,7 @@ const NewFeatureDetailPanel: React.FC<NewFeatureDetailPanelProps> = ({
                      {isEditing ? (
                         <Input type="date" value={formatDateValue(formData.notified_date)} onChange={(v) => updateField('notified_date', v)} />
                      ) : (
-                        <DataValue value={formData.notified_date} />
+                        <DataValue value={formatDateDisplay(formData.notified_date)} />
                      )}
                   </div>
                   <div>
@@ -334,7 +512,7 @@ const NewFeatureDetailPanel: React.FC<NewFeatureDetailPanelProps> = ({
                      {isEditing ? (
                         <Input type="date" value={formatDateValue(formData.announced_date)} onChange={(v) => updateField('announced_date', v)} />
                      ) : (
-                        <DataValue value={formData.announced_date} />
+                        <DataValue value={formatDateDisplay(formData.announced_date)} />
                      )}
                   </div>
                   <div>
@@ -342,7 +520,7 @@ const NewFeatureDetailPanel: React.FC<NewFeatureDetailPanelProps> = ({
                      {isEditing ? (
                         <Input type="date" value={formatDateValue(formData.launch_date)} onChange={(v) => updateField('launch_date', v)} />
                      ) : (
-                        <DataValue value={formData.launch_date} />
+                        <DataValue value={formatDateDisplay(formData.launch_date)} />
                      )}
                   </div>
                 </div>
@@ -414,9 +592,26 @@ const NewFeatureDetailPanel: React.FC<NewFeatureDetailPanelProps> = ({
                 <div className="col-span-1 md:col-span-3">
                   <Label icon={Compass}>Navigation</Label>
                   {isEditing ? (
-                    <Input value={formData.navigation} onChange={(v) => updateField('navigation', v)} placeholder="Inventory > Settings > ..." />
+                    <NavigationChipInput
+                      value={formData.navigation || ''}
+                      onChange={(v) => updateField('navigation', v)}
+                      allFeatures={allFeatures}
+                    />
                   ) : (
-                    <DataValue value={formData.navigation} />
+                    <DataValue>
+                      {formData.navigation ? (
+                        <div className="flex flex-wrap items-center gap-1">
+                          {formData.navigation.split(' > ').map((seg, idx, arr) => (
+                            <React.Fragment key={idx}>
+                              <span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-indigo-50 text-indigo-700 border border-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800">
+                                {seg.trim()}
+                              </span>
+                              {idx < arr.length - 1 && <ChevronRight size={12} className="text-slate-400" />}
+                            </React.Fragment>
+                          ))}
+                        </div>
+                      ) : '---'}
+                    </DataValue>
                   )}
                 </div>
             </div>
