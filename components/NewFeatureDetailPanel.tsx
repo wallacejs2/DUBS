@@ -115,6 +115,16 @@ const NewFeatureDetailPanel: React.FC<NewFeatureDetailPanelProps> = ({
     return dateStr.split('T')[0];
   };
 
+  const formatDateDisplay = (dateStr?: string) => {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const yy = String(d.getFullYear()).slice(-2);
+    return `${mm}-${dd}-${yy}`;
+  };
+
   const parseRelease = (val: string = '') => {
     const parts = val.split(' ');
     let q = parts.find(p => ['Q1','Q2','Q3','Q4'].includes(p)) || '';
@@ -326,7 +336,7 @@ const NewFeatureDetailPanel: React.FC<NewFeatureDetailPanelProps> = ({
                      {isEditing ? (
                         <Input type="date" value={formatDateValue(formData.notified_date)} onChange={(v) => updateField('notified_date', v)} />
                      ) : (
-                        <DataValue value={formData.notified_date} />
+                        <DataValue value={formatDateDisplay(formData.notified_date)} />
                      )}
                   </div>
                   <div>
@@ -334,7 +344,7 @@ const NewFeatureDetailPanel: React.FC<NewFeatureDetailPanelProps> = ({
                      {isEditing ? (
                         <Input type="date" value={formatDateValue(formData.announced_date)} onChange={(v) => updateField('announced_date', v)} />
                      ) : (
-                        <DataValue value={formData.announced_date} />
+                        <DataValue value={formatDateDisplay(formData.announced_date)} />
                      )}
                   </div>
                   <div>
@@ -342,7 +352,7 @@ const NewFeatureDetailPanel: React.FC<NewFeatureDetailPanelProps> = ({
                      {isEditing ? (
                         <Input type="date" value={formatDateValue(formData.launch_date)} onChange={(v) => updateField('launch_date', v)} />
                      ) : (
-                        <DataValue value={formData.launch_date} />
+                        <DataValue value={formatDateDisplay(formData.launch_date)} />
                      )}
                   </div>
                 </div>
