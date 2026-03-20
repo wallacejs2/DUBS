@@ -62,9 +62,12 @@ interface CdpIdManagerProps {
   cdpIds: CdpId[];
   onChange: (ids: CdpId[]) => void;
   isEditing: boolean;
+  copiedField: string | null;
+  onCopy: (text: string, field: string) => void;
+  fieldPrefix: string;
 }
 
-const CdpIdManager: React.FC<CdpIdManagerProps> = ({ cdpIds, onChange, isEditing }) => {
+const CdpIdManager: React.FC<CdpIdManagerProps> = ({ cdpIds, onChange, isEditing, copiedField, onCopy, fieldPrefix }) => {
   const handleAdd = () => {
     const newId: CdpId = {
       id: crypto.randomUUID(),
@@ -89,7 +92,7 @@ const CdpIdManager: React.FC<CdpIdManagerProps> = ({ cdpIds, onChange, isEditing
 
   const systemLabel = (sys: CdpIdSystem) => {
     if (sys === 'ucp') return 'UCP';
-    if (sys === 'cdp_admin') return 'CDPAdmin';
+    if (sys === 'cdp_admin') return 'CDP';
     return 'CUR';
   };
 
@@ -121,8 +124,8 @@ const CdpIdManager: React.FC<CdpIdManagerProps> = ({ cdpIds, onChange, isEditing
                   className="w-[100px] px-1 py-1 text-[10px] border border-slate-200 dark:border-slate-700 rounded focus:ring-1 focus:ring-indigo-500 outline-none bg-slate-50 dark:bg-slate-700 font-bold text-slate-700 dark:text-slate-200"
                 >
                   <option value="ucp">UCP</option>
-                  <option value="cdp_admin">CDP Admin</option>
-                  <option value="curator">Curator</option>
+                  <option value="cdp_admin">CDP</option>
+                  <option value="curator">CUR</option>
                 </select>
               ) : (
                 <span className={`text-[9px] font-bold border px-1.5 py-1 rounded uppercase tracking-wider h-fit flex-shrink-0 ${systemBadgeClass(cdpId.system)}`}>
@@ -138,9 +141,20 @@ const CdpIdManager: React.FC<CdpIdManagerProps> = ({ cdpIds, onChange, isEditing
                   className="flex-1 px-2 py-1 text-[11px] border border-slate-200 dark:border-slate-700 rounded focus:ring-1 focus:ring-indigo-500 outline-none font-mono min-w-0 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
                 />
               ) : (
-                <div className="flex-1 font-mono text-[11px] text-slate-700 dark:text-slate-300 pt-0.5 truncate" title={cdpId.value}>
-                  {cdpId.value || '---'}
-                </div>
+                <button
+                  onClick={() => cdpId.value && onCopy(cdpId.value, `${fieldPrefix}-cdp-${idx}`)}
+                  className="group flex-1 flex items-center gap-1 text-left cursor-pointer hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded px-1 transition-colors"
+                  title={`Click to copy: ${cdpId.value}`}
+                >
+                  <span className="font-mono text-[11px] text-slate-700 dark:text-slate-300 pt-0.5 truncate">
+                    {cdpId.value || '---'}
+                  </span>
+                  {copiedField === `${fieldPrefix}-cdp-${idx}` ? (
+                    <Check size={10} className="text-emerald-500 flex-shrink-0" />
+                  ) : (
+                    <Copy size={10} className="text-slate-300 dark:text-slate-600 opacity-0 group-hover:opacity-100 flex-shrink-0 transition-opacity" />
+                  )}
+                </button>
               )}
 
               {isEditing && (
@@ -191,6 +205,28 @@ const formatPhone = (val?: string) => {
     return match[1] + '-' + match[2] + '-' + match[3];
   }
   return val;
+};
+
+const ClickToCopy = ({ value, field, copiedField, onCopy, mono = false, children }: {
+  value?: string, field: string, copiedField: string | null, onCopy: (text: string, field: string) => void, mono?: boolean, children?: React.ReactNode
+}) => {
+  if (!value && !children) return <DataValue value={undefined} mono={mono} />;
+  return (
+    <button
+      onClick={() => value && onCopy(value, field)}
+      className="group flex items-center gap-1 text-left w-full cursor-pointer hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded px-1 -mx-1 transition-colors"
+      title={`Click to copy: ${value}`}
+    >
+      <div className={`text-[12px] font-normal text-slate-700 dark:text-slate-300 leading-tight min-h-[1.5em] flex items-center flex-1 ${mono ? 'font-mono' : ''}`}>
+        {children || value || '---'}
+      </div>
+      {copiedField === field ? (
+        <Check size={10} className="text-emerald-500 flex-shrink-0" />
+      ) : (
+        <Copy size={10} className="text-slate-300 dark:text-slate-600 opacity-0 group-hover:opacity-100 flex-shrink-0 transition-opacity" />
+      )}
+    </button>
+  );
 };
 
 const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
@@ -354,9 +390,9 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
       const dealer = getDealershipById(sd.dealership_id);
       if (dealer) {
         const combo = `${dealer.pp_sys_id || ''}_${dealer.store_number || ''}_${dealer.branch_number || ''}`;
-        lines.push(`DEALERSHIP ${combo}`);
+        lines.push(`${dealer.name}  ${combo}`);
       } else {
-        lines.push('DEALERSHIP (unassigned)');
+        lines.push('(unassigned dealership)');
       }
 
       sd.profiles.forEach((profile, idx) => {
@@ -376,7 +412,7 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
 
         (profile.cdp_ids || []).forEach(cdpId => {
           const systemLabel = cdpId.system === 'ucp' ? 'UCP'
-            : cdpId.system === 'cdp_admin' ? 'CDPAdmin'
+            : cdpId.system === 'cdp_admin' ? 'CDP'
             : 'CUR';
           let line = `  - [${systemLabel}] ${cdpId.value}`;
           if (cdpId.notes) line += ` [${cdpId.notes}]`;
@@ -386,6 +422,33 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
     });
 
     copyToClipboard(lines.join('\n').trim(), 'all');
+  };
+
+  const handleCopyProfile = (profile: ShopperProfile, dIdx: number, pIdx: number, dealerId?: string) => {
+    const parts: string[] = [];
+    if (profile.name) parts.push(profile.name.toUpperCase());
+    if (profile.email) parts.push(profile.email);
+    if (profile.phone) parts.push(profile.phone);
+    if (profile.dms_id) parts.push(`DMS ${profile.dms_id}`);
+    if (profile.curator_id) {
+      let cur = `CUR - ${profile.curator_id}`;
+      if (profile.curator_link) cur += ` ${profile.curator_link}`;
+      parts.push(cur);
+    }
+    if (profile.issue) parts.push(`[Issue: ${profile.issue}]`);
+
+    const lines: string[] = [parts.join(' | ')];
+
+    (profile.cdp_ids || []).forEach(cdpId => {
+      const sysLabel = cdpId.system === 'ucp' ? 'UCP'
+        : cdpId.system === 'cdp_admin' ? 'CDP'
+        : 'CUR';
+      let line = `  - [${sysLabel}] ${cdpId.value}`;
+      if (cdpId.notes) line += ` [${cdpId.notes}]`;
+      lines.push(line);
+    });
+
+    copyToClipboard(lines.join('\n').trim(), `profile-${dIdx}-${pIdx}`);
   };
 
   return (
@@ -589,15 +652,26 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                             {/* Profile header with number and remove */}
                             <div className="flex items-center justify-between mb-2">
                               <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">Profile [{pIdx + 1}]</span>
-                              {isEditing && shopperDealership.profiles.length > 1 && (
-                                <button
-                                  onClick={() => removeProfile(dIdx, pIdx)}
-                                  className="text-slate-400 hover:text-red-500 p-1 rounded-full hover:bg-red-50 dark:hover:bg-red-900/30 transition-all"
-                                  title="Remove Profile"
-                                >
-                                  <Trash2 size={12} />
-                                </button>
-                              )}
+                              <div className="flex items-center gap-1">
+                                {!isEditing && (
+                                  <button
+                                    onClick={() => handleCopyProfile(profile, dIdx, pIdx, shopperDealership.dealership_id)}
+                                    className="p-1 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-all"
+                                    title="Copy Profile"
+                                  >
+                                    {copiedField === `profile-${dIdx}-${pIdx}` ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} />}
+                                  </button>
+                                )}
+                                {isEditing && shopperDealership.profiles.length > 1 && (
+                                  <button
+                                    onClick={() => removeProfile(dIdx, pIdx)}
+                                    className="text-slate-400 hover:text-red-500 p-1 rounded-full hover:bg-red-50 dark:hover:bg-red-900/30 transition-all"
+                                    title="Remove Profile"
+                                  >
+                                    <Trash2 size={12} />
+                                  </button>
+                                )}
+                              </div>
                             </div>
 
                             {/* Profile fields - Row 1: Name, Email, Phone */}
@@ -607,7 +681,7 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                                 {isEditing ? (
                                   <Input value={profile.name} onChange={(v) => updateProfileField(dIdx, pIdx, 'name', v)} placeholder="Name" />
                                 ) : (
-                                  <DataValue value={profile.name} />
+                                  <ClickToCopy value={profile.name} field={`name-${dIdx}-${pIdx}`} copiedField={copiedField} onCopy={copyToClipboard} />
                                 )}
                               </div>
                               <div>
@@ -615,7 +689,7 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                                 {isEditing ? (
                                   <Input type="email" value={profile.email} onChange={(v) => updateProfileField(dIdx, pIdx, 'email', v)} placeholder="Email" />
                                 ) : (
-                                  <DataValue value={profile.email} />
+                                  <ClickToCopy value={profile.email} field={`email-${dIdx}-${pIdx}`} copiedField={copiedField} onCopy={copyToClipboard} />
                                 )}
                               </div>
                               <div>
@@ -630,7 +704,7 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                                     className="w-full px-3 py-1.5 text-[12px] border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-normal transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600"
                                   />
                                 ) : (
-                                  <DataValue value={formatPhone(profile.phone)} />
+                                  <ClickToCopy value={formatPhone(profile.phone)} field={`phone-${dIdx}-${pIdx}`} copiedField={copiedField} onCopy={copyToClipboard} />
                                 )}
                               </div>
                             </div>
@@ -642,7 +716,7 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                                 {isEditing ? (
                                   <Input value={profile.dms_id} onChange={(v) => updateProfileField(dIdx, pIdx, 'dms_id', v)} placeholder="DMS ID" />
                                 ) : (
-                                  <DataValue value={profile.dms_id} mono />
+                                  <ClickToCopy value={profile.dms_id} field={`dms-${dIdx}-${pIdx}`} copiedField={copiedField} onCopy={copyToClipboard} mono />
                                 )}
                               </div>
                               <div>
@@ -650,7 +724,7 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                                 {isEditing ? (
                                   <Input value={profile.curator_id} onChange={(v) => updateProfileField(dIdx, pIdx, 'curator_id', v)} placeholder="Curator ID" />
                                 ) : (
-                                  <DataValue value={profile.curator_id} mono />
+                                  <ClickToCopy value={profile.curator_id} field={`curator-${dIdx}-${pIdx}`} copiedField={copiedField} onCopy={copyToClipboard} mono />
                                 )}
                               </div>
                               <div>
@@ -658,13 +732,13 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                                 {isEditing ? (
                                   <Input value={profile.curator_link} onChange={(v) => updateProfileField(dIdx, pIdx, 'curator_link', v)} placeholder="https://..." />
                                 ) : (
-                                  <DataValue>
+                                  <ClickToCopy value={profile.curator_link} field={`curlink-${dIdx}-${pIdx}`} copiedField={copiedField} onCopy={copyToClipboard}>
                                     {profile.curator_link ? (
-                                      <a href={profile.curator_link} target="_blank" rel="noopener noreferrer" className="text-indigo-600 dark:text-indigo-400 hover:underline truncate flex items-center gap-1" title={profile.curator_link}>
+                                      <span className="text-indigo-600 dark:text-indigo-400 truncate flex items-center gap-1">
                                         Open Link <ExternalLink size={10} />
-                                      </a>
-                                    ) : '---'}
-                                  </DataValue>
+                                      </span>
+                                    ) : undefined}
+                                  </ClickToCopy>
                                 )}
                               </div>
                             </div>
@@ -695,6 +769,9 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                               cdpIds={profile.cdp_ids || []}
                               onChange={(ids) => updateProfileField(dIdx, pIdx, 'cdp_ids', ids)}
                               isEditing={isEditing}
+                              copiedField={copiedField}
+                              onCopy={copyToClipboard}
+                              fieldPrefix={`${dIdx}-${pIdx}`}
                             />
                           </div>
                         ))}

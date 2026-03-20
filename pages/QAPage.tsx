@@ -61,9 +61,9 @@ const ShopperCard: React.FC<ShopperCardProps> = ({ shopper, dealershipsMap, isEx
       const dealer = dealershipsMap.get(sd.dealership_id);
       if (dealer) {
         const combo = `${dealer.pp_sys_id || ''}_${dealer.store_number || ''}_${dealer.branch_number || ''}`;
-        lines.push(`DEALERSHIP ${combo}`);
+        lines.push(`${dealer.name}  ${combo}`);
       } else {
-        lines.push('DEALERSHIP (unassigned)');
+        lines.push('(unassigned dealership)');
       }
       sd.profiles.forEach((profile, idx) => {
         const parts: string[] = [];
@@ -79,7 +79,7 @@ const ShopperCard: React.FC<ShopperCardProps> = ({ shopper, dealershipsMap, isEx
         if (profile.issue) parts.push(` [Issue: ${profile.issue}]`);
         lines.push(`[${idx + 1}] ${parts.join(' | ')}`);
         (profile.cdp_ids || []).forEach(cdpId => {
-          const sysLabel = cdpId.system === 'ucp' ? 'UCP' : cdpId.system === 'cdp_admin' ? 'CDPAdmin' : 'CUR';
+          const sysLabel = cdpId.system === 'ucp' ? 'UCP' : cdpId.system === 'cdp_admin' ? 'CDP' : 'CUR';
           let line = `  - [${sysLabel}] ${cdpId.value}`;
           if (cdpId.notes) line += ` [${cdpId.notes}]`;
           lines.push(line);
@@ -253,7 +253,7 @@ const ShopperCard: React.FC<ShopperCardProps> = ({ shopper, dealershipsMap, isEx
                         {(profile.cdp_ids || []).length > 0 && (
                           <div className="ml-4 flex flex-col gap-0">
                             {profile.cdp_ids.map(cdpId => {
-                              const sysLabel = cdpId.system === 'ucp' ? 'UCP' : cdpId.system === 'cdp_admin' ? 'CDPAdmin' : 'CUR';
+                              const sysLabel = cdpId.system === 'ucp' ? 'UCP' : cdpId.system === 'cdp_admin' ? 'CDP' : 'CUR';
                               const sysBadge = cdpId.system === 'ucp'
                                 ? 'text-indigo-600 dark:text-indigo-400'
                                 : cdpId.system === 'cdp_admin'
