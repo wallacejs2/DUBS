@@ -207,10 +207,15 @@ export function useShoppers(filters?: { search?: string; status?: string; priori
     let data = db.getShoppers();
     if (filters?.search) {
       const s = filters.search.toLowerCase();
-      data = data.filter(sh => 
-        sh.first_name.toLowerCase().includes(s) || 
-        sh.last_name.toLowerCase().includes(s) || 
-        sh.email.toLowerCase().includes(s)
+      data = data.filter(sh =>
+        sh.first_name.toLowerCase().includes(s) ||
+        sh.last_name.toLowerCase().includes(s) ||
+        (sh.dealerships || []).some(d =>
+          d.profiles.some(p =>
+            (p.name || '').toLowerCase().includes(s) ||
+            (p.email || '').toLowerCase().includes(s)
+          )
+        )
       );
     }
     if (filters?.status) data = data.filter(sh => sh.status === filters.status);
