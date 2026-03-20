@@ -390,7 +390,7 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
       const dealer = getDealershipById(sd.dealership_id);
       if (dealer) {
         const combo = `${dealer.pp_sys_id || ''}_${dealer.store_number || ''}_${dealer.branch_number || ''}`;
-        lines.push(`${dealer.name}  ${combo}`);
+        lines.push(`${(dealer.name || '').toUpperCase()}  ${combo}`);
       } else {
         lines.push('(unassigned dealership)');
       }

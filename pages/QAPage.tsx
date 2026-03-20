@@ -61,7 +61,7 @@ const ShopperCard: React.FC<ShopperCardProps> = ({ shopper, dealershipsMap, isEx
       const dealer = dealershipsMap.get(sd.dealership_id);
       if (dealer) {
         const combo = `${dealer.pp_sys_id || ''}_${dealer.store_number || ''}_${dealer.branch_number || ''}`;
-        lines.push(`${dealer.name}  ${combo}`);
+        lines.push(`${(dealer.name || '').toUpperCase()}  ${combo}`);
       } else {
         lines.push('(unassigned dealership)');
       }
