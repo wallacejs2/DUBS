@@ -189,34 +189,37 @@ export interface DealershipWithRelations extends Dealership {
   orders: Order[];
 }
 
-export type IdentityType = 'cdpID' | 'ffcdpID';
-export type IdentityHierarchy = 'parent' | 'child';
+export type CdpIdSystem = 'ucp' | 'cdp_admin' | 'curator';
 
-export interface ShopperIdentity {
+export interface CdpId {
   id: string;
-  type: IdentityType;
+  system: CdpIdSystem;
   value: string;
-  hierarchy?: IdentityHierarchy;
   notes?: string;
 }
 
-export interface AdditionalProfile {
+export interface ShopperProfile {
   id: string;
   name: string;
   email?: string;
   phone?: string;
   dms_id?: string;
+  curator_id?: string;
   curator_link?: string;
   issue?: string;
-  cdp_identities: ShopperIdentity[];
+  cdp_ids: CdpId[];
+}
+
+export interface ShopperDealership {
+  id: string;
+  dealership_id: string;
+  profiles: ShopperProfile[];
 }
 
 export interface Shopper {
   id: string;
   first_name: string;
   last_name: string;
-  email: string;
-  phone: string;
   status: ShopperStatus;
   priority: ShopperPriority;
   username?: string;
@@ -227,21 +230,7 @@ export interface Shopper {
   qa_details?: string;
   assigned_tester?: string;
   created_at: string;
-  dealership_id?: string;
-  dms_id?: string;
-  curator_id?: string;
-  curator_link?: string;
-  
-  // Identity Sections
-  ucp_identities?: ShopperIdentity[];
-  cdp_admin_identities?: ShopperIdentity[];
-  curator_identities?: ShopperIdentity[];
-  
-  // New section
-  additional_profiles?: AdditionalProfile[];
-  
-  // Issue tracking
-  issue?: string;
+  dealerships: ShopperDealership[];
 }
 
 export interface TeamMember {

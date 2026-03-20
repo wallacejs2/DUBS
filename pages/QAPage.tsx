@@ -19,14 +19,9 @@ const QAPage: React.FC = () => {
       return {
         first_name: '',
         last_name: '',
-        email: '',
         status: ShopperStatus.ACTIVE,
         priority: ShopperPriority.MEDIUM,
-        username: '',
-        password: '',
-        phone: '',
-        device_type: '',
-        browser: '',
+        dealerships: [],
       } as Partial<Shopper>;
     }
     if (selectedShopperId) {
@@ -125,37 +120,49 @@ const QAPage: React.FC = () => {
                   onClick={() => handleRowClick(shopper.id)}
                 >
                   <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-[10px] group-hover:bg-indigo-600 group-hover:text-white transition-all flex-shrink-0">
-                        {shopper.first_name.charAt(0)}{shopper.last_name.charAt(0)}
-                      </div>
-                      <div className="min-w-0 flex flex-col items-start gap-1">
-                        <p className="text-[11px] font-bold text-slate-800 dark:text-slate-200 leading-tight truncate">{shopper.first_name} {shopper.last_name}</p>
-                        {shopper.issue && (
-                            <div className="text-[10px] text-orange-700 dark:text-orange-300 bg-orange-50 dark:bg-orange-900/30 border border-orange-100 dark:border-orange-800 px-1.5 py-0.5 rounded-md font-medium whitespace-normal break-words max-w-sm" title={shopper.issue}>
-                                {shopper.issue}
-                            </div>
-                        )}
-                      </div>
-                    </div>
+                    {(() => {
+                      const firstIssue = (shopper.dealerships || []).flatMap(d => d.profiles).find(p => p.issue)?.issue;
+                      return (
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-[10px] group-hover:bg-indigo-600 group-hover:text-white transition-all flex-shrink-0">
+                            {shopper.first_name.charAt(0)}{shopper.last_name.charAt(0)}
+                          </div>
+                          <div className="min-w-0 flex flex-col items-start gap-1">
+                            <p className="text-[11px] font-bold text-slate-800 dark:text-slate-200 leading-tight truncate">{shopper.first_name} {shopper.last_name}</p>
+                            {firstIssue && (
+                                <div className="text-[10px] text-orange-700 dark:text-orange-300 bg-orange-50 dark:bg-orange-900/30 border border-orange-100 dark:border-orange-800 px-1.5 py-0.5 rounded-md font-medium whitespace-normal break-words max-w-sm" title={firstIssue}>
+                                    {firstIssue}
+                                </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </td>
                   <td className="px-6 py-4">
-                    <div className="flex items-center gap-6">
-                      <div 
-                        className="flex items-center gap-1.5 min-w-0 cursor-pointer group/email"
-                        onClick={(e) => handleCopyEmail(e, shopper.id, shopper.email)}
-                        title="Click to copy email"
-                      >
-                        <Mail size={12} className="text-slate-400 dark:text-slate-500 flex-shrink-0 group-hover/email:text-indigo-500 transition-colors" />
-                        <span className={`text-[11px] truncate transition-colors ${copiedEmailId === shopper.id ? 'text-emerald-600 dark:text-emerald-400 font-bold' : 'text-slate-600 dark:text-slate-400 group-hover/email:text-indigo-600 dark:group-hover/email:text-indigo-400'}`}>
-                          {copiedEmailId === shopper.id ? 'Copied!' : shopper.email}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <Phone size={12} className="text-slate-400 dark:text-slate-500 flex-shrink-0" />
-                        <span className="text-[11px] text-slate-600 dark:text-slate-400 font-mono truncate">{shopper.phone || '---'}</span>
-                      </div>
-                    </div>
+                    {(() => {
+                      const firstProfile = (shopper.dealerships || []).flatMap(d => d.profiles)[0];
+                      const email = firstProfile?.email || '';
+                      const phone = firstProfile?.phone || '';
+                      return (
+                        <div className="flex items-center gap-6">
+                          <div
+                            className="flex items-center gap-1.5 min-w-0 cursor-pointer group/email"
+                            onClick={(e) => email ? handleCopyEmail(e, shopper.id, email) : e.stopPropagation()}
+                            title="Click to copy email"
+                          >
+                            <Mail size={12} className="text-slate-400 dark:text-slate-500 flex-shrink-0 group-hover/email:text-indigo-500 transition-colors" />
+                            <span className={`text-[11px] truncate transition-colors ${copiedEmailId === shopper.id ? 'text-emerald-600 dark:text-emerald-400 font-bold' : 'text-slate-600 dark:text-slate-400 group-hover/email:text-indigo-600 dark:group-hover/email:text-indigo-400'}`}>
+                              {copiedEmailId === shopper.id ? 'Copied!' : (email || '---')}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <Phone size={12} className="text-slate-400 dark:text-slate-500 flex-shrink-0" />
+                            <span className="text-[11px] text-slate-600 dark:text-slate-400 font-mono truncate">{phone || '---'}</span>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex flex-col gap-1 items-start">

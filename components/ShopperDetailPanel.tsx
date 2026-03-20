@@ -1,11 +1,11 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { 
-  X, Trash2, Edit3, Save, RefreshCw, 
-  User, Shield, Mail, Phone, Building2, Check, Hash, Link, ExternalLink, Plus, Copy,
-  Circle, AlertTriangle
+import {
+  X, Trash2, Edit3, Save, RefreshCw,
+  User, Shield, Building2, Check, Hash, Link, ExternalLink, Plus, Copy,
+  AlertTriangle
 } from 'lucide-react';
-import { Shopper, ShopperStatus, ShopperPriority, DealershipStatus, ShopperIdentity, AdditionalProfile } from '../types';
+import { Shopper, ShopperStatus, DealershipStatus, CdpId, CdpIdSystem, ShopperProfile, ShopperDealership } from '../types';
 import { useDealerships, useEnterpriseGroups } from '../hooks';
 
 interface ShopperDetailPanelProps {
@@ -36,7 +36,7 @@ const DataValue = ({ value, mono = false, children }: { value?: any, mono?: bool
 );
 
 const Input = ({ value, onChange, type = "text", className = "", placeholder="" }: { value: any, onChange: (v: string) => void, type?: string, className?: string, placeholder?: string }) => (
-  <input 
+  <input
     type={type}
     value={value || ''}
     onChange={(e) => onChange(e.target.value)}
@@ -46,7 +46,7 @@ const Input = ({ value, onChange, type = "text", className = "", placeholder="" 
 );
 
 const Select = ({ value, onChange, options, className = "" }: { value: any, onChange: (v: string) => void, options: { label: string, value: string }[], className?: string }) => (
-  <select 
+  <select
     value={value || ''}
     onChange={(e) => onChange(e.target.value)}
     className={`w-full px-3 py-1.5 text-[12px] border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-normal transition-all ${className}`}
@@ -57,194 +57,125 @@ const Select = ({ value, onChange, options, className = "" }: { value: any, onCh
   </select>
 );
 
-// Internal Component for Managing Identities
-interface IdentityManagerProps {
-  label?: string;
-  identities: (ShopperIdentity & { system?: 'ucp' | 'cdp_admin' | 'curator' })[];
-  onChange: (ids: any[]) => void;
+// CDP ID Manager - simplified from old IdentityManager
+interface CdpIdManagerProps {
+  cdpIds: CdpId[];
+  onChange: (ids: CdpId[]) => void;
   isEditing: boolean;
-  showSystem?: boolean;
 }
 
-const IdentityManager: React.FC<IdentityManagerProps> = ({ label, identities, onChange, isEditing, showSystem = false }) => {
+const CdpIdManager: React.FC<CdpIdManagerProps> = ({ cdpIds, onChange, isEditing }) => {
   const handleAdd = () => {
-    const newId = {
+    const newId: CdpId = {
       id: crypto.randomUUID(),
-      type: 'cdpID' as const,
+      system: 'ucp',
       value: '',
-      hierarchy: undefined, // Default is nothing
       notes: '',
-      ...(showSystem ? { system: 'ucp' as const } : {})
     };
-    onChange([...identities, newId]);
+    onChange([...cdpIds, newId]);
   };
 
   const handleRemove = (index: number) => {
-    const newIds = [...identities];
+    const newIds = [...cdpIds];
     newIds.splice(index, 1);
     onChange(newIds);
   };
 
-  const updateIdentity = (index: number, field: string, value: any) => {
-    const newIds = [...identities];
+  const updateCdpId = (index: number, field: keyof CdpId, value: any) => {
+    const newIds = [...cdpIds];
     newIds[index] = { ...newIds[index], [field]: value };
     onChange(newIds);
   };
 
-  const toggleHierarchy = (index: number, type: 'parent' | 'child') => {
-    const newIds = [...identities];
-    const current = newIds[index].hierarchy;
+  const systemLabel = (sys: CdpIdSystem) => {
+    if (sys === 'ucp') return 'UCP';
+    if (sys === 'cdp_admin') return 'CDPAdmin';
+    return 'CUR';
+  };
 
-    if (current === type) {
-      newIds[index].hierarchy = undefined;
-    } else {
-      if (type === 'parent') {
-        // Enforce single parent within the same system context.
-        const currentSystem = newIds[index].system;
-        newIds.forEach(id => {
-           if (showSystem) {
-             if (id.system === currentSystem && id.hierarchy === 'parent') id.hierarchy = undefined;
-           } else {
-             if (id.hierarchy === 'parent') id.hierarchy = undefined;
-           }
-        });
-      }
-      newIds[index].hierarchy = type;
-    }
-    onChange(newIds);
+  const systemBadgeClass = (sys: CdpIdSystem) => {
+    if (sys === 'ucp') return 'bg-indigo-50 text-indigo-700 border-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800';
+    if (sys === 'cdp_admin') return 'bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800';
+    return 'bg-purple-50 text-purple-700 border-purple-100 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800';
   };
 
   return (
-    <div className="flex flex-col gap-2">
-      {label && (
-        <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">
-          <Hash size={10} /> {label}
-        </div>
-      )}
-      
-      <div className="space-y-2 bg-slate-50/50 dark:bg-slate-800/50 rounded-xl p-2 border border-slate-100 dark:border-slate-800">
-        {identities.length === 0 && !isEditing && (
-           <div className="text-[10px] text-slate-400 dark:text-slate-500 italic p-1">No IDs</div>
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+        <Hash size={10} /> CDP IDs
+      </div>
+
+      <div className="space-y-1.5">
+        {cdpIds.length === 0 && !isEditing && (
+          <div className="text-[10px] text-slate-400 dark:text-slate-500 italic p-1">No IDs</div>
         )}
-        
-        {identities.map((id, idx) => (
-          <div key={id.id || idx} className="bg-white dark:bg-slate-800 p-2 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col gap-2">
-             <div className="flex gap-2 items-center">
-                {/* System Dropdown (Optional) */}
-                {showSystem && (
-                  isEditing ? (
-                    <select 
-                      value={id.system} 
-                      onChange={(e) => updateIdentity(idx, 'system', e.target.value)}
-                      className="w-[90px] px-1 py-1 text-[10px] border border-slate-200 dark:border-slate-700 rounded focus:ring-1 focus:ring-indigo-500 outline-none bg-slate-50 dark:bg-slate-700 font-bold text-slate-700 dark:text-slate-200"
-                    >
-                      <option value="ucp">UCP</option>
-                      <option value="cdp_admin">CDP Admin</option>
-                      <option value="curator">Curator</option>
-                    </select>
-                  ) : (
-                    <span className={`text-[9px] font-bold border px-1.5 py-1 rounded uppercase tracking-wider h-fit flex-shrink-0 ${
-                      id.system === 'ucp' ? 'bg-indigo-50 text-indigo-700 border-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800' :
-                      id.system === 'cdp_admin' ? 'bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800' :
-                      'bg-purple-50 text-purple-700 border-purple-100 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800'
-                    }`}>
-                      {id.system === 'cdp_admin' ? 'CDP ADMIN' : id.system?.toUpperCase()}
-                    </span>
-                  )
-                )}
 
-                {/* Type Dropdown */}
-                {isEditing ? (
-                  <select 
-                    value={id.type} 
-                    onChange={(e) => updateIdentity(idx, 'type', e.target.value)}
-                    className="w-[70px] px-1 py-1 text-[10px] border border-slate-200 dark:border-slate-700 rounded focus:ring-1 focus:ring-indigo-500 outline-none bg-slate-50 dark:bg-slate-700 font-bold text-slate-600 dark:text-slate-300"
-                  >
-                    <option value="cdpID">CDP</option>
-                    <option value="ffcdpID">FF</option>
-                  </select>
-                ) : (
-                  <span className="text-[9px] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 px-1.5 py-1 rounded uppercase tracking-wider h-fit flex-shrink-0">
-                    {id.type === 'cdpID' ? 'CDP' : 'FF'}
-                  </span>
-                )}
+        {cdpIds.map((cdpId, idx) => (
+          <div key={cdpId.id || idx}>
+            {/* Main row: system dropdown + value + delete */}
+            <div className="flex gap-2 items-center">
+              {isEditing ? (
+                <select
+                  value={cdpId.system}
+                  onChange={(e) => updateCdpId(idx, 'system', e.target.value as CdpIdSystem)}
+                  className="w-[100px] px-1 py-1 text-[10px] border border-slate-200 dark:border-slate-700 rounded focus:ring-1 focus:ring-indigo-500 outline-none bg-slate-50 dark:bg-slate-700 font-bold text-slate-700 dark:text-slate-200"
+                >
+                  <option value="ucp">UCP</option>
+                  <option value="cdp_admin">CDP Admin</option>
+                  <option value="curator">Curator</option>
+                </select>
+              ) : (
+                <span className={`text-[9px] font-bold border px-1.5 py-1 rounded uppercase tracking-wider h-fit flex-shrink-0 ${systemBadgeClass(cdpId.system)}`}>
+                  {systemLabel(cdpId.system)}
+                </span>
+              )}
 
-                {/* Value Input */}
-                {isEditing ? (
-                  <input 
-                    value={id.value} 
-                    onChange={(e) => updateIdentity(idx, 'value', e.target.value)} 
-                    placeholder="ID Value"
-                    className="flex-1 px-2 py-1 text-[11px] border border-slate-200 dark:border-slate-700 rounded focus:ring-1 focus:ring-indigo-500 outline-none font-mono min-w-0 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
-                  />
-                ) : (
-                  <div className="flex-1 font-mono text-[11px] text-slate-700 dark:text-slate-300 pt-0.5 truncate" title={id.value}>
-                    {id.value || '---'}
+              {isEditing ? (
+                <input
+                  value={cdpId.value}
+                  onChange={(e) => updateCdpId(idx, 'value', e.target.value)}
+                  placeholder="CDP ID Value"
+                  className="flex-1 px-2 py-1 text-[11px] border border-slate-200 dark:border-slate-700 rounded focus:ring-1 focus:ring-indigo-500 outline-none font-mono min-w-0 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+                />
+              ) : (
+                <div className="flex-1 font-mono text-[11px] text-slate-700 dark:text-slate-300 pt-0.5 truncate" title={cdpId.value}>
+                  {cdpId.value || '---'}
+                </div>
+              )}
+
+              {isEditing && (
+                <button onClick={() => handleRemove(idx)} className="text-slate-300 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 transition-colors flex-shrink-0">
+                  <Trash2 size={12} />
+                </button>
+              )}
+            </div>
+
+            {/* Notes row below - small italic, left to right */}
+            <div className="ml-1 mt-0.5">
+              {isEditing ? (
+                <input
+                  value={cdpId.notes || ''}
+                  onChange={(e) => updateCdpId(idx, 'notes', e.target.value)}
+                  placeholder="Add note..."
+                  className="w-full bg-transparent text-[9px] italic text-slate-600 dark:text-slate-400 placeholder:text-slate-300 dark:placeholder:text-slate-600 outline-none px-1"
+                />
+              ) : (
+                cdpId.notes ? (
+                  <div className="text-[9px] italic text-slate-400 dark:text-slate-500 px-1" title={cdpId.notes}>
+                    {cdpId.notes}
                   </div>
-                )}
-             </div>
-             
-             <div className="flex items-center justify-between pt-1 border-t border-slate-50 dark:border-slate-700/50 gap-2">
-                <div className="flex items-center gap-3">
-                    {/* Parent Toggle */}
-                    <div 
-                        className={`flex items-center gap-1.5 text-[9px] cursor-pointer flex-shrink-0 ${id.hierarchy === 'parent' ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'text-slate-400 dark:text-slate-500 font-medium'}`}
-                        onClick={isEditing ? () => toggleHierarchy(idx, 'parent') : undefined}
-                    >
-                        {isEditing ? (
-                            <div className={`w-3 h-3 rounded-full border flex items-center justify-center ${id.hierarchy === 'parent' ? 'border-indigo-600 bg-indigo-600 dark:border-indigo-500 dark:bg-indigo-500' : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900'}`}>
-                                {id.hierarchy === 'parent' && <div className="w-1 h-1 bg-white rounded-full"></div>}
-                            </div>
-                        ) : (
-                            id.hierarchy === 'parent' && <div className="w-3 h-3 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center"><Check size={8} /></div>
-                        )}
-                        {(isEditing || id.hierarchy === 'parent') && <span>Parent</span>}
-                    </div>
-
-                    {/* Child Toggle */}
-                    <div 
-                        className={`flex items-center gap-1.5 text-[9px] cursor-pointer flex-shrink-0 ${id.hierarchy === 'child' ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-400 dark:text-slate-500 font-medium'}`}
-                        onClick={isEditing ? () => toggleHierarchy(idx, 'child') : undefined}
-                    >
-                        {isEditing ? (
-                            <div className={`w-3 h-3 rounded-full border flex items-center justify-center ${id.hierarchy === 'child' ? 'border-blue-600 bg-blue-600 dark:border-blue-500 dark:bg-blue-500' : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900'}`}>
-                                {id.hierarchy === 'child' && <div className="w-1 h-1 bg-white rounded-full"></div>}
-                            </div>
-                        ) : (
-                            id.hierarchy === 'child' && <div className="w-3 h-3 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center"><Check size={8} /></div>
-                        )}
-                        {(isEditing || id.hierarchy === 'child') && <span>Child</span>}
-                    </div>
-                </div>
-                
-                <div className="flex-1 min-w-0">
-                    {isEditing ? (
-                        <input 
-                            value={id.notes || ''} 
-                            onChange={(e) => updateIdentity(idx, 'notes', e.target.value)}
-                            placeholder="Add note..."
-                            className="w-full bg-transparent text-[9px] italic text-slate-600 dark:text-slate-400 placeholder:text-slate-300 dark:placeholder:text-slate-600 outline-none text-right px-2"
-                        />
-                    ) : (
-                        <div className="text-[9px] italic text-slate-400 dark:text-slate-500 truncate text-right px-2" title={id.notes}>
-                            {id.notes}
-                        </div>
-                    )}
-                </div>
-
-                {isEditing && (
-                  <button onClick={() => handleRemove(idx)} className="text-slate-300 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 transition-colors flex-shrink-0"><Trash2 size={12} /></button>
-                )}
-             </div>
+                ) : null
+              )}
+            </div>
           </div>
         ))}
-        
+
         {isEditing && (
-          <button 
+          <button
             onClick={handleAdd}
-            className="w-full py-2 border border-dashed border-indigo-200 dark:border-indigo-800 text-indigo-500 dark:text-indigo-400 rounded-lg text-[10px] font-bold hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-all flex items-center justify-center gap-1"
+            className="w-full py-1.5 border border-dashed border-indigo-200 dark:border-indigo-800 text-indigo-500 dark:text-indigo-400 rounded-lg text-[10px] font-bold hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-all flex items-center justify-center gap-1"
           >
-            <Plus size={12} /> Add ID
+            <Plus size={12} /> Add New ID
           </button>
         )}
       </div>
@@ -252,12 +183,21 @@ const IdentityManager: React.FC<IdentityManagerProps> = ({ label, identities, on
   );
 };
 
-const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({ 
+const formatPhone = (val?: string) => {
+  if (!val) return '';
+  const cleaned = ('' + val).replace(/\D/g, '');
+  const match = cleaned.match(/^(\d{3})(\d{3})(\d{4})$/);
+  if (match) {
+    return match[1] + '-' + match[2] + '-' + match[3];
+  }
+  return val;
+};
+
+const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
   shopper, onClose, onUpdate, onDelete
 }) => {
   const isNew = !shopper.id;
   const [isEditing, setIsEditing] = useState(isNew);
-  const [quickEdit, setQuickEdit] = useState({ identities: false, profiles: false });
   const [formData, setFormData] = useState<Partial<Shopper>>(shopper);
   const [fullName, setFullName] = useState('');
   const [copiedField, setCopiedField] = useState<string | null>(null);
@@ -265,33 +205,15 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
   const { dealerships } = useDealerships();
   const { groups } = useEnterpriseGroups();
 
-  const eligibleDealerships = useMemo(() => dealerships.filter(d => 
+  const eligibleDealerships = useMemo(() => dealerships.filter(d =>
     [DealershipStatus.LIVE, DealershipStatus.LEGACY, DealershipStatus.ONBOARDING].includes(d.status)
   ).sort((a, b) => a.name.localeCompare(b.name)), [dealerships]);
 
-  const selectedDealership = useMemo(() => 
-    dealerships.find(d => d.id === formData.dealership_id), 
-    [dealerships, formData.dealership_id]
-  );
-
-  const selectedGroup = useMemo(() => 
-    groups.find(g => g.id === selectedDealership?.enterprise_group_id),
-    [groups, selectedDealership]
-  );
-
-  const toggleQuickEdit = (section: 'identities' | 'profiles') => {
-    if (quickEdit[section]) {
-      // Save changes
-      onUpdate(formData);
-      setQuickEdit(prev => ({ ...prev, [section]: false }));
-    } else {
-      // Enable edit mode
-      setQuickEdit(prev => ({ ...prev, [section]: true }));
-    }
+  const getDealershipById = (id: string) => dealerships.find(d => d.id === id);
+  const getGroupForDealership = (dealerId: string) => {
+    const d = getDealershipById(dealerId);
+    return d ? groups.find(g => g.id === d.enterprise_group_id) : undefined;
   };
-
-  const isIdentitiesEditing = isEditing || quickEdit.identities;
-  const isProfilesEditing = isEditing || quickEdit.profiles;
 
   useEffect(() => {
     setFormData(shopper);
@@ -301,7 +223,7 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
   const handleSave = () => {
     onUpdate(formData);
     if (isNew) {
-      onClose(); // Close if it was a new creation
+      onClose();
     } else {
       setIsEditing(false);
     }
@@ -321,34 +243,11 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  // Unified System Identity Handling
-  const combinedSystemIdentities = useMemo(() => {
-    return [
-      ...(formData.ucp_identities || []).map(i => ({...i, system: 'ucp' as const})),
-      ...(formData.cdp_admin_identities || []).map(i => ({...i, system: 'cdp_admin' as const})),
-      ...(formData.curator_identities || []).map(i => ({...i, system: 'curator' as const})),
-    ];
-  }, [formData.ucp_identities, formData.cdp_admin_identities, formData.curator_identities]);
-
-  const handleSystemIdentitiesUpdate = (newIds: (ShopperIdentity & { system: 'ucp' | 'cdp_admin' | 'curator' })[]) => {
-      // Split back into buckets based on 'system' property
-      const ucp = newIds.filter(i => i.system === 'ucp').map(({system, ...i}) => i);
-      const cdp = newIds.filter(i => i.system === 'cdp_admin').map(({system, ...i}) => i);
-      const curator = newIds.filter(i => i.system === 'curator').map(({system, ...i}) => i);
-      
-      setFormData(prev => ({
-        ...prev,
-        ucp_identities: ucp,
-        cdp_admin_identities: cdp,
-        curator_identities: curator
-      }));
-  };
-
   const handleNameChange = (val: string) => {
     setFullName(val);
     const trimmed = val.trimStart();
     const firstSpaceIndex = trimmed.indexOf(' ');
-    
+
     if (firstSpaceIndex === -1) {
       updateField('first_name', trimmed);
       updateField('last_name', '');
@@ -365,145 +264,135 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
     });
   };
 
-  const handleCopyAll = () => {
-    const lines: string[] = [];
-    
-    // Dealership Info
-    if (selectedDealership) {
-        lines.push(selectedDealership.name.toUpperCase());
-        const pp = selectedDealership.pp_sys_id || '';
-        const store = selectedDealership.store_number || '';
-        const branch = selectedDealership.branch_number || '';
-        // Format: ppsysid_store_branch
-        lines.push(`${pp}_${store}_${branch}`);
-    }
-
-    lines.push('');
-
-    // Shopper Info
-    const name = `${formData.first_name || ''} ${formData.last_name || ''}`.trim();
-    if (name) lines.push(name.toUpperCase());
-    
-    if (formData.email) lines.push(`Email: ${formData.email}`);
-    if (formData.phone) lines.push(`Phone: ${formData.phone}`);
-    if (formData.dms_id) lines.push(`DMS ID: ${formData.dms_id}`);
-    
-    if (formData.curator_id) {
-        let curatorLine = `Curator ID: ${formData.curator_id}`;
-        if (formData.curator_link) curatorLine += ` (${formData.curator_link})`;
-        lines.push(curatorLine);
-    } else if (formData.curator_link) {
-        lines.push(`Curator Link: ${formData.curator_link}`);
-    }
-
-    lines.push('');
-
-    // System Identities
-    const formatIdentityList = (ids?: ShopperIdentity[]) => {
-        if (!ids || ids.length === 0) return [];
-        return ids.map(id => {
-            const parts: string[] = [];
-            parts.push(`[${id.type === 'cdpID' ? 'CDP' : 'FF'}]`);
-            if (id.value) parts.push(id.value);
-            if (id.hierarchy === 'parent') parts.push('(Parent)');
-            else if (id.hierarchy === 'child') parts.push('(Child)');
-            if (id.notes) parts.push(`[${id.notes}]`);
-            return `  - ${parts.join(' ')}`;
-        });
-    };
-
-    const ucpIds = formatIdentityList(formData.ucp_identities);
-    const cdpIds = formatIdentityList(formData.cdp_admin_identities);
-    const curatorIds = formatIdentityList(formData.curator_identities);
-
-    if (ucpIds.length > 0 || cdpIds.length > 0 || curatorIds.length > 0) {
-        lines.push('--- CDP IDENTITIES ---');
-        if (ucpIds.length > 0) {
-            lines.push('UCP:');
-            lines.push(...ucpIds);
-        }
-        if (cdpIds.length > 0) {
-            lines.push('CDP Admin:');
-            lines.push(...cdpIds);
-        }
-        if (curatorIds.length > 0) {
-            lines.push('Curator:');
-            lines.push(...curatorIds);
-        }
-        lines.push('');
-    }
-
-    // Additional Profiles
-    if (formData.additional_profiles && formData.additional_profiles.length > 0) {
-        lines.push('--- ADDITIONAL PROFILES ---');
-        formData.additional_profiles.forEach((p, i) => {
-            const parts: string[] = [];
-            if (p.name) parts.push(p.name);
-            if (p.email) parts.push(p.email);
-            if (p.phone) parts.push(p.phone);
-            if (p.curator_link) parts.push(`Link: ${p.curator_link}`);
-            if (p.issue) parts.push(`[Issue: ${p.issue}]`);
-            
-            if (parts.length > 0) {
-                lines.push(`[${i+1}] ${parts.join(' | ')}`);
-            }
-
-            const profileIds = formatIdentityList(p.cdp_identities);
-            if (profileIds.length > 0) {
-                lines.push('    CDP IDs:');
-                profileIds.forEach(idLine => lines.push(`  ${idLine}`)); // Indent further
-            }
-        });
-    }
-
-    // Clean up trailing newlines and copy
-    const text = lines.join('\n').trim();
-    copyToClipboard(text, 'all');
-  };
-
-  const formatPhone = (val?: string) => {
-    if (!val) return '';
-    const cleaned = ('' + val).replace(/\D/g, '');
-    const match = cleaned.match(/^(\d{3})(\d{3})(\d{4})$/);
-    if (match) {
-      return '(' + match[1] + ') ' + match[2] + '-' + match[3];
-    }
-    return val;
-  };
-
-  // Logic for Additional Profiles
-  const addProfile = () => {
-    const newProfile: AdditionalProfile = {
+  // === Dealership helpers ===
+  const addDealership = () => {
+    const newDealership: ShopperDealership = {
+      id: crypto.randomUUID(),
+      dealership_id: '',
+      profiles: [{
         id: crypto.randomUUID(),
         name: '',
         email: '',
         phone: '',
         dms_id: '',
+        curator_id: '',
         curator_link: '',
         issue: '',
-        cdp_identities: []
+        cdp_ids: [],
+      }],
     };
-    updateField('additional_profiles', [...(formData.additional_profiles || []), newProfile]);
+    setFormData(prev => ({
+      ...prev,
+      dealerships: [...(prev.dealerships || []), newDealership],
+    }));
   };
 
-  const removeProfile = (index: number) => {
-    const newProfiles = [...(formData.additional_profiles || [])];
-    newProfiles.splice(index, 1);
-    updateField('additional_profiles', newProfiles);
+  const removeDealership = (dIdx: number) => {
+    setFormData(prev => {
+      const newDealerships = [...(prev.dealerships || [])];
+      newDealerships.splice(dIdx, 1);
+      return { ...prev, dealerships: newDealerships };
+    });
   };
 
-  const updateProfile = (index: number, field: keyof AdditionalProfile, value: any) => {
-    const newProfiles = [...(formData.additional_profiles || [])];
-    newProfiles[index] = { ...newProfiles[index], [field]: value };
-    updateField('additional_profiles', newProfiles);
+  const updateDealershipField = (dIdx: number, field: keyof ShopperDealership, value: any) => {
+    setFormData(prev => {
+      const newDealerships = [...(prev.dealerships || [])];
+      newDealerships[dIdx] = { ...newDealerships[dIdx], [field]: value };
+      return { ...prev, dealerships: newDealerships };
+    });
+  };
+
+  // === Profile helpers ===
+  const addProfile = (dIdx: number) => {
+    const newProfile: ShopperProfile = {
+      id: crypto.randomUUID(),
+      name: '',
+      email: '',
+      phone: '',
+      dms_id: '',
+      curator_id: '',
+      curator_link: '',
+      issue: '',
+      cdp_ids: [],
+    };
+    setFormData(prev => {
+      const newDealerships = [...(prev.dealerships || [])];
+      newDealerships[dIdx] = {
+        ...newDealerships[dIdx],
+        profiles: [...newDealerships[dIdx].profiles, newProfile],
+      };
+      return { ...prev, dealerships: newDealerships };
+    });
+  };
+
+  const removeProfile = (dIdx: number, pIdx: number) => {
+    setFormData(prev => {
+      const newDealerships = [...(prev.dealerships || [])];
+      const newProfiles = [...newDealerships[dIdx].profiles];
+      newProfiles.splice(pIdx, 1);
+      newDealerships[dIdx] = { ...newDealerships[dIdx], profiles: newProfiles };
+      return { ...prev, dealerships: newDealerships };
+    });
+  };
+
+  const updateProfileField = (dIdx: number, pIdx: number, field: keyof ShopperProfile, value: any) => {
+    setFormData(prev => {
+      const newDealerships = [...(prev.dealerships || [])];
+      const newProfiles = [...newDealerships[dIdx].profiles];
+      newProfiles[pIdx] = { ...newProfiles[pIdx], [field]: value };
+      newDealerships[dIdx] = { ...newDealerships[dIdx], profiles: newProfiles };
+      return { ...prev, dealerships: newDealerships };
+    });
+  };
+
+  // === Copy All ===
+  const handleCopyAll = () => {
+    const lines: string[] = [];
+
+    (formData.dealerships || []).forEach(sd => {
+      const dealer = getDealershipById(sd.dealership_id);
+      if (dealer) {
+        const combo = `${dealer.pp_sys_id || ''}_${dealer.store_number || ''}_${dealer.branch_number || ''}`;
+        lines.push(`DEALERSHIP ${combo}`);
+      } else {
+        lines.push('DEALERSHIP (unassigned)');
+      }
+
+      sd.profiles.forEach((profile, idx) => {
+        const parts: string[] = [];
+        if (profile.name) parts.push(profile.name.toUpperCase());
+        if (profile.email) parts.push(profile.email);
+        if (profile.phone) parts.push(profile.phone);
+        if (profile.dms_id) parts.push(`DMS ${profile.dms_id}`);
+        if (profile.curator_id) {
+          let cur = `CUR - ${profile.curator_id}`;
+          if (profile.curator_link) cur += ` ${profile.curator_link}`;
+          parts.push(cur);
+        }
+        if (profile.issue) parts.push(` [Issue: ${profile.issue}]`);
+
+        lines.push(`[${idx + 1}] ${parts.join(' | ')}`);
+
+        (profile.cdp_ids || []).forEach(cdpId => {
+          const systemLabel = cdpId.system === 'ucp' ? 'UCP'
+            : cdpId.system === 'cdp_admin' ? 'CDPAdmin'
+            : 'CUR';
+          let line = `  - [${systemLabel}] ${cdpId.value}`;
+          if (cdpId.notes) line += ` [${cdpId.notes}]`;
+          lines.push(line);
+        });
+      });
+    });
+
+    copyToClipboard(lines.join('\n').trim(), 'all');
   };
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]" onClick={isEditing && isNew ? undefined : onClose}></div>
-      {/* Changed max-w-2xl to max-w-4xl to widen the panel */}
       <div className="relative w-full max-w-4xl bg-white dark:bg-slate-900 h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300 transition-colors">
-        
+
         {/* Sticky Header */}
         <div className="bg-white dark:bg-slate-900 sticky top-0 z-30 border-b border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
           <div className="p-4 flex justify-between items-center gap-4">
@@ -514,23 +403,22 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                <div>
                  {isEditing ? (
                    <div className="w-full">
-                     <Input 
-                       value={fullName} 
-                       onChange={handleNameChange} 
-                       placeholder="Full Name" 
-                       className="font-bold text-lg" 
+                     <Input
+                       value={fullName}
+                       onChange={handleNameChange}
+                       placeholder="Full Name"
+                       className="font-bold text-lg"
                      />
                    </div>
                  ) : (
                    <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">{formData.first_name} {formData.last_name}</h2>
                  )}
-                 {!isEditing && <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">{formData.email}</p>}
                </div>
              </div>
 
              <div className="flex items-center gap-2">
                {!isEditing && (
-                 <button 
+                 <button
                     onClick={handleCopyAll}
                     className="p-2 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-all"
                     title="Copy All Details"
@@ -538,7 +426,7 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                     {copiedField === 'all' ? <Check size={16} className="text-emerald-500" /> : <Copy size={16} />}
                  </button>
                )}
-               
+
                {isEditing ? (
                  <>
                    <button onClick={handleSave} className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-indigo-700 shadow-md shadow-indigo-100 flex items-center gap-2 transition-all">
@@ -561,15 +449,14 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6 bg-white dark:bg-slate-900 custom-scrollbar transition-colors">
-          {/* Removed max-w-xl constraint to allow full width usage */}
           <div className="space-y-6 mx-auto">
-            
-            {/* Status Section (Audit Priority removed) */}
+
+            {/* Status Section */}
             <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-2xl border border-slate-100 dark:border-slate-800">
                <div>
                   <Label icon={Shield}>Status</Label>
                   {isEditing ? (
-                    <Select 
+                    <Select
                        value={formData.status}
                        onChange={(v) => updateField('status', v)}
                        options={Object.values(ShopperStatus).map(s => ({ label: s, value: s }))}
@@ -582,297 +469,246 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                </div>
             </div>
 
-            {/* Issue Section */}
-            <div className="mt-4">
-               <Label icon={AlertTriangle}>Issue / Blocker</Label>
-               {isEditing ? (
-                  <textarea 
-                    value={formData.issue || ''}
-                    onChange={(e) => updateField('issue', e.target.value)}
-                    className="w-full px-3 py-2 text-[12px] border border-orange-300 bg-orange-50 dark:bg-orange-900/20 dark:border-orange-900 rounded-lg focus:ring-1 focus:ring-orange-500 outline-none text-slate-800 dark:text-orange-100 placeholder:text-orange-300 min-h-[60px]"
-                    placeholder="Describe any issues..."
-                  />
-               ) : (
-                  formData.issue ? (
-                    <div className="w-full px-3 py-2 text-[12px] border border-orange-300 bg-orange-50 dark:bg-orange-900/20 dark:border-orange-900 rounded-lg text-slate-800 dark:text-orange-100">
-                      {formData.issue}
-                    </div>
-                  ) : (
-                    <div className="text-[12px] text-slate-400 dark:text-slate-500 italic">No issues recorded.</div>
-                  )
-               )}
-            </div>
-
-            {/* Dealership Assignment */}
+            {/* Dealerships Section */}
             <div className="mt-4">
               <div className="flex items-center justify-between mb-3 border-b border-slate-100 dark:border-slate-800 pb-2">
-                 <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-widest">Dealership Assignment</h3>
-                 {selectedDealership && (
-                   <div className="flex items-center gap-1">
-                      <button 
-                        onClick={() => copyToClipboard(selectedDealership.pp_sys_id || '', 'pp')}
-                        className="p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-all"
-                        title="Copy PP Sys ID"
-                      >
-                        {copiedField === 'pp' ? <Check size={14} className="text-emerald-500" /> : <Hash size={14} />}
-                      </button>
-                      <button 
-                        onClick={() => {
-                           const combo = `${selectedDealership.pp_sys_id || ''}_${selectedDealership.store_number || ''}_${selectedDealership.branch_number || ''}`;
-                           copyToClipboard(combo, 'combo');
-                        }}
-                        className="p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-all"
-                        title="Copy PP_Store_Branch"
-                      >
-                        {copiedField === 'combo' ? <Check size={14} className="text-emerald-500" /> : <Link size={14} />}
-                      </button>
-                   </div>
-                 )}
-              </div>
-              
-              <div className="space-y-3">
-                 <div className="w-full">
-                    <Label icon={Building2}>Assigned Dealership</Label>
-                    {isEditing ? (
-                       <select 
-                          value={formData.dealership_id || ''} 
-                          onChange={(e) => updateField('dealership_id', e.target.value)}
-                          className="w-full px-3 py-1.5 text-[12px] border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-normal transition-all"
-                       >
-                          <option value="">-- No Dealership Assigned --</option>
-                          {eligibleDealerships.map(d => (
-                             <option key={d.id} value={d.id}>{d.name} ({d.status})</option>
-                          ))}
-                       </select>
-                    ) : (
-                       <DataValue value={selectedDealership?.name || 'Unassigned'} />
-                    )}
-                 </div>
-
-                 {selectedDealership && (
-                    <div className="grid grid-cols-3 gap-3 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
-                       <div className="min-w-0">
-                          <Label>Enterprise Group</Label>
-                          <div className="truncate" title={selectedGroup?.name || 'Single (Independent)'}>
-                             <DataValue value={selectedGroup?.name || 'Single (Independent)'} />
-                          </div>
-                       </div>
-                       <div>
-                          <Label>PP Sys ID</Label>
-                          <DataValue mono value={selectedDealership.pp_sys_id} />
-                       </div>
-                       <div>
-                          <Label>Store / Branch</Label>
-                          <DataValue mono value={`${selectedDealership.store_number || '-'}/${selectedDealership.branch_number || '-'}`} />
-                       </div>
-                    </div>
-                 )}
-              </div>
-            </div>
-
-            {/* Contact Info */}
-            <div className="mt-5 pt-5 border-t border-slate-100 dark:border-slate-800">
-              <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-widest mb-3">Contact Details</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2 sm:col-span-1">
-                  <Label icon={Mail}>Email Address</Label>
-                  {isEditing ? (
-                    <Input type="email" value={formData.email} onChange={(v) => updateField('email', v)} />
-                  ) : (
-                    <DataValue>
-                      <a href={`mailto:${formData.email}`} className="text-indigo-600 dark:text-indigo-400 hover:underline">{formData.email}</a>
-                    </DataValue>
-                  )}
-                </div>
-                <div className="col-span-2 sm:col-span-1">
-                  <Label icon={Phone}>Phone Number</Label>
-                  {isEditing ? (
-                    <input 
-                      type="text"
-                      value={formData.phone || ''}
-                      onChange={(e) => updateField('phone', e.target.value)}
-                      onBlur={(e) => updateField('phone', formatPhone(e.target.value))}
-                      placeholder="(###) ###-####"
-                      className="w-full px-3 py-1.5 text-[12px] border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-normal transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600"
-                    />
-                  ) : (
-                    <DataValue value={formatPhone(formData.phone)} />
-                  )}
-                </div>
+                <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-widest">Dealerships</h3>
+                {isEditing && (
+                  <button
+                    onClick={addDealership}
+                    className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 flex items-center gap-1 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-1 rounded transition-colors border border-indigo-100 dark:border-indigo-800"
+                  >
+                    <Plus size={12} /> Add Dealership
+                  </button>
+                )}
               </div>
 
-              {/* Identifiers Section */}
-              <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-slate-50 dark:border-slate-800/50">
-                 <div>
-                    <Label icon={Hash}>DMS ID</Label>
-                    {isEditing ? (
-                      <Input value={formData.dms_id} onChange={(v) => updateField('dms_id', v)} placeholder="DMS ID" />
-                    ) : (
-                      <DataValue value={formData.dms_id} mono />
-                    )}
-                 </div>
-                 <div>
-                    <Label icon={Hash}>Curator ID</Label>
-                    {isEditing ? (
-                      <Input value={formData.curator_id} onChange={(v) => updateField('curator_id', v)} placeholder="Curator ID" />
-                    ) : (
-                      <DataValue value={formData.curator_id} mono />
-                    )}
-                 </div>
-                 <div>
-                    <Label icon={Link}>Curator Link</Label>
-                    {isEditing ? (
-                      <Input value={formData.curator_link} onChange={(v) => updateField('curator_link', v)} placeholder="https://..." />
-                    ) : (
-                       <DataValue>
-                          {formData.curator_link ? (
-                            <a href={formData.curator_link} target="_blank" rel="noopener noreferrer" className="text-indigo-600 dark:text-indigo-400 hover:underline truncate flex items-center gap-1" title={formData.curator_link}>
-                              Open Link <ExternalLink size={10} />
-                            </a>
-                          ) : '---'}
-                       </DataValue>
-                    )}
-                 </div>
-              </div>
-            </div>
+              <div className="space-y-6">
+                {(formData.dealerships || []).map((shopperDealership, dIdx) => {
+                  const dealer = getDealershipById(shopperDealership.dealership_id);
+                  const group = getGroupForDealership(shopperDealership.dealership_id);
 
-            {/* System Identities Section */}
-            <div className="mt-5 pt-5 border-t border-slate-100 dark:border-slate-800">
-              <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-widest">System Identities</h3>
-                  {!isEditing && (
-                      <button 
-                          onClick={() => toggleQuickEdit('identities')}
-                          className={`p-1.5 rounded-lg transition-all ${quickEdit.identities ? 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-400' : 'text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30'}`}
-                          title={quickEdit.identities ? "Save Identities" : "Quick Edit Identities"}
-                      >
-                          {quickEdit.identities ? <Check size={14} /> : <Edit3 size={14} />}
-                      </button>
-                  )}
-              </div>
-              <div className="flex flex-col gap-3">
-                 <IdentityManager 
-                    identities={combinedSystemIdentities} 
-                    onChange={handleSystemIdentitiesUpdate}
-                    isEditing={isIdentitiesEditing}
-                    showSystem={true}
-                 />
-              </div>
-            </div>
+                  return (
+                    <div key={shopperDealership.id} className="border border-slate-200 dark:border-slate-700 rounded-2xl p-4 bg-white dark:bg-slate-800/30 relative">
 
-            {/* Additional Profiles Section */}
-            <div className="mt-5 pt-5 border-t border-slate-100 dark:border-slate-800">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-widest">Additional Profiles</h3>
-                <div className="flex items-center gap-2">
-                    {!isEditing && (
-                        <button 
-                            onClick={() => toggleQuickEdit('profiles')}
-                            className={`p-1.5 rounded-lg transition-all ${quickEdit.profiles ? 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-400' : 'text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30'}`}
-                            title={quickEdit.profiles ? "Save Profiles" : "Quick Edit Profiles"}
-                        >
-                            {quickEdit.profiles ? <Check size={14} /> : <Edit3 size={14} />}
-                        </button>
-                    )}
-                    {isProfilesEditing && (
-                        <button onClick={addProfile} className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 flex items-center gap-1 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-1 rounded transition-colors border border-indigo-100 dark:border-indigo-800">
-                            <Plus size={12} /> Add Profile
-                        </button>
-                    )}
-                </div>
-              </div>
-              
-              <div className="space-y-4">
-                {(formData.additional_profiles || []).map((profile, idx) => (
-                    <div key={profile.id} className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl p-3 relative">
-                        {/* Header / Remove */}
-                        {isProfilesEditing && (
-                           <button 
-                             onClick={() => removeProfile(idx)} 
-                             className="absolute top-2 right-2 text-slate-400 hover:text-red-500 bg-white dark:bg-slate-700 p-1 rounded-full shadow-sm border border-slate-100 dark:border-slate-600 hover:border-red-100 dark:hover:border-red-900 transition-all z-10"
-                             title="Remove Profile"
-                           >
-                             <Trash2 size={12} />
-                           </button>
+                      {/* Dealership Header */}
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <Building2 size={14} className="text-slate-400" />
+                          <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Dealership {dIdx + 1}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          {dealer && (
+                            <>
+                              <button
+                                onClick={() => copyToClipboard(dealer.pp_sys_id || '', `pp-${dIdx}`)}
+                                className="p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-all"
+                                title="Copy PP Sys ID"
+                              >
+                                {copiedField === `pp-${dIdx}` ? <Check size={14} className="text-emerald-500" /> : <Hash size={14} />}
+                              </button>
+                              <button
+                                onClick={() => {
+                                  const combo = `${dealer.pp_sys_id || ''}_${dealer.store_number || ''}_${dealer.branch_number || ''}`;
+                                  copyToClipboard(combo, `combo-${dIdx}`);
+                                }}
+                                className="p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-all"
+                                title="Copy PP_Store_Branch"
+                              >
+                                {copiedField === `combo-${dIdx}` ? <Check size={14} className="text-emerald-500" /> : <Link size={14} />}
+                              </button>
+                            </>
+                          )}
+                          {isEditing && (
+                            <button
+                              onClick={() => removeDealership(dIdx)}
+                              className="p-1.5 text-slate-300 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-all"
+                              title="Remove Dealership"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Dealership Dropdown */}
+                      <div className="mb-3">
+                        <Label icon={Building2}>Assigned Dealership</Label>
+                        {isEditing ? (
+                          <select
+                            value={shopperDealership.dealership_id || ''}
+                            onChange={(e) => updateDealershipField(dIdx, 'dealership_id', e.target.value)}
+                            className="w-full px-3 py-1.5 text-[12px] border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-normal transition-all"
+                          >
+                            <option value="">-- Select Dealership --</option>
+                            {eligibleDealerships.map(d => (
+                              <option key={d.id} value={d.id}>{d.name} ({d.status})</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <DataValue value={dealer?.name || 'Unassigned'} />
                         )}
-                        
-                        {/* 4 Columns Input */}
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4 pr-6">
-                            <div>
+                      </div>
+
+                      {/* Dealership Info */}
+                      {dealer && (
+                        <div className="grid grid-cols-3 gap-3 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800 mb-4">
+                          <div className="min-w-0">
+                            <Label>Enterprise Group</Label>
+                            <div className="truncate" title={group?.name || 'Single (Independent)'}>
+                              <DataValue value={group?.name || 'Single (Independent)'} />
+                            </div>
+                          </div>
+                          <div>
+                            <Label>PP Sys ID</Label>
+                            <DataValue mono value={dealer.pp_sys_id} />
+                          </div>
+                          <div>
+                            <Label>Store / Branch</Label>
+                            <DataValue mono value={`${dealer.store_number || '-'}/${dealer.branch_number || '-'}`} />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Profiles under this dealership */}
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Profiles</span>
+                          {isEditing && (
+                            <button
+                              onClick={() => addProfile(dIdx)}
+                              className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 flex items-center gap-1 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-1 rounded transition-colors border border-indigo-100 dark:border-indigo-800"
+                            >
+                              <Plus size={10} /> Add Profile
+                            </button>
+                          )}
+                        </div>
+
+                        {shopperDealership.profiles.map((profile, pIdx) => (
+                          <div key={profile.id} className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl p-3 relative">
+                            {/* Profile header with number and remove */}
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">Profile [{pIdx + 1}]</span>
+                              {isEditing && shopperDealership.profiles.length > 1 && (
+                                <button
+                                  onClick={() => removeProfile(dIdx, pIdx)}
+                                  className="text-slate-400 hover:text-red-500 p-1 rounded-full hover:bg-red-50 dark:hover:bg-red-900/30 transition-all"
+                                  title="Remove Profile"
+                                >
+                                  <Trash2 size={12} />
+                                </button>
+                              )}
+                            </div>
+
+                            {/* Profile fields - Row 1: Name, Email, Phone */}
+                            <div className="grid grid-cols-3 gap-3 mb-2">
+                              <div>
                                 <Label>Name</Label>
-                                {isProfilesEditing ? (
-                                    <Input value={profile.name} onChange={(v) => updateProfile(idx, 'name', v)} placeholder="Name" />
+                                {isEditing ? (
+                                  <Input value={profile.name} onChange={(v) => updateProfileField(dIdx, pIdx, 'name', v)} placeholder="Name" />
                                 ) : (
-                                    <DataValue value={profile.name} />
+                                  <DataValue value={profile.name} />
                                 )}
-                            </div>
-                            <div>
+                              </div>
+                              <div>
                                 <Label>Email</Label>
-                                {isProfilesEditing ? (
-                                     <Input value={profile.email} onChange={(v) => updateProfile(idx, 'email', v)} placeholder="Email" />
+                                {isEditing ? (
+                                  <Input type="email" value={profile.email} onChange={(v) => updateProfileField(dIdx, pIdx, 'email', v)} placeholder="Email" />
                                 ) : (
-                                     <DataValue value={profile.email} />
+                                  <DataValue value={profile.email} />
                                 )}
-                            </div>
-                            <div>
+                              </div>
+                              <div>
                                 <Label>Phone</Label>
-                                {isProfilesEditing ? (
-                                     <input 
-                                      type="text"
-                                      value={profile.phone || ''}
-                                      onChange={(e) => updateProfile(idx, 'phone', e.target.value)}
-                                      onBlur={(e) => updateProfile(idx, 'phone', formatPhone(e.target.value))}
-                                      placeholder="(###) ###-####"
-                                      className="w-full px-3 py-1.5 text-[12px] border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-normal transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600"
-                                    />
+                                {isEditing ? (
+                                  <input
+                                    type="text"
+                                    value={profile.phone || ''}
+                                    onChange={(e) => updateProfileField(dIdx, pIdx, 'phone', e.target.value)}
+                                    onBlur={(e) => updateProfileField(dIdx, pIdx, 'phone', formatPhone(e.target.value))}
+                                    placeholder="###-###-####"
+                                    className="w-full px-3 py-1.5 text-[12px] border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-normal transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600"
+                                  />
                                 ) : (
-                                     <DataValue value={formatPhone(profile.phone)} />
+                                  <DataValue value={formatPhone(profile.phone)} />
                                 )}
+                              </div>
                             </div>
-                            <div>
-                                <Label>Curator Link</Label>
-                                {isProfilesEditing ? (
-                                     <Input value={profile.curator_link} onChange={(v) => updateProfile(idx, 'curator_link', v)} placeholder="https://..." />
-                                ) : (
-                                     <DataValue>
-                                        {profile.curator_link ? (
-                                          <a href={profile.curator_link} target="_blank" rel="noopener noreferrer" className="text-indigo-600 dark:text-indigo-400 hover:underline truncate flex items-center gap-1" title={profile.curator_link}>
-                                            Link <ExternalLink size={10} />
-                                          </a>
-                                        ) : '---'}
-                                     </DataValue>
-                                )}
-                            </div>
-                        </div>
 
-                        {/* Issue Field */}
-                        <div className="mb-4 pr-6">
-                            <Label icon={AlertTriangle}>Issue / Blocker</Label>
-                            {isProfilesEditing ? (
+                            {/* Profile fields - Row 2: DMS ID, Curator ID, Curator Link */}
+                            <div className="grid grid-cols-3 gap-3 mb-3">
+                              <div>
+                                <Label icon={Hash}>DMS ID</Label>
+                                {isEditing ? (
+                                  <Input value={profile.dms_id} onChange={(v) => updateProfileField(dIdx, pIdx, 'dms_id', v)} placeholder="DMS ID" />
+                                ) : (
+                                  <DataValue value={profile.dms_id} mono />
+                                )}
+                              </div>
+                              <div>
+                                <Label icon={Hash}>Curator ID</Label>
+                                {isEditing ? (
+                                  <Input value={profile.curator_id} onChange={(v) => updateProfileField(dIdx, pIdx, 'curator_id', v)} placeholder="Curator ID" />
+                                ) : (
+                                  <DataValue value={profile.curator_id} mono />
+                                )}
+                              </div>
+                              <div>
+                                <Label icon={Link}>Curator Link</Label>
+                                {isEditing ? (
+                                  <Input value={profile.curator_link} onChange={(v) => updateProfileField(dIdx, pIdx, 'curator_link', v)} placeholder="https://..." />
+                                ) : (
+                                  <DataValue>
+                                    {profile.curator_link ? (
+                                      <a href={profile.curator_link} target="_blank" rel="noopener noreferrer" className="text-indigo-600 dark:text-indigo-400 hover:underline truncate flex items-center gap-1" title={profile.curator_link}>
+                                        Open Link <ExternalLink size={10} />
+                                      </a>
+                                    ) : '---'}
+                                  </DataValue>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Issue Field */}
+                            <div className="mb-3">
+                              <Label icon={AlertTriangle}>Issue / Blocker</Label>
+                              {isEditing ? (
                                 <textarea
-                                    value={profile.issue || ''}
-                                    onChange={(e) => updateProfile(idx, 'issue', e.target.value)}
-                                    className="w-full px-3 py-2 text-[12px] border border-orange-300 bg-orange-50 dark:bg-orange-900/20 dark:border-orange-900 rounded-lg focus:ring-1 focus:ring-orange-500 outline-none text-slate-800 dark:text-orange-100 placeholder:text-orange-300 min-h-[40px]"
-                                    placeholder="Describe issue for this profile..."
+                                  value={profile.issue || ''}
+                                  onChange={(e) => updateProfileField(dIdx, pIdx, 'issue', e.target.value)}
+                                  className="w-full px-3 py-2 text-[12px] border border-orange-300 bg-orange-50 dark:bg-orange-900/20 dark:border-orange-900 rounded-lg focus:ring-1 focus:ring-orange-500 outline-none text-slate-800 dark:text-orange-100 placeholder:text-orange-300 min-h-[40px]"
+                                  placeholder="Describe issue for this profile..."
                                 />
-                            ) : (
-                                <div className="w-full px-3 py-2 text-[12px] border border-orange-300 bg-orange-50 dark:bg-orange-900/20 dark:border-orange-900 rounded-lg text-slate-800 dark:text-orange-100">
-                                    {profile.issue || 'No issues recorded.'}
-                                </div>
-                            )}
-                        </div>
+                              ) : (
+                                profile.issue ? (
+                                  <div className="w-full px-3 py-2 text-[12px] border border-orange-300 bg-orange-50 dark:bg-orange-900/20 dark:border-orange-900 rounded-lg text-slate-800 dark:text-orange-100">
+                                    {profile.issue}
+                                  </div>
+                                ) : (
+                                  <div className="text-[10px] text-slate-400 dark:text-slate-500 italic">No issues recorded.</div>
+                                )
+                              )}
+                            </div>
 
-                        {/* Identities */}
-                        <IdentityManager 
-                            label="CDP IDs"
-                            identities={profile.cdp_identities || []}
-                            onChange={(ids) => updateProfile(idx, 'cdp_identities', ids)}
-                            isEditing={isProfilesEditing}
-                        />
+                            {/* CDP IDs */}
+                            <CdpIdManager
+                              cdpIds={profile.cdp_ids || []}
+                              onChange={(ids) => updateProfileField(dIdx, pIdx, 'cdp_ids', ids)}
+                              isEditing={isEditing}
+                            />
+                          </div>
+                        ))}
+
+                        {shopperDealership.profiles.length === 0 && !isEditing && (
+                          <div className="text-[10px] text-slate-400 dark:text-slate-500 italic">No profiles recorded.</div>
+                        )}
+                      </div>
                     </div>
-                ))}
-                {(!formData.additional_profiles || formData.additional_profiles.length === 0) && !isProfilesEditing && (
-                    <div className="text-[10px] text-slate-400 dark:text-slate-500 italic">No additional profiles recorded.</div>
+                  );
+                })}
+
+                {(!formData.dealerships || formData.dealerships.length === 0) && !isEditing && (
+                  <div className="text-[10px] text-slate-400 dark:text-slate-500 italic">No dealerships assigned.</div>
                 )}
               </div>
             </div>

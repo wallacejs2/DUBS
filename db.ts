@@ -83,6 +83,60 @@ class CuratorLocalDB extends EventTarget {
           notes: parsed.notes || [],
           tasks: parsed.tasks || []
         };
+        // Migrate old shopper format to new multi-dealership structure
+        if (this.data.shoppers) {
+          let migrated = false;
+          this.data.shoppers = this.data.shoppers.map((s: any) => {
+            if (s.dealerships) return s; // Already migrated
+            migrated = true;
+
+            // Build primary profile from top-level fields
+            const primaryProfile: any = {
+              id: this.generateId(),
+              name: `${s.first_name || ''} ${s.last_name || ''}`.trim(),
+              email: s.email || '',
+              phone: s.phone || '',
+              dms_id: s.dms_id || '',
+              curator_id: s.curator_id || '',
+              curator_link: s.curator_link || '',
+              issue: s.issue || '',
+              cdp_ids: [
+                ...(s.ucp_identities || []).map((i: any) => ({ id: i.id || this.generateId(), system: 'ucp', value: i.value || '', notes: i.notes || '' })),
+                ...(s.cdp_admin_identities || []).map((i: any) => ({ id: i.id || this.generateId(), system: 'cdp_admin', value: i.value || '', notes: i.notes || '' })),
+                ...(s.curator_identities || []).map((i: any) => ({ id: i.id || this.generateId(), system: 'curator', value: i.value || '', notes: i.notes || '' })),
+              ]
+            };
+
+            // Convert additional profiles
+            const additionalProfiles = (s.additional_profiles || []).map((p: any) => ({
+              id: p.id || this.generateId(),
+              name: p.name || '',
+              email: p.email || '',
+              phone: p.phone || '',
+              dms_id: p.dms_id || '',
+              curator_id: '',
+              curator_link: p.curator_link || '',
+              issue: p.issue || '',
+              cdp_ids: (p.cdp_identities || []).map((i: any) => ({ id: i.id || this.generateId(), system: i.system || 'ucp', value: i.value || '', notes: i.notes || '' })),
+            }));
+
+            const allProfiles = [primaryProfile, ...additionalProfiles].filter((p: any) => p.name || p.email);
+
+            const dealerships: any[] = [];
+            if (s.dealership_id || allProfiles.length > 0) {
+              dealerships.push({
+                id: this.generateId(),
+                dealership_id: s.dealership_id || '',
+                profiles: allProfiles.length > 0 ? allProfiles : [{ id: this.generateId(), name: '', cdp_ids: [] }],
+              });
+            }
+
+            // Return cleaned shopper
+            const { email, phone, dms_id, curator_id, curator_link, issue, dealership_id, ucp_identities, cdp_admin_identities, curator_identities, additional_profiles, ...rest } = s;
+            return { ...rest, dealerships };
+          });
+          if (migrated) this.save();
+        }
       } catch (e) {
         console.error("Failed to parse LocalDB data", e);
       }
@@ -177,14 +231,11 @@ class CuratorLocalDB extends EventTarget {
       id: this.generateId(),
       first_name: 'Michael',
       last_name: 'Tester',
-      email: 'm.tester@qa-curator.io',
-      phone: '310-555-9012',
       status: ShopperStatus.ACTIVE,
       priority: ShopperPriority.HIGH,
-      username: 'mtester_qa',
-      password: 'SafePassword123!',
-      created_at: new Date().toISOString()
-    }];
+      created_at: new Date().toISOString(),
+      dealerships: []
+    } as Shopper];
 
     this.data.newFeatures = [{
       id: this.generateId(),
