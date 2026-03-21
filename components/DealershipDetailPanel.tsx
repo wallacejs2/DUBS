@@ -79,7 +79,7 @@ const Input = ({ value, onChange, type = "text", className = "", placeholder="",
     placeholder={placeholder}
     disabled={disabled}
     required={required}
-    className={`w-full px-2 py-1 text-sm border border-slate-200/60 dark:border-[#38383A] rounded-xl focus:ring-1 focus:ring-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none bg-slate-100/50 dark:bg-[#2C2C2E] text-slate-900 dark:text-slate-100 font-normal placeholder:text-slate-400 dark:placeholder:text-slate-600 ${disabled ? 'opacity-50 bg-slate-50 dark:bg-slate-900 cursor-not-allowed border-slate-100/60 dark:border-[#38383A]' : ''} ${className}`}
+    className={`w-full px-2 py-1 text-sm border border-slate-200/60 dark:border-[#38383A] rounded-xl focus:ring-1 focus:ring-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none bg-slate-100/50 dark:bg-[#2C2C2E] text-slate-900 dark:text-slate-100 font-normal placeholder:text-slate-400 dark:placeholder:text-slate-600 ${disabled ? 'opacity-50 bg-slate-50 dark:bg-[#1C1C1E] cursor-not-allowed border-slate-100/60 dark:border-[#38383A]' : ''} ${className}`}
   />
 );
 
@@ -497,7 +497,7 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
              <div className="flex items-center gap-2">
                {isEditing ? (
                  <>
-                   <button onClick={handleSave} className="px-3 py-1.5 bg-blue-500 text-white rounded-xl text-sm font-semibold hover:bg-blue-600 transition-colors flex items-center gap-1">
+                   <button onClick={handleSave} className="px-3 py-1.5 bg-blue-500 text-white rounded-xl text-sm font-semibold hover:bg-blue-600 transition-colors focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none flex items-center gap-1">
                      <Save size={14} /> Save
                    </button>
                    <button onClick={handleCancel} className="p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 rounded-lg"><RefreshCw size={16} /></button>
@@ -528,7 +528,7 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                {!isEditing && (
                  <button onClick={onDelete} className="p-1.5 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"><Trash2 size={16} /></button>
                )}
-               <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 rounded-lg"><X size={20} /></button>
+               <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 rounded-lg focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"><X size={20} /></button>
              </div>
           </div>
 
@@ -1184,7 +1184,7 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                            </div>
                         ))}
                         {(!order.products || order.products.length === 0) && (
-                            <div className="text-center py-4 text-slate-400 text-xs italic bg-slate-50 dark:bg-slate-900 rounded-lg border border-dashed border-slate-200/60 dark:border-[#38383A]">No products added to this order.</div>
+                            <div className="text-center py-4 text-slate-400 text-xs italic bg-slate-50/50 dark:bg-white/[0.02] rounded-lg border border-dashed border-slate-200/60 dark:border-[#38383A]">No products added to this order.</div>
                         )}
                      </div>
                   </div>
