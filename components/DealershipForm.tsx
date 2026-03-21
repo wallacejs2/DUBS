@@ -24,7 +24,7 @@ const STATES = [
 
 // UI Components matching DealershipDetailPanel
 const Label = ({ children }: { children?: React.ReactNode }) => (
-  <label className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1 block">
+  <label className="text-xs font-semibold text-slate-400 dark:text-slate-500 mb-1 block">
     {children}
   </label>
 );
@@ -38,7 +38,7 @@ const Input = ({ value, onChange, type = "text", className = "", placeholder="",
     placeholder={placeholder}
     disabled={disabled}
     required={required}
-    className={`w-full px-2 py-1 text-[12px] border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-normal placeholder:text-slate-400 dark:placeholder:text-slate-600 ${disabled ? 'opacity-50 bg-slate-50 dark:bg-slate-900 cursor-not-allowed border-slate-100 dark:border-slate-800' : ''} ${className}`}
+    className={`w-full px-2 py-1 text-sm border border-slate-200/60 dark:border-[#38383A] rounded-xl focus:ring-1 focus:ring-blue-500 outline-none bg-slate-100/50 dark:bg-[#2C2C2E] text-slate-900 dark:text-slate-100 font-normal placeholder:text-slate-400 dark:placeholder:text-slate-500 ${disabled ? 'opacity-50 bg-slate-50 dark:bg-[#1C1C1E] cursor-not-allowed' : ''} ${className}`}
   />
 );
 
@@ -47,7 +47,7 @@ const Select = ({ value, onChange, options, className = "", disabled = false }: 
     value={value || ''}
     onChange={(e) => onChange(e.target.value)}
     disabled={disabled}
-    className={`w-full px-2 py-1 text-[12px] border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-normal ${disabled ? 'opacity-50 cursor-not-allowed bg-slate-50 dark:bg-slate-900' : ''} ${className}`}
+    className={`w-full px-2 py-1 text-sm border border-slate-200/60 dark:border-[#38383A] rounded-xl focus:ring-1 focus:ring-blue-500 outline-none bg-slate-100/50 dark:bg-[#2C2C2E] text-slate-900 dark:text-slate-100 font-normal ${disabled ? 'opacity-50 cursor-not-allowed bg-slate-50 dark:bg-[#1C1C1E]' : ''} ${className}`}
   >
     {options.map(opt => (
       <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -74,16 +74,16 @@ const MultiSelect = ({ options, selected, onToggle, placeholder = "Select produc
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between px-2 py-1 text-[12px] border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-normal text-left min-h-[30px]"
+        className="w-full flex items-center justify-between px-2 py-1 text-sm border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-normal text-left min-h-[30px]"
       >
         <div className="flex flex-wrap gap-1 items-center flex-1">
           {selected.length === 0 ? (
             <span className="text-slate-400 dark:text-slate-600">{placeholder}</span>
           ) : (
             selected.map(item => (
-              <span key={item} className="bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 px-1.5 py-0.5 rounded flex items-center gap-1 text-[10px] font-bold">
+              <span key={item} className="bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300 px-1.5 py-0.5 rounded flex items-center gap-1 text-xs font-bold">
                 {item}
-                <X size={10} className="cursor-pointer hover:text-indigo-900" onClick={(e) => { e.stopPropagation(); onToggle(item); }} />
+                <X size={10} className="cursor-pointer hover:text-blue-900" onClick={(e) => { e.stopPropagation(); onToggle(item); }} />
               </span>
             ))
           )}
@@ -95,15 +95,15 @@ const MultiSelect = ({ options, selected, onToggle, placeholder = "Select produc
         <div className="absolute z-50 w-full mt-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl max-h-60 overflow-y-auto custom-scrollbar animate-in fade-in slide-in-from-top-2 duration-150">
           <div className="p-1">
             {options.length === 0 ? (
-              <div className="p-3 text-center text-slate-400 italic text-[11px]">No options found</div>
+              <div className="p-3 text-center text-slate-400 italic text-xs">No options found</div>
             ) : (
               options.map(opt => (
                 <div
                   key={opt.id}
                   onClick={() => onToggle(opt.name)}
-                  className={`flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-colors ${selected.includes(opt.name) ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300' : 'hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'}`}
+                  className={`flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-colors ${selected.includes(opt.name) ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300' : 'hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'}`}
                 >
-                  <span className="text-[12px]">{opt.name}</span>
+                  <span className="text-sm">{opt.name}</span>
                   {selected.includes(opt.name) && <Check size={14} />}
                 </div>
               ))
@@ -327,7 +327,7 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
                 <button 
                     type="submit" 
                     form="dealer-form" 
-                    className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-indigo-700 shadow-lg shadow-indigo-500/20 flex items-center gap-2 transition-all"
+                    className="px-4 py-2.5 bg-blue-500 text-white rounded-xl text-sm font-semibold hover:bg-blue-600 flex items-center gap-2 transition-colors focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"
                 >
                     <Save size={16} /> Save Changes
                 </button>
@@ -344,7 +344,7 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
             
             {/* Core Info */}
             <div className="space-y-6">
-                <h3 className="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">Core Information</h3>
+                <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">Core Information</h3>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
@@ -413,7 +413,7 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
                         <textarea
                             value={formData.hold_reason || ''}
                             onChange={(e) => updateField('hold_reason', e.target.value)}
-                            className="w-full px-2 py-1.5 text-[12px] border border-orange-200 dark:border-orange-800 bg-white dark:bg-slate-900 rounded-lg focus:ring-1 focus:ring-orange-500 outline-none text-slate-800 dark:text-orange-100 placeholder:text-orange-300 min-h-[80px] resize-none"
+                            className="w-full px-2 py-1.5 text-sm border border-orange-200 dark:border-orange-800 bg-white dark:bg-slate-900 rounded-lg focus:ring-1 focus:ring-orange-500 outline-none text-slate-800 dark:text-orange-100 placeholder:text-orange-300 min-h-[80px] resize-none"
                             placeholder="Reason for hold..."
                         />
                     </div>
@@ -425,7 +425,7 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
                         <textarea
                             value={formData.cancellation_reason || ''}
                             onChange={(e) => updateField('cancellation_reason', e.target.value)}
-                            className="w-full px-2 py-1.5 text-[12px] border border-red-200 dark:border-red-800 bg-white dark:bg-slate-900 rounded-lg focus:ring-1 focus:ring-red-500 outline-none text-slate-800 dark:text-red-100 placeholder:text-red-300 min-h-[80px] resize-none"
+                            className="w-full px-2 py-1.5 text-sm border border-red-200 dark:border-red-800 bg-white dark:bg-slate-900 rounded-lg focus:ring-1 focus:ring-red-500 outline-none text-slate-800 dark:text-red-100 placeholder:text-red-300 min-h-[80px] resize-none"
                             placeholder="Reason for cancellation..."
                         />
                     </div>
@@ -437,18 +437,18 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
             {/* Enterprise & IDs */}
             <div className="space-y-6">
                 <div className="flex justify-between items-center">
-                    <h3 className="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">Enterprise & Identifiers</h3>
+                    <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">Enterprise & Identifiers</h3>
                     {!isAddingGroup && (
-                        <button type="button" onClick={() => setIsAddingGroup(true)} className="text-[9px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline">+ New Group</button>
+                        <button type="button" onClick={() => setIsAddingGroup(true)} className="text-xs font-bold text-blue-500 dark:text-blue-400 hover:underline">+ New Group</button>
                     )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {isAddingGroup ? (
-                        <div className="col-span-2 bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-xl border border-indigo-100 dark:border-indigo-800 animate-in fade-in zoom-in-95">
+                        <div className="col-span-2 bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-800 animate-in fade-in zoom-in-95">
                             <div className="flex justify-between items-center mb-3">
-                                <span className="text-xs font-bold text-indigo-800 dark:text-indigo-300">Create New Enterprise Group</span>
-                                <button type="button" onClick={() => setIsAddingGroup(false)} className="text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200"><X size={14} /></button>
+                                <span className="text-xs font-bold text-blue-800 dark:text-blue-300">Create New Enterprise Group</span>
+                                <button type="button" onClick={() => setIsAddingGroup(false)} className="text-blue-400 hover:text-blue-800 dark:hover:text-blue-200"><X size={14} /></button>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                                 <div className="md:col-span-3">
@@ -464,7 +464,7 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
                                     <Input value={newGroupERA} onChange={(v) => setNewGroupERA(v)} placeholder="ERA ID" />
                                 </div>
                                 <div className="flex items-end">
-                                    <button type="button" onClick={handleAddGroup} className="h-[26px] w-full bg-indigo-600 text-white rounded-lg font-bold text-[10px] hover:bg-indigo-700 transition-all shadow-md">
+                                    <button type="button" onClick={handleAddGroup} className="h-[26px] w-full bg-blue-500 text-white rounded-lg font-bold text-xs hover:bg-blue-600 transition-all shadow-md">
                                         Create & Select
                                     </button>
                                 </div>
@@ -543,7 +543,7 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
 
             {/* Providers */}
             <div className="space-y-6">
-                <h3 className="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">Providers</h3>
+                <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">Providers</h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
@@ -578,9 +578,9 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
                       id="sms_active"
                       checked={!!formData.sms_activated} 
                       onChange={(e) => updateField('sms_activated', e.target.checked)}
-                      className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                      className="w-4 h-4 rounded border-slate-300 text-blue-500 focus:ring-blue-500 cursor-pointer"
                     />
-                    <label htmlFor="sms_active" className="text-[12px] font-medium text-slate-700 dark:text-slate-300 cursor-pointer select-none">
+                    <label htmlFor="sms_active" className="text-sm font-medium text-slate-700 dark:text-slate-300 cursor-pointer select-none">
                         SMS Services Activated
                     </label>
                 </div>
@@ -616,9 +616,9 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
                       id="fp_solutions_visible"
                       checked={!!formData.fp_solutions_visible}
                       onChange={(e) => updateField('fp_solutions_visible', e.target.checked)}
-                      className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                      className="w-4 h-4 rounded border-slate-300 text-blue-500 focus:ring-blue-500 cursor-pointer"
                     />
-                    <label htmlFor="fp_solutions_visible" className="text-[12px] font-medium text-slate-700 dark:text-slate-300 cursor-pointer select-none">
+                    <label htmlFor="fp_solutions_visible" className="text-sm font-medium text-slate-700 dark:text-slate-300 cursor-pointer select-none">
                         FP Solutions Visible
                     </label>
                 </div>
@@ -629,8 +629,8 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
             {/* Websites */}
             <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                    <h3 className="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">Websites</h3>
-                    <button type="button" onClick={addWebsite} className="text-[9px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1">
+                    <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">Websites</h3>
+                    <button type="button" onClick={addWebsite} className="text-xs font-bold text-blue-500 dark:text-blue-400 hover:underline flex items-center gap-1">
                         <Plus size={12} /> Add URL
                     </button>
                 </div>
@@ -658,7 +658,7 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
 
             {/* Contacts */}
             <div className="space-y-6">
-                <h3 className="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">Team Assignment</h3>
+                <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">Team Assignment</h3>
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
@@ -688,7 +688,7 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
                 </div>
 
                 <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800 space-y-4">
-                    <h4 className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Primary Point of Contact (Dealership Side)</h4>
+                    <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Primary Point of Contact (Dealership Side)</h4>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <Label>POC Name</Label>
@@ -716,7 +716,7 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
 
             {/* DMT Orders */}
             <div className="space-y-6">
-               <h3 className="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">DMT Orders</h3>
+               <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">DMT Orders</h3>
                
                {formData.orders?.map((order, orderIdx) => (
                   <div key={orderIdx} className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm relative space-y-4">
@@ -741,8 +741,8 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
 
                      <div className="space-y-2 pt-2">
                         <div className="flex justify-between items-center px-1">
-                           <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Line Items</span>
-                           <button type="button" onClick={() => addProductToOrder(orderIdx)} className="text-[9px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1">
+                           <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Line Items</span>
+                           <button type="button" onClick={() => addProductToOrder(orderIdx)} className="text-xs font-bold text-blue-500 dark:text-blue-400 hover:underline flex items-center gap-1">
                              <Plus size={10} /> Add Product
                            </button>
                         </div>

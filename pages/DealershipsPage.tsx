@@ -16,7 +16,7 @@ interface DealershipsPageProps {
   setFilters: React.Dispatch<React.SetStateAction<DealershipFilterState>>;
 }
 
-type SubPanel = 
+type SubPanel =
   | { type: 'group'; id: string }
   | { type: 'provider'; id: string }
   | { type: 'member'; id: string };
@@ -27,7 +27,7 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
   const { orders } = useOrders();
   const { items: providerProducts, upsert: upsertPP, remove: removePP } = useProvidersProducts();
   const { members: teamMembers, upsert: upsertTM, remove: removeTM } = useTeamMembers();
-  
+
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedDealerId, setSelectedDealerId] = useState<string | null>(null);
   const [editingDealer, setEditingDealer] = useState<DealershipWithRelations | null>(null);
@@ -49,15 +49,15 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
   };
 
   const checkIsManaged = (dealerId: string) => {
-    return orders.some(o => 
-      o.dealership_id === dealerId && 
+    return orders.some(o =>
+      o.dealership_id === dealerId &&
       o.products.some(p => p.product_code === ProductCode.P15392_MANAGED)
     );
   };
 
   const checkHasAddlWeb = (dealerId: string) => {
-    return orders.some(o => 
-      o.dealership_id === dealerId && 
+    return orders.some(o =>
+      o.dealership_id === dealerId &&
       o.products.some(p => p.product_code === ProductCode.P15435_ADDL_WEB || p.product_code === ProductCode.P15436_MNGD_ADDL)
     );
   };
@@ -79,7 +79,7 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
       const fullD = db.getDealershipWithRelations(d.id);
       if (!fullD) return;
       const groupName = allGroups.find(g => g.id === fullD.enterprise_group_id)?.name || 'Independent';
-      
+
       const baseInfo: any = {
          Status: fullD.status,
          Hold_Reason: fullD.hold_reason || '',
@@ -155,9 +155,9 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
     });
 
     const columns = [
-      'Status', 'Hold_Reason', 'Cancellation_Reason', 'CIF', 'Name', 'Group', 'Store', 'Branch', 
+      'Status', 'Hold_Reason', 'Cancellation_Reason', 'CIF', 'Name', 'Group', 'Store', 'Branch',
       'PP_ID', 'ERA_ID', 'BU_ID', 'MMS_ID', 'Address', 'Address_Line2', 'City', 'State', 'Zip_Code', 'CRM',
-      'Sales_Contact', 'Enrollment_Contact', 'CSM', 'POC_Name', 'POC_Email', 'POC_Phone', 
+      'Sales_Contact', 'Enrollment_Contact', 'CSM', 'POC_Name', 'POC_Email', 'POC_Phone',
       'Received_Date', 'Order_Number', 'Onboarding_Date',
       'Go_Live_Date', 'Term_Date',
       ...productCodes,
@@ -197,45 +197,37 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
 
   return (
     <div className="animate-in fade-in duration-700 h-full flex flex-col">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 flex-shrink-0">
-        <div>
-          <h1 className="text-2xl font-extrabold text-slate-800 dark:text-slate-100 tracking-tight">Dealerships</h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Manage and track your curator dealership network.</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button 
-            onClick={handleExportCSV}
-            className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-600 dark:text-slate-300 font-bold text-[11px] hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm transition-all"
-          >
-            <FileSpreadsheet size={14} /> Export CSV
-          </button>
-          <button 
-            onClick={() => { setEditingDealer(null); setIsFormOpen(true); }}
-            className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold text-xs shadow-md shadow-indigo-100 hover:bg-indigo-700 hover:-translate-y-0.5 transition-all dark:shadow-none"
-          >
-            <Plus size={16} /> New Dealership
-          </button>
-        </div>
+      <div className="flex items-center gap-2 mb-6 flex-shrink-0">
+        <button
+          onClick={handleExportCSV}
+          className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl text-sm font-semibold hover:bg-blue-500/20 transition-colors focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"
+        >
+          <FileSpreadsheet size={14} /> Export CSV
+        </button>
+        <button
+          onClick={() => { setEditingDealer(null); setIsFormOpen(true); }}
+          className="flex items-center gap-1.5 px-4 py-2 bg-blue-500 text-white rounded-xl text-sm font-semibold hover:bg-blue-600 transition-colors focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"
+        >
+          <Plus size={16} /> New Dealership
+        </button>
       </div>
 
       <div className="flex gap-6 items-start h-full">
         <div className="flex-1 w-full min-w-0">
             {loading ? (
-                <div className="flex flex-col gap-3">
+                <div className="rounded-2xl overflow-hidden">
                 {[1,2,3,4,5].map(i => (
-                    <div key={i} className="bg-white dark:bg-slate-900 rounded-2xl h-24 border border-slate-100 dark:border-slate-800 animate-pulse"></div>
+                    <div key={i} className="h-24 ios-shimmer"></div>
                 ))}
                 </div>
             ) : dealerships.length === 0 ? (
-                <div className="bg-white dark:bg-slate-900 rounded-[2rem] p-12 text-center border border-slate-100 dark:border-slate-800 border-dashed">
-                <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300 dark:text-slate-600">
-                    <Plus size={32} />
-                </div>
-                <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100">No dealerships found</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">Try adjusting your filters or create a new dealership to get started.</p>
+                <div className="py-16 text-center">
+                <Plus size={48} className="mx-auto mb-3 text-slate-300 dark:text-slate-600" />
+                <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200">No dealerships found</h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Try adjusting your filters or create a new dealership to get started.</p>
                 </div>
             ) : (
-                <div className="flex flex-col gap-3 pb-20">
+                <div className="rounded-2xl bg-white/80 dark:bg-[#2C2C2E] overflow-hidden divide-y divide-slate-200/60 dark:divide-[#38383A] pb-20">
                 {dealerships.map(dealer => {
                     const details = getDetails(dealer.id);
                     const hasClientId = details?.website_links?.some(l => l.client_id && l.client_id.trim().length > 0) ?? false;
@@ -269,7 +261,7 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
       </div>
 
       {isFormOpen && (
-        <DealershipForm 
+        <DealershipForm
           groups={groups}
           initialData={editingDealer || undefined}
           onSubmit={handleCreate}
@@ -278,7 +270,7 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
       )}
 
       {selectedDealerId && selectedDealerDetails && !activeSubPanel && (
-        <DealershipDetailPanel 
+        <DealershipDetailPanel
           dealership={selectedDealerDetails}
           groups={groups}
           onClose={() => { setSelectedDealerId(null); setPanelStack([]); }}
@@ -295,7 +287,7 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
       {activeSubPanel && (
         <>
           {activeSubPanel.type === 'group' && groups.find(g => g.id === activeSubPanel.id) && (
-            <EnterpriseGroupDetailPanel 
+            <EnterpriseGroupDetailPanel
               group={groups.find(g => g.id === activeSubPanel.id)!}
               dealerships={dealerships.filter(d => d.enterprise_group_id === activeSubPanel.id)}
               onClose={() => { setSelectedDealerId(null); setPanelStack([]); }}
@@ -306,7 +298,7 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
             />
           )}
           {activeSubPanel.type === 'provider' && providerProducts.find(p => p.id === activeSubPanel.id) && (
-            <ProviderProductDetailPanel 
+            <ProviderProductDetailPanel
               item={providerProducts.find(p => p.id === activeSubPanel.id)!}
               onClose={() => { setSelectedDealerId(null); setPanelStack([]); }}
               onBack={() => popPanelStack()}
@@ -315,7 +307,7 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
             />
           )}
           {activeSubPanel.type === 'member' && teamMembers.find(m => m.id === activeSubPanel.id) && (
-            <TeamMemberDetailPanel 
+            <TeamMemberDetailPanel
               member={teamMembers.find(m => m.id === activeSubPanel.id)!}
               onClose={() => { setSelectedDealerId(null); setPanelStack([]); }}
               onBack={() => popPanelStack()}

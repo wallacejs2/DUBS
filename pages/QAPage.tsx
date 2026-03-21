@@ -24,14 +24,14 @@ interface ShopperCardProps {
 }
 
 const statusColors: Record<ShopperStatus, string> = {
-  [ShopperStatus.ACTIVE]: 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300',
+  [ShopperStatus.ACTIVE]: 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
   [ShopperStatus.TESTING]: 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
   [ShopperStatus.REVIEW]: 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
   [ShopperStatus.RESOLVED]: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
 };
 
 const statusBorderColors: Record<ShopperStatus, string> = {
-  [ShopperStatus.ACTIVE]: 'border-l-indigo-500',
+  [ShopperStatus.ACTIVE]: 'border-l-blue-500',
   [ShopperStatus.TESTING]: 'border-l-blue-500',
   [ShopperStatus.REVIEW]: 'border-l-amber-500',
   [ShopperStatus.RESOLVED]: 'border-l-emerald-500',
@@ -96,19 +96,19 @@ const ShopperCard: React.FC<ShopperCardProps> = ({ shopper, dealershipsMap, isEx
   };
 
   return (
-    <div className={`bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 border-l-[3px] ${statusBorderColors[shopper.status]} shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700 transition-all`}>
+    <div className={`border-l-[3px] ${statusBorderColors[shopper.status]}`}>
       {/* Summary Row */}
-      <div className="p-4 cursor-pointer" onClick={onEdit}>
+      <div className="p-4 cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 transition-colors focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none" onClick={onEdit}>
         <div className="flex items-center justify-between gap-4">
           {/* Left: Avatar + Name + Dealership chips */}
           <div className="flex items-center gap-3 flex-1 min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-[11px] flex-shrink-0 shadow-sm">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
               {shopper.first_name.charAt(0)}{shopper.last_name.charAt(0)}
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="text-[13px] font-bold text-slate-800 dark:text-slate-100 truncate">{shopper.first_name} {shopper.last_name}</h3>
-                <span className={`px-1.5 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-widest flex-shrink-0 ${statusColors[shopper.status]}`}>
+                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">{shopper.first_name} {shopper.last_name}</h3>
+                <span className={`px-1.5 py-0.5 rounded-full text-xs font-bold uppercase flex-shrink-0 ${statusColors[shopper.status]}`}>
                   {shopper.status}
                 </span>
               </div>
@@ -119,19 +119,19 @@ const ShopperCard: React.FC<ShopperCardProps> = ({ shopper, dealershipsMap, isEx
                     (shopper.dealerships || []).map((sd, i) => {
                       const dealer = dealershipsMap.get(sd.dealership_id);
                       return (
-                        <span key={sd.id} className="inline-flex items-center gap-1 text-[9px] font-medium text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-md border border-slate-200 dark:border-slate-700">
-                          <Building2 size={8} className="text-slate-400 dark:text-slate-500" />
+                        <span key={sd.id} className="inline-flex items-center gap-1 text-xs font-medium text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-md border border-slate-200/60 dark:border-[#38383A]">
+                          <Building2 size={10} className="text-slate-400 dark:text-slate-500" />
                           {dealer?.name || 'Unassigned'}
                         </span>
                       );
                     })
                   ) : (
-                    <span className="text-[9px] text-slate-400 dark:text-slate-500 italic">No dealerships</span>
+                    <span className="text-xs text-slate-400 dark:text-slate-500 italic">No dealerships</span>
                   )}
                 </div>
                 {/* Counters */}
-                <span className="text-[9px] text-slate-400 dark:text-slate-500 flex items-center gap-1 flex-shrink-0">
-                  <Users size={9} /> {totalProfiles} profile{totalProfiles !== 1 ? 's' : ''}
+                <span className="text-xs text-slate-400 dark:text-slate-500 flex items-center gap-1 flex-shrink-0">
+                  <Users size={11} /> {totalProfiles} profile{totalProfiles !== 1 ? 's' : ''}
                 </span>
               </div>
             </div>
@@ -140,14 +140,14 @@ const ShopperCard: React.FC<ShopperCardProps> = ({ shopper, dealershipsMap, isEx
           {/* Right: Actions */}
           <div className="flex items-center gap-1 flex-shrink-0">
             {issueCount > 0 && (
-              <span className="text-[9px] font-bold text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 border border-orange-100 dark:border-orange-800 px-1.5 py-0.5 rounded-md flex items-center gap-1 mr-1" title={firstIssue}>
-                <AlertTriangle size={9} /> {issueCount}
+              <span className="text-xs font-bold text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 border border-orange-100 dark:border-orange-800 px-1.5 py-0.5 rounded-md flex items-center gap-1 mr-1" title={firstIssue}>
+                <AlertTriangle size={11} /> {issueCount}
               </span>
             )}
             {totalDealerships > 0 && (
               <button
                 onClick={handleCopyAll}
-                className="p-1.5 text-slate-300 dark:text-slate-600 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-all"
+                className="p-1.5 text-slate-300 dark:text-slate-600 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-all focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"
                 title="Copy All"
               >
                 {copiedField === 'all' ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
@@ -156,7 +156,7 @@ const ShopperCard: React.FC<ShopperCardProps> = ({ shopper, dealershipsMap, isEx
             {totalDealerships > 0 && (
               <button
                 onClick={(e) => { e.stopPropagation(); onToggleExpand(); }}
-                className="p-1.5 text-slate-300 dark:text-slate-600 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all"
+                className="p-1.5 text-slate-300 dark:text-slate-600 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"
                 title={isExpanded ? "Collapse" : "Expand Preview"}
               >
                 {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
@@ -164,14 +164,14 @@ const ShopperCard: React.FC<ShopperCardProps> = ({ shopper, dealershipsMap, isEx
             )}
             <button
               onClick={(e) => { e.stopPropagation(); onEdit(); }}
-              className="p-1.5 text-slate-300 dark:text-slate-600 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-all"
+              className="p-1.5 text-slate-300 dark:text-slate-600 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-all focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"
               title="Edit"
             >
               <Edit3 size={14} />
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); onDelete(); }}
-              className="p-1.5 text-slate-300 dark:text-slate-600 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-all"
+              className="p-1.5 text-slate-300 dark:text-slate-600 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-all focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"
               title="Delete"
             >
               <Trash2 size={14} />
@@ -182,7 +182,7 @@ const ShopperCard: React.FC<ShopperCardProps> = ({ shopper, dealershipsMap, isEx
 
       {/* Expanded: Dealership + Profile Preview */}
       {isExpanded && (
-        <div className="border-t border-slate-100 dark:border-slate-800 px-4 pb-4 pt-3 bg-slate-50/50 dark:bg-slate-800/20 rounded-b-xl">
+        <div className="border-t border-slate-200/60 dark:border-[#38383A] px-4 pb-4 pt-3 bg-slate-50/50 dark:bg-white/[0.02]">
           <div className="space-y-3">
             {(shopper.dealerships || []).map((sd, dIdx) => {
               const dealer = dealershipsMap.get(sd.dealership_id);
@@ -192,14 +192,14 @@ const ShopperCard: React.FC<ShopperCardProps> = ({ shopper, dealershipsMap, isEx
                 <div key={sd.id}>
                   {/* Dealership header */}
                   <div className="flex items-center gap-2 mb-1.5">
-                    <Building2 size={11} className="text-indigo-500 dark:text-indigo-400 flex-shrink-0" />
-                    <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide">
+                    <Building2 size={11} className="text-blue-500 dark:text-blue-400 flex-shrink-0" />
+                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide">
                       {dealer?.name || 'Unassigned'}
                     </span>
                     {combo && (
                       <button
                         onClick={(e) => copyToClipboard(combo, `combo-${dIdx}`, e)}
-                        className="text-[9px] font-mono text-slate-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center gap-0.5 transition-colors"
+                        className="text-xs font-mono text-slate-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-0.5 transition-colors focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"
                         title="Copy PP_Store_Branch"
                       >
                         {copiedField === `combo-${dIdx}` ? <Check size={9} className="text-emerald-500" /> : <Hash size={9} />}
@@ -212,14 +212,14 @@ const ShopperCard: React.FC<ShopperCardProps> = ({ shopper, dealershipsMap, isEx
                   <div className="ml-5 space-y-1">
                     {sd.profiles.map((profile, pIdx) => (
                       <div key={profile.id} className="flex flex-col">
-                        <div className="flex items-center gap-1 flex-wrap text-[10px]">
+                        <div className="flex items-center gap-1 flex-wrap text-xs">
                           <span className="font-bold text-slate-600 dark:text-slate-300">[{pIdx + 1}]</span>
                           <span className="font-semibold text-slate-700 dark:text-slate-200">{profile.name || '(unnamed)'}</span>
                           {profile.email && (
                             <>
                               <span className="text-slate-300 dark:text-slate-600">|</span>
                               <span className="text-slate-500 dark:text-slate-400 flex items-center gap-0.5">
-                                <Mail size={8} /> {profile.email}
+                                <Mail size={10} /> {profile.email}
                               </span>
                             </>
                           )}
@@ -227,7 +227,7 @@ const ShopperCard: React.FC<ShopperCardProps> = ({ shopper, dealershipsMap, isEx
                             <>
                               <span className="text-slate-300 dark:text-slate-600">|</span>
                               <span className="text-slate-500 dark:text-slate-400 font-mono flex items-center gap-0.5">
-                                <Phone size={8} /> {formatPhone(profile.phone)}
+                                <Phone size={10} /> {formatPhone(profile.phone)}
                               </span>
                             </>
                           )}
@@ -244,7 +244,7 @@ const ShopperCard: React.FC<ShopperCardProps> = ({ shopper, dealershipsMap, isEx
                             </>
                           )}
                           {profile.issue && (
-                            <span className="text-[9px] text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 border border-orange-100 dark:border-orange-800 px-1 py-0 rounded font-medium ml-0.5">
+                            <span className="text-xs text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 border border-orange-100 dark:border-orange-800 px-1 py-0 rounded font-medium ml-0.5">
                               {profile.issue}
                             </span>
                           )}
@@ -255,12 +255,12 @@ const ShopperCard: React.FC<ShopperCardProps> = ({ shopper, dealershipsMap, isEx
                             {profile.cdp_ids.map(cdpId => {
                               const sysLabel = cdpId.system === 'ucp' ? 'UCP' : cdpId.system === 'cdp_admin' ? 'CDP' : 'CUR';
                               const sysBadge = cdpId.system === 'ucp'
-                                ? 'text-indigo-600 dark:text-indigo-400'
+                                ? 'text-blue-600 dark:text-blue-400'
                                 : cdpId.system === 'cdp_admin'
                                 ? 'text-blue-600 dark:text-blue-400'
                                 : 'text-purple-600 dark:text-purple-400';
                               return (
-                                <div key={cdpId.id} className="text-[9px] flex items-center gap-1 text-slate-400 dark:text-slate-500">
+                                <div key={cdpId.id} className="text-xs flex items-center gap-1 text-slate-400 dark:text-slate-500">
                                   <span className="text-slate-300 dark:text-slate-600">-</span>
                                   <span className={`font-bold ${sysBadge}`}>[{sysLabel}]</span>
                                   <span className="font-mono truncate">{cdpId.value}</span>
@@ -276,7 +276,7 @@ const ShopperCard: React.FC<ShopperCardProps> = ({ shopper, dealershipsMap, isEx
 
                   {/* Divider between dealerships */}
                   {dIdx < (shopper.dealerships || []).length - 1 && (
-                    <div className="border-b border-slate-200 dark:border-slate-700/50 mt-2 mb-1"></div>
+                    <div className="border-b border-slate-200/60 dark:border-[#38383A] mt-2 mb-1"></div>
                   )}
                 </div>
               );
@@ -330,14 +330,10 @@ const QAPage: React.FC = () => {
 
   return (
     <div className="animate-in fade-in duration-700">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-extrabold text-slate-800 dark:text-slate-100 tracking-tight">QA Shoppers</h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Manage testers and audit accounts for system verification.</p>
-        </div>
+      <div className="flex justify-end items-center mb-6">
         <button
           onClick={() => { setSelectedShopperId(null); setIsCreating(true); }}
-          className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold text-xs shadow-md shadow-indigo-100 hover:bg-indigo-700 hover:-translate-y-0.5 transition-all dark:shadow-none"
+          className="flex items-center gap-1.5 px-4 py-2 bg-blue-500 text-white rounded-xl text-sm font-semibold hover:bg-blue-600 transition-colors focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"
         >
           <Plus size={16} /> New Shopper
         </button>
@@ -363,19 +359,17 @@ const QAPage: React.FC = () => {
       />
 
       {loading ? (
-        <div className="space-y-3">
-          {[1,2,3,4].map(i => <div key={i} className="h-20 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 animate-pulse"></div>)}
+        <div className="rounded-2xl overflow-hidden">
+          {[1,2,3,4].map(i => <div key={i} className="h-16 ios-shimmer"></div>)}
         </div>
       ) : shoppers.length === 0 ? (
-        <div className="bg-white dark:bg-slate-900 rounded-[2rem] p-12 text-center border border-slate-100 dark:border-slate-800 border-dashed transition-colors">
-          <div className="w-16 h-16 bg-indigo-50 dark:bg-indigo-900/30 rounded-full flex items-center justify-center mx-auto mb-4 text-indigo-400">
-            <User size={32} />
-          </div>
-          <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100">No Shoppers Registered</h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Begin by adding your first quality assurance tester to the system.</p>
+        <div className="py-16 text-center">
+          <User size={48} className="mx-auto mb-3 text-slate-300 dark:text-slate-600" />
+          <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200">No Shoppers Registered</h3>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Begin by adding your first quality assurance tester to the system.</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="rounded-2xl bg-white/80 dark:bg-[#2C2C2E] overflow-hidden divide-y divide-slate-200/60 dark:divide-[#38383A]">
           {shoppers.map(shopper => (
             <ShopperCard
               key={shopper.id}

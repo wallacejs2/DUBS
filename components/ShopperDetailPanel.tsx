@@ -23,14 +23,14 @@ const statusColors: Record<ShopperStatus, string> = {
 };
 
 const Label = ({ children, icon: Icon }: { children?: React.ReactNode, icon?: any }) => (
-  <label className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">
+  <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 dark:text-slate-500 mb-1">
     {Icon && <Icon size={10} />}
     {children}
   </label>
 );
 
 const DataValue = ({ value, mono = false, children }: { value?: any, mono?: boolean, children?: React.ReactNode }) => (
-  <div className={`text-[12px] font-normal text-slate-700 dark:text-slate-300 leading-tight min-h-[1.5em] flex items-center ${mono ? 'font-mono' : ''}`}>
+  <div className={`text-sm font-normal text-slate-700 dark:text-slate-300 leading-tight min-h-[1.5em] flex items-center ${mono ? 'font-mono' : ''}`}>
     {children || value || '---'}
   </div>
 );
@@ -41,7 +41,7 @@ const Input = ({ value, onChange, type = "text", className = "", placeholder="" 
     value={value || ''}
     onChange={(e) => onChange(e.target.value)}
     placeholder={placeholder}
-    className={`w-full px-3 py-1.5 text-[12px] border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-normal transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 ${className}`}
+    className={`w-full px-3 py-1.5 text-sm border border-slate-200/60 dark:border-[#38383A] rounded-lg focus:ring-1 focus:ring-blue-500 outline-none bg-slate-100/50 dark:bg-[#2C2C2E] text-slate-900 dark:text-slate-100 font-normal transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 ${className}`}
   />
 );
 
@@ -49,7 +49,7 @@ const Select = ({ value, onChange, options, className = "" }: { value: any, onCh
   <select
     value={value || ''}
     onChange={(e) => onChange(e.target.value)}
-    className={`w-full px-3 py-1.5 text-[12px] border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-normal transition-all ${className}`}
+    className={`w-full px-3 py-1.5 text-sm border border-slate-200/60 dark:border-[#38383A] rounded-lg focus:ring-1 focus:ring-blue-500 outline-none bg-slate-100/50 dark:bg-[#2C2C2E] text-slate-900 dark:text-slate-100 font-normal transition-all ${className}`}
   >
     {options.map(opt => (
       <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -104,13 +104,13 @@ const CdpIdManager: React.FC<CdpIdManagerProps> = ({ cdpIds, onChange, isEditing
 
   return (
     <div className="flex flex-col gap-1.5">
-      <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+      <div className="flex items-center gap-1.5 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
         <Hash size={10} /> CDP IDs
       </div>
 
       <div className="space-y-1.5">
         {cdpIds.length === 0 && !isEditing && (
-          <div className="text-[10px] text-slate-400 dark:text-slate-500 italic p-1">No IDs</div>
+          <div className="text-xs text-slate-400 dark:text-slate-500 italic p-1">No IDs</div>
         )}
 
         {cdpIds.map((cdpId, idx) => (
@@ -121,14 +121,14 @@ const CdpIdManager: React.FC<CdpIdManagerProps> = ({ cdpIds, onChange, isEditing
                 <select
                   value={cdpId.system}
                   onChange={(e) => updateCdpId(idx, 'system', e.target.value as CdpIdSystem)}
-                  className="w-[100px] px-1 py-1 text-[10px] border border-slate-200 dark:border-slate-700 rounded focus:ring-1 focus:ring-indigo-500 outline-none bg-slate-50 dark:bg-slate-700 font-bold text-slate-700 dark:text-slate-200"
+                  className="w-[100px] px-1 py-1 text-xs border border-slate-200/60 dark:border-[#38383A] rounded focus:ring-1 focus:ring-blue-500 outline-none bg-slate-50 dark:bg-slate-700 font-bold text-slate-700 dark:text-slate-200"
                 >
                   <option value="ucp">UCP</option>
                   <option value="cdp_admin">CDP</option>
                   <option value="curator">CUR</option>
                 </select>
               ) : (
-                <span className={`text-[9px] font-bold border px-1.5 py-1 rounded uppercase tracking-wider h-fit flex-shrink-0 ${systemBadgeClass(cdpId.system)}`}>
+                <span className={`text-xs font-bold border px-1.5 py-1 rounded uppercase tracking-wider h-fit flex-shrink-0 ${systemBadgeClass(cdpId.system)}`}>
                   {systemLabel(cdpId.system)}
                 </span>
               )}
@@ -138,15 +138,15 @@ const CdpIdManager: React.FC<CdpIdManagerProps> = ({ cdpIds, onChange, isEditing
                   value={cdpId.value}
                   onChange={(e) => updateCdpId(idx, 'value', e.target.value)}
                   placeholder="CDP ID Value"
-                  className="flex-1 px-2 py-1 text-[11px] border border-slate-200 dark:border-slate-700 rounded focus:ring-1 focus:ring-indigo-500 outline-none font-mono min-w-0 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+                  className="flex-1 px-2 py-1 text-xs border border-slate-200/60 dark:border-[#38383A] rounded focus:ring-1 focus:ring-blue-500 outline-none font-mono min-w-0 bg-white/95 dark:bg-[#1C1C1E]/95 text-slate-900 dark:text-slate-100"
                 />
               ) : (
                 <button
                   onClick={() => cdpId.value && onCopy(cdpId.value, `${fieldPrefix}-cdp-${idx}`)}
-                  className="group flex-1 flex items-center gap-1 text-left cursor-pointer hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded px-1 transition-colors"
+                  className="group flex-1 flex items-center gap-1 text-left cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded px-1 transition-colors"
                   title={`Click to copy: ${cdpId.value}`}
                 >
-                  <span className="font-mono text-[11px] text-slate-700 dark:text-slate-300 pt-0.5 truncate">
+                  <span className="font-mono text-xs text-slate-700 dark:text-slate-300 pt-0.5 truncate">
                     {cdpId.value || '---'}
                   </span>
                   {copiedField === `${fieldPrefix}-cdp-${idx}` ? (
@@ -171,11 +171,11 @@ const CdpIdManager: React.FC<CdpIdManagerProps> = ({ cdpIds, onChange, isEditing
                   value={cdpId.notes || ''}
                   onChange={(e) => updateCdpId(idx, 'notes', e.target.value)}
                   placeholder="Add note..."
-                  className="w-full bg-transparent text-[9px] italic text-slate-600 dark:text-slate-400 placeholder:text-slate-300 dark:placeholder:text-slate-600 outline-none px-1"
+                  className="w-full bg-transparent text-xs italic text-slate-600 dark:text-slate-400 placeholder:text-slate-300 dark:placeholder:text-slate-600 outline-none px-1"
                 />
               ) : (
                 cdpId.notes ? (
-                  <div className="text-[9px] italic text-slate-400 dark:text-slate-500 px-1" title={cdpId.notes}>
+                  <div className="text-xs italic text-slate-400 dark:text-slate-500 px-1" title={cdpId.notes}>
                     {cdpId.notes}
                   </div>
                 ) : null
@@ -187,7 +187,7 @@ const CdpIdManager: React.FC<CdpIdManagerProps> = ({ cdpIds, onChange, isEditing
         {isEditing && (
           <button
             onClick={handleAdd}
-            className="w-full py-1.5 border border-dashed border-indigo-200 dark:border-indigo-800 text-indigo-500 dark:text-indigo-400 rounded-lg text-[10px] font-bold hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-all flex items-center justify-center gap-1"
+            className="w-full py-1.5 border border-dashed border-blue-200 dark:border-blue-800 text-blue-500 dark:text-blue-400 rounded-lg text-xs font-bold hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-all flex items-center justify-center gap-1"
           >
             <Plus size={12} /> Add New ID
           </button>
@@ -214,10 +214,10 @@ const ClickToCopy = ({ value, field, copiedField, onCopy, mono = false, children
   return (
     <button
       onClick={() => value && onCopy(value, field)}
-      className="group flex items-center gap-1 text-left w-full cursor-pointer hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded px-1 -mx-1 transition-colors"
+      className="group flex items-center gap-1 text-left w-full cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded px-1 -mx-1 transition-colors"
       title={`Click to copy: ${value}`}
     >
-      <div className={`text-[12px] font-normal text-slate-700 dark:text-slate-300 leading-tight min-h-[1.5em] flex items-center flex-1 ${mono ? 'font-mono' : ''}`}>
+      <div className={`text-sm font-normal text-slate-700 dark:text-slate-300 leading-tight min-h-[1.5em] flex items-center flex-1 ${mono ? 'font-mono' : ''}`}>
         {children || value || '---'}
       </div>
       {copiedField === field ? (
@@ -453,14 +453,18 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
-      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]" onClick={isEditing && isNew ? undefined : onClose}></div>
-      <div className="relative w-full max-w-4xl bg-white dark:bg-slate-900 h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300 transition-colors">
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={isEditing && isNew ? undefined : onClose}></div>
+      <div className="relative w-full max-w-4xl bg-white/95 dark:bg-[#1C1C1E]/95 backdrop-blur-xl h-full flex flex-col animate-in slide-in-from-right duration-300 rounded-l-2xl transition-colors">
+        {/* Grabber pill */}
+        <div className="flex justify-center pt-2 pb-0">
+          <div className="w-9 h-1 bg-slate-300 dark:bg-slate-600 rounded-full"></div>
+        </div>
 
         {/* Sticky Header */}
-        <div className="bg-white dark:bg-slate-900 sticky top-0 z-30 border-b border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
+        <div className="sticky top-0 z-30 border-b border-slate-200/60 dark:border-[#38383A] bg-white/90 dark:bg-[#1C1C1E]/90 backdrop-blur-xl">
           <div className="p-4 flex justify-between items-center gap-4">
              <div className="flex items-center gap-3">
-               <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg shadow-sm ${isNew ? 'bg-indigo-100 text-indigo-600' : 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white'}`}>
+               <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg shadow-sm ${isNew ? 'bg-blue-100 text-blue-600' : 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white'}`}>
                  {isNew ? <User size={20} /> : (formData.first_name?.[0] || '') + (formData.last_name?.[0] || '')}
                </div>
                <div>
@@ -483,7 +487,7 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                {!isEditing && (
                  <button
                     onClick={handleCopyAll}
-                    className="p-2 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-all"
+                    className="p-2 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-all"
                     title="Copy All Details"
                  >
                     {copiedField === 'all' ? <Check size={16} className="text-emerald-500" /> : <Copy size={16} />}
@@ -492,30 +496,30 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
 
                {isEditing ? (
                  <>
-                   <button onClick={handleSave} className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-indigo-700 shadow-md shadow-indigo-100 flex items-center gap-2 transition-all">
+                   <button onClick={handleSave} className="px-4 py-2 bg-blue-500 text-white rounded-xl text-sm font-semibold hover:bg-blue-600 transition-colors flex items-center gap-2">
                      <Save size={14} /> Save
                    </button>
-                   <button onClick={handleCancel} className="p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all"><RefreshCw size={16} /></button>
+                   <button onClick={handleCancel} className="p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 rounded-lg transition-all"><RefreshCw size={16} /></button>
                  </>
                ) : (
-                 <button onClick={() => setIsEditing(true)} className="px-3 py-2 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 transition-all">
+                 <button onClick={() => setIsEditing(true)} className="px-3 py-2 border border-slate-200/60 dark:border-[#38383A] text-slate-600 dark:text-slate-300 rounded-lg text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 transition-all">
                     <Edit3 size={14} /> Edit
                  </button>
                )}
                {!isNew && (
                  <button onClick={onDelete} className="p-2 text-slate-300 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-all"><Trash2 size={18} /></button>
                )}
-               <button onClick={onClose} className="p-2 text-slate-300 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all"><X size={20} /></button>
+               <button onClick={onClose} className="p-2 text-slate-300 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 rounded-lg transition-all"><X size={20} /></button>
              </div>
           </div>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 bg-white dark:bg-slate-900 custom-scrollbar transition-colors">
+        <div className="flex-1 overflow-y-auto p-6 bg-white/95 dark:bg-[#1C1C1E]/95 custom-scrollbar transition-colors">
           <div className="space-y-6 mx-auto">
 
             {/* Status Section */}
-            <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-2xl border border-slate-100 dark:border-slate-800">
+            <div className="bg-slate-50/50 dark:bg-white/[0.02] p-3 rounded-2xl border border-slate-100/60 dark:border-[#38383A]">
                <div>
                   <Label icon={Shield}>Status</Label>
                   {isEditing ? (
@@ -525,7 +529,7 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                        options={Object.values(ShopperStatus).map(s => ({ label: s, value: s }))}
                     />
                   ) : (
-                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border ${statusColors[formData.status || ShopperStatus.ACTIVE]}`}>
+                    <span className={`px-2.5 py-1 rounded-full text-sm font-semibold border ${statusColors[formData.status || ShopperStatus.ACTIVE]}`}>
                       {formData.status}
                     </span>
                   )}
@@ -534,12 +538,12 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
 
             {/* Dealerships Section */}
             <div className="mt-4">
-              <div className="flex items-center justify-between mb-3 border-b border-slate-100 dark:border-slate-800 pb-2">
-                <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-widest">Dealerships</h3>
+              <div className="flex items-center justify-between mb-3 border-b border-slate-100/60 dark:border-[#38383A] pb-2">
+                <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Dealerships</h3>
                 {isEditing && (
                   <button
                     onClick={addDealership}
-                    className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 flex items-center gap-1 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-1 rounded transition-colors border border-indigo-100 dark:border-indigo-800"
+                    className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center gap-1 bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded transition-colors border border-blue-100 dark:border-blue-800"
                   >
                     <Plus size={12} /> Add Dealership
                   </button>
@@ -552,20 +556,20 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                   const group = getGroupForDealership(shopperDealership.dealership_id);
 
                   return (
-                    <div key={shopperDealership.id} className="border border-slate-200 dark:border-slate-700 rounded-2xl p-4 bg-white dark:bg-slate-800/30 relative">
+                    <div key={shopperDealership.id} className="border border-slate-200/60 dark:border-[#38383A] rounded-2xl p-4 bg-slate-100/50 dark:bg-[#2C2C2E]/30 relative">
 
                       {/* Dealership Header */}
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
                           <Building2 size={14} className="text-slate-400" />
-                          <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Dealership {dIdx + 1}</span>
+                          <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Dealership {dIdx + 1}</span>
                         </div>
                         <div className="flex items-center gap-1">
                           {dealer && (
                             <>
                               <button
                                 onClick={() => copyToClipboard(dealer.pp_sys_id || '', `pp-${dIdx}`)}
-                                className="p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-all"
+                                className="p-1.5 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-all"
                                 title="Copy PP Sys ID"
                               >
                                 {copiedField === `pp-${dIdx}` ? <Check size={14} className="text-emerald-500" /> : <Hash size={14} />}
@@ -575,7 +579,7 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                                   const combo = `${dealer.pp_sys_id || ''}_${dealer.store_number || ''}_${dealer.branch_number || ''}`;
                                   copyToClipboard(combo, `combo-${dIdx}`);
                                 }}
-                                className="p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-all"
+                                className="p-1.5 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-all"
                                 title="Copy PP_Store_Branch"
                               >
                                 {copiedField === `combo-${dIdx}` ? <Check size={14} className="text-emerald-500" /> : <Link size={14} />}
@@ -601,7 +605,7 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                           <select
                             value={shopperDealership.dealership_id || ''}
                             onChange={(e) => updateDealershipField(dIdx, 'dealership_id', e.target.value)}
-                            className="w-full px-3 py-1.5 text-[12px] border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-normal transition-all"
+                            className="w-full px-3 py-1.5 text-sm border border-slate-200/60 dark:border-[#38383A] rounded-lg focus:ring-1 focus:ring-blue-500 outline-none bg-slate-100/50 dark:bg-[#2C2C2E] text-slate-900 dark:text-slate-100 font-normal transition-all"
                           >
                             <option value="">-- Select Dealership --</option>
                             {eligibleDealerships.map(d => (
@@ -615,7 +619,7 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
 
                       {/* Dealership Info */}
                       {dealer && (
-                        <div className="grid grid-cols-3 gap-3 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800 mb-4">
+                        <div className="grid grid-cols-3 gap-3 bg-slate-50/50 dark:bg-white/[0.02] p-3 rounded-xl border border-slate-100/60 dark:border-[#38383A] mb-4">
                           <div className="min-w-0">
                             <Label>Enterprise Group</Label>
                             <div className="truncate" title={group?.name || 'Single (Independent)'}>
@@ -636,11 +640,11 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                       {/* Profiles under this dealership */}
                       <div className="space-y-3">
                         <div className="flex items-center justify-between">
-                          <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Profiles</span>
+                          <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Profiles</span>
                           {isEditing && (
                             <button
                               onClick={() => addProfile(dIdx)}
-                              className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 flex items-center gap-1 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-1 rounded transition-colors border border-indigo-100 dark:border-indigo-800"
+                              className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center gap-1 bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded transition-colors border border-blue-100 dark:border-blue-800"
                             >
                               <Plus size={10} /> Add Profile
                             </button>
@@ -648,15 +652,15 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                         </div>
 
                         {shopperDealership.profiles.map((profile, pIdx) => (
-                          <div key={profile.id} className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl p-3 relative">
+                          <div key={profile.id} className="bg-slate-50/50 dark:bg-white/[0.02] border border-slate-200/60 dark:border-[#38383A] rounded-xl p-3 relative">
                             {/* Profile header with number and remove */}
                             <div className="flex items-center justify-between mb-2">
-                              <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">Profile [{pIdx + 1}]</span>
+                              <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Profile [{pIdx + 1}]</span>
                               <div className="flex items-center gap-1">
                                 {!isEditing && (
                                   <button
                                     onClick={() => handleCopyProfile(profile, dIdx, pIdx, shopperDealership.dealership_id)}
-                                    className="p-1 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-all"
+                                    className="p-1 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-all"
                                     title="Copy Profile"
                                   >
                                     {copiedField === `profile-${dIdx}-${pIdx}` ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} />}
@@ -701,7 +705,7 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                                     onChange={(e) => updateProfileField(dIdx, pIdx, 'phone', e.target.value)}
                                     onBlur={(e) => updateProfileField(dIdx, pIdx, 'phone', formatPhone(e.target.value))}
                                     placeholder="###-###-####"
-                                    className="w-full px-3 py-1.5 text-[12px] border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-normal transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600"
+                                    className="w-full px-3 py-1.5 text-sm border border-slate-200/60 dark:border-[#38383A] rounded-lg focus:ring-1 focus:ring-blue-500 outline-none bg-slate-100/50 dark:bg-[#2C2C2E] text-slate-900 dark:text-slate-100 font-normal transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600"
                                   />
                                 ) : (
                                   <ClickToCopy value={formatPhone(profile.phone)} field={`phone-${dIdx}-${pIdx}`} copiedField={copiedField} onCopy={copyToClipboard} />
@@ -734,7 +738,7 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                                 ) : (
                                   <ClickToCopy value={profile.curator_link} field={`curlink-${dIdx}-${pIdx}`} copiedField={copiedField} onCopy={copyToClipboard}>
                                     {profile.curator_link ? (
-                                      <span className="text-indigo-600 dark:text-indigo-400 truncate flex items-center gap-1">
+                                      <span className="text-blue-600 dark:text-blue-400 truncate flex items-center gap-1">
                                         Open Link <ExternalLink size={10} />
                                       </span>
                                     ) : undefined}
@@ -750,16 +754,16 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                                 <textarea
                                   value={profile.issue || ''}
                                   onChange={(e) => updateProfileField(dIdx, pIdx, 'issue', e.target.value)}
-                                  className="w-full px-3 py-2 text-[12px] border border-orange-300 bg-orange-50 dark:bg-orange-900/20 dark:border-orange-900 rounded-lg focus:ring-1 focus:ring-orange-500 outline-none text-slate-800 dark:text-orange-100 placeholder:text-orange-300 min-h-[40px]"
+                                  className="w-full px-3 py-2 text-sm border border-orange-300 bg-orange-50 dark:bg-orange-900/20 dark:border-orange-900 rounded-lg focus:ring-1 focus:ring-orange-500 outline-none text-slate-800 dark:text-orange-100 placeholder:text-orange-300 min-h-[40px]"
                                   placeholder="Describe issue for this profile..."
                                 />
                               ) : (
                                 profile.issue ? (
-                                  <div className="w-full px-3 py-2 text-[12px] border border-orange-300 bg-orange-50 dark:bg-orange-900/20 dark:border-orange-900 rounded-lg text-slate-800 dark:text-orange-100">
+                                  <div className="w-full px-3 py-2 text-sm border border-orange-300 bg-orange-50 dark:bg-orange-900/20 dark:border-orange-900 rounded-lg text-slate-800 dark:text-orange-100">
                                     {profile.issue}
                                   </div>
                                 ) : (
-                                  <div className="text-[10px] text-slate-400 dark:text-slate-500 italic">No issues recorded.</div>
+                                  <div className="text-xs text-slate-400 dark:text-slate-500 italic">No issues recorded.</div>
                                 )
                               )}
                             </div>
@@ -777,7 +781,7 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                         ))}
 
                         {shopperDealership.profiles.length === 0 && !isEditing && (
-                          <div className="text-[10px] text-slate-400 dark:text-slate-500 italic">No profiles recorded.</div>
+                          <div className="text-xs text-slate-400 dark:text-slate-500 italic">No profiles recorded.</div>
                         )}
                       </div>
                     </div>
@@ -785,14 +789,14 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                 })}
 
                 {(!formData.dealerships || formData.dealerships.length === 0) && !isEditing && (
-                  <div className="text-[10px] text-slate-400 dark:text-slate-500 italic">No dealerships assigned.</div>
+                  <div className="text-xs text-slate-400 dark:text-slate-500 italic">No dealerships assigned.</div>
                 )}
               </div>
             </div>
 
             {/* Timestamps */}
             {!isNew && (
-              <div className="pt-4 mt-4 border-t border-slate-100 dark:border-slate-800 flex gap-6 text-[10px] text-slate-400 dark:text-slate-500">
+              <div className="pt-4 mt-4 border-t border-slate-100/60 dark:border-[#38383A] flex gap-6 text-xs text-slate-400 dark:text-slate-500">
                 <span>Created: {new Date(formData.created_at || '').toLocaleDateString()}</span>
                 <span>ID: {formData.id}</span>
               </div>

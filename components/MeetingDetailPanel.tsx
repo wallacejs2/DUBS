@@ -15,14 +15,14 @@ interface MeetingDetailPanelProps {
 }
 
 const Label = ({ children, icon: Icon }: { children?: React.ReactNode, icon?: any }) => (
-  <label className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">
+  <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 dark:text-slate-500 mb-1">
     {Icon && <Icon size={10} />}
     {children}
   </label>
 );
 
 const DataValue = ({ value, children }: { value?: any, children?: React.ReactNode }) => (
-  <div className="text-[12px] font-normal text-slate-700 dark:text-slate-300 leading-tight min-h-[1.5em] flex items-center">
+  <div className="text-sm font-normal text-slate-700 dark:text-slate-300 leading-tight min-h-[1.5em] flex items-center">
     {children || value || '---'}
   </div>
 );
@@ -33,7 +33,7 @@ const Input = ({ value, onChange, type = "text", className = "", placeholder = "
     value={value || ''}
     onChange={(e) => onChange(e.target.value)}
     placeholder={placeholder}
-    className={`w-full px-3 py-1.5 text-[12px] border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-normal transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 ${className}`}
+    className={`w-full px-3 py-1.5 text-sm border border-slate-200/60 dark:border-[#38383A] rounded-lg focus:ring-1 focus:ring-blue-500 outline-none bg-slate-100/50 dark:bg-[#2C2C2E] text-slate-900 dark:text-slate-100 font-normal transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 ${className}`}
   />
 );
 
@@ -78,14 +78,18 @@ const MeetingDetailPanel: React.FC<MeetingDetailPanelProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
-      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]" onClick={isEditing && isNew ? undefined : onClose}></div>
-      <div className="relative w-full max-w-3xl bg-white dark:bg-slate-900 h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300 transition-colors">
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={isEditing && isNew ? undefined : onClose}></div>
+      <div className="relative w-full max-w-3xl bg-white/95 dark:bg-[#1C1C1E]/95 backdrop-blur-xl h-full flex flex-col animate-in slide-in-from-right duration-300 rounded-l-2xl transition-colors">
+        {/* Grabber pill */}
+        <div className="flex justify-center pt-2 pb-0">
+          <div className="w-9 h-1 bg-slate-300 dark:bg-slate-600 rounded-full"></div>
+        </div>
 
         {/* Header */}
-        <div className="bg-white dark:bg-slate-900 sticky top-0 z-30 border-b border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
+        <div className="sticky top-0 z-30 border-b border-slate-200/60 dark:border-[#38383A] bg-white/90 dark:bg-[#1C1C1E]/90 backdrop-blur-xl">
           <div className="p-4 flex justify-between items-center gap-4">
             <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg shadow-sm ${isNew ? 'bg-indigo-100 text-indigo-600' : 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white'}`}>
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg shadow-sm ${isNew ? 'bg-blue-100 text-blue-600' : 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white'}`}>
                 <CalendarDays size={20} />
               </div>
               <div>
@@ -110,26 +114,26 @@ const MeetingDetailPanel: React.FC<MeetingDetailPanelProps> = ({
             <div className="flex items-center gap-2">
               {isEditing ? (
                 <>
-                  <button onClick={handleSave} className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-indigo-700 shadow-md shadow-indigo-100 flex items-center gap-2 transition-all">
+                  <button onClick={handleSave} className="px-4 py-2 bg-blue-500 text-white rounded-xl text-sm font-semibold hover:bg-blue-600 transition-colors flex items-center gap-2">
                     <Save size={14} /> Save
                   </button>
-                  <button onClick={handleCancel} className="p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all"><RefreshCw size={16} /></button>
+                  <button onClick={handleCancel} className="p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 rounded-lg transition-all"><RefreshCw size={16} /></button>
                 </>
               ) : (
-                <button onClick={() => setIsEditing(true)} className="px-3 py-2 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 transition-all">
+                <button onClick={() => setIsEditing(true)} className="px-3 py-2 border border-slate-200/60 dark:border-[#38383A] text-slate-600 dark:text-slate-300 rounded-lg text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 transition-all">
                   <Edit3 size={14} /> Edit
                 </button>
               )}
               {!isNew && (
                 <button onClick={onDelete} className="p-2 text-slate-300 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-all"><Trash2 size={18} /></button>
               )}
-              <button onClick={onClose} className="p-2 text-slate-300 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all"><X size={20} /></button>
+              <button onClick={onClose} className="p-2 text-slate-300 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 rounded-lg transition-all"><X size={20} /></button>
             </div>
           </div>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 bg-white dark:bg-slate-900 custom-scrollbar transition-colors">
+        <div className="flex-1 overflow-y-auto p-6 bg-white/95 dark:bg-[#1C1C1E]/95 custom-scrollbar transition-colors">
           <div className="space-y-6">
 
             {/* Date Field */}
@@ -147,8 +151,8 @@ const MeetingDetailPanel: React.FC<MeetingDetailPanelProps> = ({
             </div>
 
             {/* Notes Field */}
-            <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
-              <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-widest mb-3">Meeting Notes</h3>
+            <div className="pt-4 border-t border-slate-100/60 dark:border-[#38383A]">
+              <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">Meeting Notes</h3>
               {isEditing ? (
                 <RichTextEditor
                   value={formData.notes || ''}
@@ -158,11 +162,11 @@ const MeetingDetailPanel: React.FC<MeetingDetailPanelProps> = ({
               ) : (
                 formData.notes ? (
                   <div
-                    className="text-[12px] font-normal text-slate-700 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4 border border-slate-100 dark:border-slate-700 min-h-[200px] [&_ul]:list-disc [&_ul]:ml-4 [&_ol]:list-decimal [&_ol]:ml-4 [&_li]:my-0.5"
+                    className="text-sm font-normal text-slate-700 dark:text-slate-300 leading-relaxed bg-slate-50/50 dark:bg-white/[0.02] rounded-lg p-4 border border-slate-100 dark:border-slate-700 min-h-[200px] [&_ul]:list-disc [&_ul]:ml-4 [&_ol]:list-decimal [&_ol]:ml-4 [&_li]:my-0.5"
                     dangerouslySetInnerHTML={{ __html: formData.notes }}
                   />
                 ) : (
-                  <div className="text-[12px] font-normal text-slate-700 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4 border border-slate-100 dark:border-slate-700 min-h-[200px]">
+                  <div className="text-sm font-normal text-slate-700 dark:text-slate-300 leading-relaxed bg-slate-50/50 dark:bg-white/[0.02] rounded-lg p-4 border border-slate-100 dark:border-slate-700 min-h-[200px]">
                     <span className="text-slate-400 dark:text-slate-500 italic">No notes recorded.</span>
                   </div>
                 )
@@ -171,7 +175,7 @@ const MeetingDetailPanel: React.FC<MeetingDetailPanelProps> = ({
 
             {/* Timestamps */}
             {!isNew && (
-              <div className="pt-4 mt-4 border-t border-slate-100 dark:border-slate-800 flex gap-6 text-[10px] text-slate-400 dark:text-slate-500">
+              <div className="pt-4 mt-4 border-t border-slate-100/60 dark:border-[#38383A] flex gap-6 text-xs text-slate-400 dark:text-slate-500">
                 <span>Created: {new Date(formData.created_at || '').toLocaleDateString()}</span>
                 <span>ID: {formData.id}</span>
               </div>
