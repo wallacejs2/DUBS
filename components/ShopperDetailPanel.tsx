@@ -121,7 +121,7 @@ const CdpIdManager: React.FC<CdpIdManagerProps> = ({ cdpIds, onChange, isEditing
                 <select
                   value={cdpId.system}
                   onChange={(e) => updateCdpId(idx, 'system', e.target.value as CdpIdSystem)}
-                  className="w-[100px] px-1 py-1 text-xs border border-slate-200/60 dark:border-[#38383A] rounded focus:ring-1 focus:ring-blue-500 outline-none bg-slate-50 dark:bg-slate-700 font-bold text-slate-700 dark:text-slate-200"
+                  className="w-[100px] px-1 py-1 text-xs border border-slate-200/60 dark:border-[#38383A] rounded focus:ring-1 focus:ring-blue-500 outline-none bg-slate-100/50 dark:bg-[#2C2C2E] font-bold text-slate-700 dark:text-slate-200"
                 >
                   <option value="ucp">UCP</option>
                   <option value="cdp_admin">CDP</option>
