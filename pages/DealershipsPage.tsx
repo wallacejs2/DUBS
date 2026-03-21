@@ -404,7 +404,7 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Try adjusting your filters or create a new dealership to get started.</p>
                 </div>
             ) : (
-                <div className="rounded-2xl bg-white/80 dark:bg-[#2C2C2E] overflow-hidden divide-y divide-slate-200/60 dark:divide-[#38383A] pb-20">
+                <div className="flex flex-col gap-3 pb-20">
                 {dealerships.map(dealer => {
                     const details = getDetails(dealer.id);
                     const hasClientId = details?.website_links?.some(l => l.client_id && l.client_id.trim().length > 0) ?? false;

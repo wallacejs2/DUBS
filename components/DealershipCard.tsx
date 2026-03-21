@@ -75,32 +75,6 @@ const DealershipCard: React.FC<DealershipCardProps> = ({
     copyToClipboard(`${pp}_${store}_${branch}`, 'combo');
   };
 
-  const getStatusColorClass = (status: DealershipStatus) => {
-    switch (status) {
-      case DealershipStatus.DMT_PENDING: return 'bg-slate-400';
-      case DealershipStatus.DMT_APPROVED: return 'bg-blue-500';
-      case DealershipStatus.HOLD: return 'bg-orange-500';
-      case DealershipStatus.ONBOARDING: return 'bg-indigo-500';
-      case DealershipStatus.LIVE: return 'bg-emerald-500';
-      case DealershipStatus.LEGACY: return 'bg-yellow-500';
-      case DealershipStatus.CANCELLED: return 'bg-red-500';
-      default: return 'bg-slate-400';
-    }
-  };
-
-  const getStatusDotColor = (status: DealershipStatus) => {
-    switch (status) {
-      case DealershipStatus.DMT_PENDING: return 'bg-slate-400';
-      case DealershipStatus.DMT_APPROVED: return 'bg-blue-500';
-      case DealershipStatus.HOLD: return 'bg-orange-500';
-      case DealershipStatus.ONBOARDING: return 'bg-indigo-500';
-      case DealershipStatus.LIVE: return 'bg-emerald-500';
-      case DealershipStatus.LEGACY: return 'bg-yellow-500';
-      case DealershipStatus.CANCELLED: return 'bg-red-500';
-      default: return 'bg-slate-400';
-    }
-  };
-
   // Count warnings for collapsed indicator
   const warningCount = [
     !hasClientId,
@@ -115,21 +89,13 @@ const DealershipCard: React.FC<DealershipCardProps> = ({
   return (
     <div
       onClick={onClick}
-      className="group flex hover:bg-slate-50/80 dark:hover:bg-white/[0.03] transition-all duration-150 cursor-pointer overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50"
+      className="group bg-white/80 dark:bg-[#2C2C2E] rounded-2xl border border-slate-200/60 dark:border-[#38383A] hover:bg-slate-50/80 dark:hover:bg-white/[0.04] hover:border-blue-200 dark:hover:border-blue-700/50 transition-all duration-150 cursor-pointer overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50"
       tabIndex={0}
     >
-      {/* Left status color bar */}
-      <div className={`w-1.5 flex-shrink-0 ${getStatusColorClass(dealership.status)}`}></div>
-
-      {/* Main content */}
-      <div className="flex-1 min-w-0 py-3 px-4">
-        {/* Primary row: name + secondary info */}
-        <div className="flex items-center gap-3">
-          {/* Left side: status dot + favorite + name + secondary */}
-          <div className="flex items-center gap-2.5 min-w-0 flex-1">
-            {/* Status dot */}
-            <div className={`w-2 h-2 rounded-full flex-shrink-0 ${getStatusDotColor(dealership.status)}`} title={dealership.status}></div>
-
+      <div className="p-4">
+        {/* Row 1: CIF (left) + Status + warnings (right) */}
+        <div className="flex items-center justify-between mb-1.5">
+          <div className="flex items-center gap-2">
             {/* Favorite star */}
             {onToggleFavorite && (
               <button
@@ -143,52 +109,44 @@ const DealershipCard: React.FC<DealershipCardProps> = ({
                 <Star size={14} fill={dealership.is_favorite ? "currentColor" : "none"} />
               </button>
             )}
-
-            {/* Name + secondary info */}
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                {/* CIF before name */}
-                <span className="flex-shrink-0 text-xs font-mono font-semibold text-slate-400 dark:text-slate-500">
-                  {dealership.cif_number || 'NO CIF'}
-                </span>
-                <h3 className="text-base font-semibold text-slate-800 dark:text-slate-100 truncate leading-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                  {dealership.name}
-                </h3>
-
-                {/* Warning count badge (collapsed) */}
-                {warningCount > 0 && (
-                  <span
-                    className="flex-shrink-0 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-orange-500 rounded-full leading-none"
-                    title={[
-                      !hasClientId && '40NM',
-                      hasZeroPrice && '$0',
-                      missingCSM && 'CSM',
-                      missingEnrollment && 'ENR',
-                      missingPOC && 'POC',
-                      missingWebProvider && 'WEB',
-                      missingInvProvider && 'INV',
-                    ].filter(Boolean).join(', ')}
-                  >
-                    {warningCount}
-                  </span>
-                )}
-              </div>
-              <p className="text-sm text-slate-500 dark:text-slate-400 truncate">
-                <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold mr-1.5 ${statusColors[dealership.status]}`}>
-                  {dealership.status}
-                </span>
-                {groupName || 'Single'} · {dealership.crm_provider}
-                {isManaged && ' · Managed'}
-                {hasAddlWeb && ' · Addl. Web'}
-                {dealership.sms_activated && ' · SMS'}
-              </p>
-            </div>
+            <span className="text-xs font-mono font-semibold text-slate-400 dark:text-slate-500">
+              {dealership.cif_number || 'NO CIF'}
+            </span>
           </div>
 
-          {/* Right side: copy buttons + CIF + chevron */}
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex items-center gap-2">
+            {/* Warning count badge */}
+            {warningCount > 0 && (
+              <span
+                className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-orange-500 rounded-full leading-none"
+                title={[
+                  !hasClientId && '40NM',
+                  hasZeroPrice && '$0',
+                  missingCSM && 'CSM',
+                  missingEnrollment && 'ENR',
+                  missingPOC && 'POC',
+                  missingWebProvider && 'WEB',
+                  missingInvProvider && 'INV',
+                ].filter(Boolean).join(', ')}
+              >
+                {warningCount}
+              </span>
+            )}
+            {/* Status badge */}
+            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${statusColors[dealership.status]}`}>
+              {dealership.status}
+            </span>
+          </div>
+        </div>
+
+        {/* Row 2: Dealership name (bigger) + chevron */}
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100 truncate leading-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+            {dealership.name}
+          </h3>
+          <div className="flex items-center gap-1.5 flex-shrink-0 ml-3">
             {/* Copy buttons — hidden until hover */}
-            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
               <button
                 onClick={handleCopyDetails}
                 className="p-1 text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/50 rounded transition-all"
@@ -211,30 +169,36 @@ const DealershipCard: React.FC<DealershipCardProps> = ({
                 {copiedField === 'pp' ? <Check size={14} className="text-emerald-500" /> : <Hash size={14} />}
               </button>
             </div>
-
-            {/* Chevron */}
             <ChevronRight size={16} className="text-slate-300 dark:text-slate-600 flex-shrink-0" />
           </div>
         </div>
 
-        {/* Bottom metadata row */}
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 dark:text-slate-400 mt-1.5 pt-1.5 border-t border-slate-200/40 dark:border-[#38383A]/50">
-          <div className="flex items-center gap-1" title="Store / Branch">
+        {/* Row 3: Group / CRM / tags */}
+        <p className="text-sm text-slate-500 dark:text-slate-400 truncate mb-2">
+          {groupName || 'Single'} · {dealership.crm_provider}
+          {isManaged && ' · Managed'}
+          {hasAddlWeb && ' · Addl. Web'}
+          {dealership.sms_activated && ' · SMS'}
+        </p>
+
+        {/* Row 4: Metadata */}
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-200/40 dark:border-[#38383A]/50">
+          <div className="flex items-center gap-1.5" title="Store / Branch">
             <span className="font-medium text-slate-400 dark:text-slate-500">St/Br:</span>
             <span className="font-mono">{dealership.store_number || '--'} / {dealership.branch_number || '--'}</span>
           </div>
 
-          <div className="flex items-center gap-1" title="PP / ERA Systems">
+          <div className="flex items-center gap-1.5" title="PP / ERA Systems">
             <span className="font-medium text-slate-400 dark:text-slate-500">PP/ERA:</span>
             <span className="font-mono">{dealership.pp_sys_id || '--'} / {dealership.era_system_id || '--'}</span>
           </div>
 
-          <div className="flex items-center gap-1 ml-auto" title="Onboarding Date">
+          <div className="flex items-center gap-1.5 ml-auto" title="Onboarding Date">
             <span className="font-medium text-slate-400 dark:text-slate-500">Onb:</span>
             <span>{formatDate(dealership.onboarding_date)}</span>
           </div>
 
-          <div className="flex items-center gap-1" title="Go Live Date">
+          <div className="flex items-center gap-1.5" title="Go Live Date">
             <span className="font-medium text-slate-400 dark:text-slate-500">Live:</span>
             <span>{formatDate(dealership.go_live_date)}</span>
           </div>

@@ -569,11 +569,11 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                     </div>
                 ) : null}
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 gap-x-6 gap-y-4">
                     <div>
                         <Label>Status</Label>
                         {isEditing ? (
-                            <Select 
+                            <Select
                                 value={formData.status}
                                 onChange={(v) => updateField('status', v)}
                                 options={Object.values(DealershipStatus).map(s => ({ label: s, value: s }))}
@@ -587,7 +587,7 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                     <div>
                         <Label>Onboarding</Label>
                         {isEditing ? (
-                            <Input 
+                            <Input
                                 type="date"
                                 value={formatDateInput(formData.onboarding_date)}
                                 onChange={(v) => updateField('onboarding_date', v)}
@@ -601,7 +601,7 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                     <div>
                         <Label>Go-Live</Label>
                         {isEditing ? (
-                            <Input 
+                            <Input
                                 type="date"
                                 value={formatDateInput(formData.go_live_date)}
                                 onChange={(v) => updateField('go_live_date', v)}
@@ -615,7 +615,7 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                     <div>
                         <Label>Term Date</Label>
                         {isEditing ? (
-                            <Input 
+                            <Input
                                 type="date"
                                 value={formatDateInput(formData.term_date)}
                                 onChange={(v) => updateField('term_date', v)}
