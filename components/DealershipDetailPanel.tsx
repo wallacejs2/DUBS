@@ -1075,7 +1075,7 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                 </div>
 
                 <div className="bg-slate-50/50 dark:bg-white/[0.02] p-4 rounded-xl border border-slate-100/60 dark:border-[#38383A] space-y-4">
-                    <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Primary Point of Contact (Dealership Side)</h4>
+                    <h4 className="text-xs font-semibold text-slate-500 dark:text-slate-400">Primary Point of Contact (Dealership Side)</h4>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <Label>POC Name</Label>
@@ -1140,7 +1140,7 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
 
                      <div className="space-y-2 pt-2">
                         <div className="flex justify-between items-center px-1">
-                           <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Line Items</span>
+                           <span className="text-xs font-semibold text-slate-400">Line Items</span>
                            {isEditing && (
                                <button type="button" onClick={() => addProductToOrder(orderIdx)} className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1">
                                  <Plus size={10} /> Add Product
