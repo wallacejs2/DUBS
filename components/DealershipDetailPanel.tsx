@@ -79,7 +79,7 @@ const Input = ({ value, onChange, type = "text", className = "", placeholder="",
     placeholder={placeholder}
     disabled={disabled}
     required={required}
-    className={`w-full px-2 py-1 text-sm border border-slate-200/60 dark:border-[#38383A] rounded-lg focus:ring-1 focus:ring-blue-500 outline-none bg-slate-100/50 dark:bg-[#2C2C2E] text-slate-900 dark:text-slate-100 font-normal placeholder:text-slate-400 dark:placeholder:text-slate-600 ${disabled ? 'opacity-50 bg-slate-50 dark:bg-slate-900 cursor-not-allowed border-slate-100/60 dark:border-[#38383A]' : ''} ${className}`}
+    className={`w-full px-2 py-1 text-sm border border-slate-200/60 dark:border-[#38383A] rounded-xl focus:ring-1 focus:ring-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none bg-slate-100/50 dark:bg-[#2C2C2E] text-slate-900 dark:text-slate-100 font-normal placeholder:text-slate-400 dark:placeholder:text-slate-600 ${disabled ? 'opacity-50 bg-slate-50 dark:bg-slate-900 cursor-not-allowed border-slate-100/60 dark:border-[#38383A]' : ''} ${className}`}
   />
 );
 
@@ -88,7 +88,7 @@ const Select = ({ value, onChange, options, className = "", disabled = false }: 
     value={value || ''}
     onChange={(e) => onChange(e.target.value)}
     disabled={disabled}
-    className={`w-full px-2 py-1 text-sm border border-slate-200/60 dark:border-[#38383A] rounded-lg focus:ring-1 focus:ring-blue-500 outline-none bg-slate-100/50 dark:bg-[#2C2C2E] text-slate-900 dark:text-slate-100 font-normal ${disabled ? 'opacity-50 cursor-not-allowed bg-slate-50 dark:bg-slate-900' : ''} ${className}`}
+    className={`w-full px-2 py-1 text-sm border border-slate-200/60 dark:border-[#38383A] rounded-xl focus:ring-1 focus:ring-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none bg-slate-100/50 dark:bg-[#2C2C2E] text-slate-900 dark:text-slate-100 font-normal ${disabled ? 'opacity-50 cursor-not-allowed bg-slate-50 dark:bg-slate-900' : ''} ${className}`}
   >
     {options.map(opt => (
       <option key={opt.value} value={opt.value}>{opt.label}</option>

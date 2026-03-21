@@ -35,7 +35,7 @@ const Input = ({ value, onChange, type = "text", className = "", placeholder="",
     onChange={(e) => onChange(e.target.value)}
     placeholder={placeholder}
     required={required}
-    className={`w-full px-3 py-1.5 text-sm border border-slate-200/60 dark:border-[#38383A] rounded-lg focus:ring-1 focus:ring-blue-500 outline-none bg-slate-100/50 dark:bg-[#2C2C2E] text-slate-900 dark:text-slate-100 font-normal transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 ${className}`}
+    className={`w-full px-3 py-1.5 text-sm border border-slate-200/60 dark:border-[#38383A] rounded-xl focus:ring-1 focus:ring-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none bg-slate-100/50 dark:bg-[#2C2C2E] text-slate-900 dark:text-slate-100 font-normal transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 ${className}`}
   />
 );
 
@@ -43,7 +43,7 @@ const Select = ({ value, onChange, options, className = "", placeholder }: { val
   <select 
     value={value || ''}
     onChange={(e) => onChange(e.target.value)}
-    className={`w-full px-3 py-1.5 text-sm border border-slate-200/60 dark:border-[#38383A] rounded-lg focus:ring-1 focus:ring-blue-500 outline-none bg-slate-100/50 dark:bg-[#2C2C2E] text-slate-900 dark:text-slate-100 font-normal transition-all ${className}`}
+    className={`w-full px-3 py-1.5 text-sm border border-slate-200/60 dark:border-[#38383A] rounded-xl focus:ring-1 focus:ring-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none bg-slate-100/50 dark:bg-[#2C2C2E] text-slate-900 dark:text-slate-100 font-normal transition-all ${className}`}
   >
     {placeholder && <option value="">{placeholder}</option>}
     {options.map(opt => (
@@ -666,13 +666,13 @@ const NewFeatureDetailPanel: React.FC<NewFeatureDetailPanelProps> = ({
                                     value={pmr.number} 
                                     onChange={(e) => updatePmr(idx, 'number', e.target.value)} 
                                     placeholder="PMR-####" 
-                                    className="w-32 px-2 py-1 text-xs border border-slate-200 dark:border-slate-600 rounded focus:ring-1 focus:ring-blue-500 outline-none font-mono font-bold uppercase bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                                    className="w-32 px-2 py-1 text-xs border border-slate-200/60 dark:border-[#38383A] rounded focus:ring-1 focus:ring-blue-500 outline-none font-mono font-bold uppercase bg-slate-100/50 dark:bg-[#2C2C2E] text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                                  />
                                  <input 
                                     value={pmr.link} 
                                     onChange={(e) => updatePmr(idx, 'link', e.target.value)} 
                                     placeholder="https://..." 
-                                    className="flex-1 px-2 py-1 text-xs border border-slate-200 dark:border-slate-600 rounded focus:ring-1 focus:ring-blue-500 outline-none bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                                    className="flex-1 px-2 py-1 text-xs border border-slate-200/60 dark:border-[#38383A] rounded focus:ring-1 focus:ring-blue-500 outline-none bg-slate-100/50 dark:bg-[#2C2C2E] text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                                  />
                                  <button type="button" onClick={() => removePmr(idx)} className="text-slate-300 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400"><Trash2 size={14} /></button>
                               </>
@@ -704,7 +704,7 @@ const NewFeatureDetailPanel: React.FC<NewFeatureDetailPanelProps> = ({
                     onChange={(e) => updateField('summary', e.target.value)}
                     placeholder="Enter a brief summary of this feature..."
                     rows={3}
-                    className="w-full px-3 py-1.5 text-sm border border-slate-200/60 dark:border-[#38383A] rounded-lg focus:ring-1 focus:ring-blue-500 outline-none bg-slate-100/50 dark:bg-[#2C2C2E] text-slate-900 dark:text-slate-100 font-normal transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 resize-y"
+                    className="w-full px-3 py-1.5 text-sm border border-slate-200/60 dark:border-[#38383A] rounded-xl focus:ring-1 focus:ring-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none bg-slate-100/50 dark:bg-[#2C2C2E] text-slate-900 dark:text-slate-100 font-normal transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 resize-y"
                   />
                ) : (
                   <div className="w-full px-4 py-3 text-sm border border-slate-100/60 dark:border-[#38383A] bg-slate-50/50 dark:bg-slate-800/50 rounded-xl text-slate-700 dark:text-slate-300 leading-relaxed">

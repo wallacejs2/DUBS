@@ -52,7 +52,7 @@ const Input = ({ value, onChange, type = "text", className = "", placeholder="" 
     value={value || ''}
     onChange={(e) => onChange(e.target.value)}
     placeholder={placeholder}
-    className={`w-full px-3 py-1.5 text-sm border border-slate-200/60 dark:border-[#38383A] rounded-lg focus:ring-1 focus:ring-blue-500 outline-none bg-slate-100/50 dark:bg-[#2C2C2E] text-slate-900 dark:text-slate-100 font-normal transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 ${className}`}
+    className={`w-full px-3 py-1.5 text-sm border border-slate-200/60 dark:border-[#38383A] rounded-xl focus:ring-1 focus:ring-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none bg-slate-100/50 dark:bg-[#2C2C2E] text-slate-900 dark:text-slate-100 font-normal transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 ${className}`}
   />
 );
 
@@ -60,7 +60,7 @@ const Select = ({ value, onChange, options, className = "" }: { value: any, onCh
   <select 
     value={value || ''}
     onChange={(e) => onChange(e.target.value)}
-    className={`w-full px-3 py-1.5 text-sm border border-slate-200/60 dark:border-[#38383A] rounded-lg focus:ring-1 focus:ring-blue-500 outline-none bg-slate-100/50 dark:bg-[#2C2C2E] text-slate-900 dark:text-slate-100 font-normal transition-all ${className}`}
+    className={`w-full px-3 py-1.5 text-sm border border-slate-200/60 dark:border-[#38383A] rounded-xl focus:ring-1 focus:ring-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none bg-slate-100/50 dark:bg-[#2C2C2E] text-slate-900 dark:text-slate-100 font-normal transition-all ${className}`}
   >
     {options.map(opt => (
       <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -279,7 +279,7 @@ const ProviderProductDetailPanel: React.FC<ProviderProductDetailPanelProps> = ({
                       onChange={(e) => updateField('support_phone', e.target.value)}
                       onBlur={(e) => updateField('support_phone', formatPhone(e.target.value))}
                       placeholder="(###) ###-####"
-                      className="w-full px-3 py-1.5 text-sm border border-slate-200/60 dark:border-[#38383A] rounded-lg focus:ring-1 focus:ring-blue-500 outline-none bg-slate-100/50 dark:bg-[#2C2C2E] text-slate-900 dark:text-slate-100 font-normal transition-all"
+                      className="w-full px-3 py-1.5 text-sm border border-slate-200/60 dark:border-[#38383A] rounded-xl focus:ring-1 focus:ring-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none bg-slate-100/50 dark:bg-[#2C2C2E] text-slate-900 dark:text-slate-100 font-normal transition-all"
                     />
                   ) : (
                     <DataValue value={formatPhone(formData.support_phone)} />
@@ -309,7 +309,7 @@ const ProviderProductDetailPanel: React.FC<ProviderProductDetailPanelProps> = ({
                    <textarea 
                      value={formData.notes || ''}
                      onChange={(e) => updateField('notes', e.target.value)}
-                     className="w-full px-3 py-2 text-sm border border-slate-200/60 dark:border-[#38383A] rounded-lg focus:ring-1 focus:ring-blue-500 outline-none bg-slate-100/50 dark:bg-[#2C2C2E] text-slate-900 dark:text-slate-100 font-normal min-h-[80px]"
+                     className="w-full px-3 py-2 text-sm border border-slate-200/60 dark:border-[#38383A] rounded-xl focus:ring-1 focus:ring-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none bg-slate-100/50 dark:bg-[#2C2C2E] text-slate-900 dark:text-slate-100 font-normal min-h-[80px]"
                      placeholder="Add any internal context..."
                    />
                ) : (

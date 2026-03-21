@@ -41,7 +41,7 @@ const Input = ({ value, onChange, type = "text", className = "", placeholder="" 
     value={value || ''}
     onChange={(e) => onChange(e.target.value)}
     placeholder={placeholder}
-    className={`w-full px-3 py-1.5 text-sm border border-slate-200/60 dark:border-[#38383A] rounded-lg focus:ring-1 focus:ring-blue-500 outline-none bg-slate-100/50 dark:bg-[#2C2C2E] text-slate-900 dark:text-slate-100 font-normal transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 ${className}`}
+    className={`w-full px-3 py-1.5 text-sm border border-slate-200/60 dark:border-[#38383A] rounded-xl focus:ring-1 focus:ring-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none bg-slate-100/50 dark:bg-[#2C2C2E] text-slate-900 dark:text-slate-100 font-normal transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 ${className}`}
   />
 );
 
@@ -49,7 +49,7 @@ const Select = ({ value, onChange, options, className = "" }: { value: any, onCh
   <select
     value={value || ''}
     onChange={(e) => onChange(e.target.value)}
-    className={`w-full px-3 py-1.5 text-sm border border-slate-200/60 dark:border-[#38383A] rounded-lg focus:ring-1 focus:ring-blue-500 outline-none bg-slate-100/50 dark:bg-[#2C2C2E] text-slate-900 dark:text-slate-100 font-normal transition-all ${className}`}
+    className={`w-full px-3 py-1.5 text-sm border border-slate-200/60 dark:border-[#38383A] rounded-xl focus:ring-1 focus:ring-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none bg-slate-100/50 dark:bg-[#2C2C2E] text-slate-900 dark:text-slate-100 font-normal transition-all ${className}`}
   >
     {options.map(opt => (
       <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -605,7 +605,7 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                           <select
                             value={shopperDealership.dealership_id || ''}
                             onChange={(e) => updateDealershipField(dIdx, 'dealership_id', e.target.value)}
-                            className="w-full px-3 py-1.5 text-sm border border-slate-200/60 dark:border-[#38383A] rounded-lg focus:ring-1 focus:ring-blue-500 outline-none bg-slate-100/50 dark:bg-[#2C2C2E] text-slate-900 dark:text-slate-100 font-normal transition-all"
+                            className="w-full px-3 py-1.5 text-sm border border-slate-200/60 dark:border-[#38383A] rounded-xl focus:ring-1 focus:ring-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none bg-slate-100/50 dark:bg-[#2C2C2E] text-slate-900 dark:text-slate-100 font-normal transition-all"
                           >
                             <option value="">-- Select Dealership --</option>
                             {eligibleDealerships.map(d => (
@@ -705,7 +705,7 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                                     onChange={(e) => updateProfileField(dIdx, pIdx, 'phone', e.target.value)}
                                     onBlur={(e) => updateProfileField(dIdx, pIdx, 'phone', formatPhone(e.target.value))}
                                     placeholder="###-###-####"
-                                    className="w-full px-3 py-1.5 text-sm border border-slate-200/60 dark:border-[#38383A] rounded-lg focus:ring-1 focus:ring-blue-500 outline-none bg-slate-100/50 dark:bg-[#2C2C2E] text-slate-900 dark:text-slate-100 font-normal transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600"
+                                    className="w-full px-3 py-1.5 text-sm border border-slate-200/60 dark:border-[#38383A] rounded-xl focus:ring-1 focus:ring-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none bg-slate-100/50 dark:bg-[#2C2C2E] text-slate-900 dark:text-slate-100 font-normal transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600"
                                   />
                                 ) : (
                                   <ClickToCopy value={formatPhone(profile.phone)} field={`phone-${dIdx}-${pIdx}`} copiedField={copiedField} onCopy={copyToClipboard} />
