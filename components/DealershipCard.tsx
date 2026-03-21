@@ -115,7 +115,7 @@ const DealershipCard: React.FC<DealershipCardProps> = ({
   return (
     <div
       onClick={onClick}
-      className="group flex bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:border-blue-200 dark:hover:border-blue-700 transition-all duration-150 cursor-pointer overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50"
+      className="group flex hover:bg-slate-50/80 dark:hover:bg-white/[0.03] transition-all duration-150 cursor-pointer overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50"
       tabIndex={0}
     >
       {/* Left status color bar */}
@@ -147,6 +147,10 @@ const DealershipCard: React.FC<DealershipCardProps> = ({
             {/* Name + secondary info */}
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
+                {/* CIF before name */}
+                <span className="flex-shrink-0 text-xs font-mono font-semibold text-slate-400 dark:text-slate-500">
+                  {dealership.cif_number || 'NO CIF'}
+                </span>
                 <h3 className="text-base font-semibold text-slate-800 dark:text-slate-100 truncate leading-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                   {dealership.name}
                 </h3>
@@ -170,6 +174,9 @@ const DealershipCard: React.FC<DealershipCardProps> = ({
                 )}
               </div>
               <p className="text-sm text-slate-500 dark:text-slate-400 truncate">
+                <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold mr-1.5 ${statusColors[dealership.status]}`}>
+                  {dealership.status}
+                </span>
                 {groupName || 'Single'} · {dealership.crm_provider}
                 {isManaged && ' · Managed'}
                 {hasAddlWeb && ' · Addl. Web'}
@@ -205,18 +212,13 @@ const DealershipCard: React.FC<DealershipCardProps> = ({
               </button>
             </div>
 
-            {/* CIF */}
-            <span className="text-xs font-mono text-slate-400 dark:text-slate-500">
-              {dealership.cif_number || 'NO CIF'}
-            </span>
-
             {/* Chevron */}
             <ChevronRight size={16} className="text-slate-300 dark:text-slate-600 flex-shrink-0" />
           </div>
         </div>
 
         {/* Bottom metadata row */}
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 dark:text-slate-400 mt-1.5 pt-1.5 border-t border-slate-100 dark:border-slate-800/50">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 dark:text-slate-400 mt-1.5 pt-1.5 border-t border-slate-200/40 dark:border-[#38383A]/50">
           <div className="flex items-center gap-1" title="Store / Branch">
             <span className="font-medium text-slate-400 dark:text-slate-500">St/Br:</span>
             <span className="font-mono">{dealership.store_number || '--'} / {dealership.branch_number || '--'}</span>

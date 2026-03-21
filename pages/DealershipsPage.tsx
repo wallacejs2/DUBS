@@ -1,8 +1,8 @@
 
 import React, { useState } from 'react';
-import { Plus, FileSpreadsheet } from 'lucide-react';
+import { Plus, FileSpreadsheet, Search, Hash, X, ChevronDown, SlidersHorizontal } from 'lucide-react';
 import { useDealerships, useEnterpriseGroups, useOrders, useProvidersProducts, useTeamMembers } from '../hooks';
-import { DealershipWithRelations, ProductCode, DealershipFilterState } from '../types';
+import { DealershipWithRelations, ProductCode, DealershipFilterState, DealershipStatus } from '../types';
 import { db } from '../db';
 import DealershipCard from '../components/DealershipCard';
 import DealershipForm from '../components/DealershipForm';
@@ -195,9 +195,18 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
 
   const activeSubPanel = panelStack[panelStack.length - 1];
 
+  const [showFilters, setShowFilters] = useState(false);
+
+  const hasActiveFilters = !!(filters.search || filters.cif || filters.client_id || filters.status || filters.group || filters.issue || filters.managed || filters.addl_web || filters.sms || filters.received_month || filters.onboarding_month || filters.go_live_month || filters.term_month);
+  const activeFilterCount = [filters.search, filters.cif, filters.client_id, filters.status, filters.group, filters.issue, filters.managed, filters.addl_web, filters.sms, filters.received_month, filters.onboarding_month, filters.go_live_month, filters.term_month].filter(Boolean).length;
+
+  const handleResetFilters = () => {
+    setFilters({ search: '', status: '', group: '', issue: '', managed: '', addl_web: '', cif: '', client_id: '', sms: '', received_month: '', onboarding_month: '', go_live_month: '', term_month: '' });
+  };
+
   return (
     <div className="animate-in fade-in duration-700 h-full flex flex-col">
-      <div className="flex items-center gap-2 mb-6 flex-shrink-0">
+      <div className="flex items-center gap-2 mb-4 flex-shrink-0">
         <button
           onClick={handleExportCSV}
           className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl text-sm font-semibold hover:bg-blue-500/20 transition-colors focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"
@@ -210,7 +219,175 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
         >
           <Plus size={16} /> New Dealership
         </button>
+        <button
+          onClick={() => setShowFilters(!showFilters)}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none ${
+            showFilters || hasActiveFilters
+              ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400'
+              : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'
+          }`}
+        >
+          <SlidersHorizontal size={14} />
+          Filters
+          {activeFilterCount > 0 && (
+            <span className="ml-0.5 min-w-[18px] h-[18px] px-1 inline-flex items-center justify-center text-[10px] font-bold text-white bg-blue-500 rounded-full leading-none">
+              {activeFilterCount}
+            </span>
+          )}
+        </button>
+        {hasActiveFilters && (
+          <button
+            onClick={handleResetFilters}
+            className="text-xs text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 font-semibold transition-colors"
+          >
+            Reset
+          </button>
+        )}
       </div>
+
+      {/* Inline Filters */}
+      {showFilters && (
+        <div className="mb-4 p-3 bg-white/80 dark:bg-[#2C2C2E] rounded-2xl border border-slate-200/60 dark:border-[#38383A] animate-in fade-in slide-in-from-top-2 duration-200">
+          {/* Dashboard lifecycle month filter indicator */}
+          {(filters.received_month || filters.onboarding_month || filters.go_live_month || filters.term_month) && (
+            <div className="mb-3 px-3 py-2 bg-cyan-50 dark:bg-cyan-900/30 border border-cyan-200 dark:border-cyan-700/50 rounded-xl flex items-center justify-between gap-2">
+              <span className="text-xs text-cyan-700 dark:text-cyan-300 font-semibold">
+                {filters.received_month && `Received: ${filters.received_month}`}
+                {filters.onboarding_month && `Onboarding: ${filters.onboarding_month}`}
+                {filters.go_live_month && `Go-Live: ${filters.go_live_month}`}
+                {filters.term_month && `Termed: ${filters.term_month}`}
+              </span>
+              <button
+                onClick={() => setFilters({ ...filters, received_month: '', onboarding_month: '', go_live_month: '', term_month: '' })}
+                className="text-cyan-600 dark:text-cyan-400 hover:text-cyan-800 dark:hover:text-cyan-200 flex-shrink-0"
+              >
+                <X size={12} />
+              </button>
+            </div>
+          )}
+
+          {/* Search row */}
+          <div className="flex flex-wrap gap-2 mb-2">
+            <div className="relative flex-1 min-w-[140px]">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+              <input
+                value={filters.search}
+                onChange={(e) => setFilters({...filters, search: e.target.value})}
+                placeholder="Search name..."
+                className="w-full pl-8 pr-7 py-1.5 bg-slate-100/50 dark:bg-[#1C1C1E] border border-slate-200/60 dark:border-[#38383A] rounded-xl text-sm text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all"
+              />
+              {filters.search && (
+                <button onClick={() => setFilters({...filters, search: ''})} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                  <X size={12} />
+                </button>
+              )}
+            </div>
+            <div className="relative min-w-[120px]">
+              <Hash className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+              <input
+                value={filters.cif}
+                onChange={(e) => setFilters({...filters, cif: e.target.value})}
+                placeholder="CIF #"
+                className="w-full pl-8 pr-7 py-1.5 bg-slate-100/50 dark:bg-[#1C1C1E] border border-slate-200/60 dark:border-[#38383A] rounded-xl text-sm text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all"
+              />
+              {filters.cif && (
+                <button onClick={() => setFilters({...filters, cif: ''})} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                  <X size={12} />
+                </button>
+              )}
+            </div>
+            <div className="relative min-w-[120px]">
+              <Hash className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+              <input
+                value={filters.client_id}
+                onChange={(e) => setFilters({...filters, client_id: e.target.value})}
+                placeholder="40NM"
+                className="w-full pl-8 pr-7 py-1.5 bg-slate-100/50 dark:bg-[#1C1C1E] border border-slate-200/60 dark:border-[#38383A] rounded-xl text-sm text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all"
+              />
+              {filters.client_id && (
+                <button onClick={() => setFilters({...filters, client_id: ''})} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                  <X size={12} />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Dropdowns + toggles row */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative min-w-[130px]">
+              <select
+                value={filters.status}
+                onChange={(e) => setFilters({...filters, status: e.target.value})}
+                className="w-full pl-2.5 pr-7 py-1.5 bg-slate-100/50 dark:bg-[#1C1C1E] border border-slate-200/60 dark:border-[#38383A] rounded-xl text-sm text-slate-700 dark:text-slate-300 appearance-none focus:ring-1 focus:ring-blue-500 outline-none cursor-pointer"
+              >
+                <option value="">All Statuses</option>
+                {Object.values(DealershipStatus).map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={12} />
+            </div>
+
+            <div className="relative min-w-[130px]">
+              <select
+                value={filters.group}
+                onChange={(e) => setFilters({...filters, group: e.target.value})}
+                className="w-full pl-2.5 pr-7 py-1.5 bg-slate-100/50 dark:bg-[#1C1C1E] border border-slate-200/60 dark:border-[#38383A] rounded-xl text-sm text-slate-700 dark:text-slate-300 appearance-none focus:ring-1 focus:ring-blue-500 outline-none cursor-pointer"
+              >
+                <option value="">All Groups</option>
+                {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+              </select>
+              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={12} />
+            </div>
+
+            <div className="relative min-w-[140px]">
+              <select
+                value={filters.issue}
+                onChange={(e) => setFilters({...filters, issue: e.target.value})}
+                className="w-full pl-2.5 pr-7 py-1.5 bg-slate-100/50 dark:bg-[#1C1C1E] border border-slate-200/60 dark:border-[#38383A] rounded-xl text-sm text-slate-700 dark:text-slate-300 appearance-none focus:ring-1 focus:ring-blue-500 outline-none cursor-pointer"
+              >
+                <option value="">No Issues</option>
+                <option value="no_id">Missing 40NM</option>
+                <option value="zero_price">$0 Product Price</option>
+                <option value="no_csm">Missing CSM</option>
+                <option value="no_enrollment">Missing Enrollment</option>
+                <option value="no_poc">Missing POC Email</option>
+                <option value="no_web_provider">Missing Web Provider</option>
+                <option value="no_inv_provider">Missing Inv. Provider</option>
+              </select>
+              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={12} />
+            </div>
+
+            <div className="flex items-center gap-3 ml-1">
+              <label className="flex items-center gap-1.5 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  checked={filters.managed === 'yes'}
+                  onChange={(e) => setFilters({...filters, managed: e.target.checked ? 'yes' : ''})}
+                  className="w-3.5 h-3.5 rounded border-slate-300 dark:border-slate-600 text-blue-500 focus:ring-blue-500 focus:ring-offset-0 cursor-pointer"
+                />
+                <span className="text-xs font-medium text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-300">Managed</span>
+              </label>
+              <label className="flex items-center gap-1.5 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  checked={filters.addl_web === 'yes'}
+                  onChange={(e) => setFilters({...filters, addl_web: e.target.checked ? 'yes' : ''})}
+                  className="w-3.5 h-3.5 rounded border-slate-300 dark:border-slate-600 text-blue-500 focus:ring-blue-500 focus:ring-offset-0 cursor-pointer"
+                />
+                <span className="text-xs font-medium text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-300">Addl. Web</span>
+              </label>
+              <label className="flex items-center gap-1.5 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  checked={filters.sms === 'yes'}
+                  onChange={(e) => setFilters({...filters, sms: e.target.checked ? 'yes' : ''})}
+                  className="w-3.5 h-3.5 rounded border-slate-300 dark:border-slate-600 text-blue-500 focus:ring-blue-500 focus:ring-offset-0 cursor-pointer"
+                />
+                <span className="text-xs font-medium text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-300">SMS</span>
+              </label>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="flex gap-6 items-start h-full">
         <div className="flex-1 w-full min-w-0">
