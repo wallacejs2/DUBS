@@ -39,8 +39,8 @@ const DealershipCard: React.FC<DealershipCardProps> = ({
   const formatDate = (dateString?: string) => {
     if (!dateString) return '---';
     const datePart = dateString.split('T')[0];
-    const [year, month, day] = datePart.split('-').map(Number);
-    return new Date(year, month - 1, day).toLocaleDateString('en-US');
+    const [year, month, day] = datePart.split('-');
+    return `${month}-${day}-${year}`;
   };
 
   const copyToClipboard = (text: string, field: string) => {

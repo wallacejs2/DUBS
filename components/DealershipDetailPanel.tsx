@@ -452,11 +452,9 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
     if (!dateStr) return null;
     const datePart = dateStr.split('T')[0];
     const [year, month, day] = datePart.split('-').map(Number);
-    return new Date(year, month - 1, day).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+    const mm = String(month).padStart(2, '0');
+    const dd = String(day).padStart(2, '0');
+    return `${mm}-${dd}-${year}`;
   };
 
   const formatDateInput = (dateStr?: string) => {
@@ -569,7 +567,7 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                     </div>
                 ) : null}
 
-                <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+                <div className="grid grid-cols-4 gap-4">
                     <div>
                         <Label>Status</Label>
                         {isEditing ? (
