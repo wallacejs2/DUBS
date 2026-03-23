@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Building2, Users, ClipboardCheck, LayoutDashboard,
   Sparkles, Moon, Sun, Briefcase, Package,
-  ChevronRight, CalendarDays, NotebookPen
+  CalendarDays, NotebookPen
 } from 'lucide-react';
 import DealershipsPage from './pages/DealershipsPage.tsx';
 import EnterpriseGroupsPage from './pages/EnterpriseGroupsPage.tsx';
@@ -20,8 +20,6 @@ type NavPage = 'dealerships' | 'groups' | 'qa' | 'dashboard' | 'features' | 'tea
 
 const App: React.FC = () => {
   const [activePage, setActivePage] = useState<NavPage>('dashboard');
-  const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
-
   // Lifted Dealership Filter State
   const [dealershipFilters, setDealershipFilters] = useState<DealershipFilterState>({
     search: '', status: '', group: '', issue: '', managed: '', addl_web: '', cif: '', client_id: '', sms: '',
@@ -99,26 +97,14 @@ const App: React.FC = () => {
     <div className="min-h-screen bg-[#F2F2F7] dark:bg-black text-slate-900 dark:text-slate-100 font-sans transition-colors duration-300">
 
       {/* iOS-style Sidebar with vibrancy */}
-      <aside className={`fixed top-0 left-0 h-screen bg-white/90 dark:bg-[#1C1C1E]/95 backdrop-blur-xl backdrop-saturate-150 flex flex-col z-50 border-r border-slate-200/60 dark:border-[#38383A] transition-all duration-300 ease-in-out ${isSidebarExpanded ? 'w-[240px]' : 'w-[60px]'}`}>
-
-        {/* Chevron Toggle */}
-        <button
-          onClick={() => setIsSidebarExpanded(!isSidebarExpanded)}
-          className="absolute -right-3 top-[20px] z-50 w-6 h-6 bg-white dark:bg-[#2C2C2E] border border-slate-200/60 dark:border-[#38383A] rounded-full flex items-center justify-center shadow-sm hover:shadow-md transition-all duration-200 group focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2"
-          title={isSidebarExpanded ? "Collapse Sidebar" : "Expand Sidebar"}
-        >
-           <ChevronRight
-             size={14}
-             className={`text-slate-400 group-hover:text-blue-500 dark:text-slate-500 dark:group-hover:text-blue-400 transition-transform duration-300 ${isSidebarExpanded ? 'rotate-180' : ''}`}
-           />
-        </button>
+      <aside className="fixed top-0 left-0 h-screen w-[240px] bg-white/90 dark:bg-[#1C1C1E]/95 backdrop-blur-xl backdrop-saturate-150 flex flex-col z-50 border-r border-slate-200/60 dark:border-[#38383A]">
 
         {/* Brand / Logo */}
-        <div className={`flex items-center h-[56px] px-3.5 mb-1 transition-all ${isSidebarExpanded ? 'justify-start' : 'justify-center'}`}>
-           <div className="w-8 h-8 bg-blue-500 rounded-[10px] flex items-center justify-center font-bold text-lg text-white flex-shrink-0 cursor-pointer" onClick={() => setIsSidebarExpanded(true)}>
+        <div className="flex items-center h-[56px] px-3.5 mb-1 justify-start">
+           <div className="w-8 h-8 bg-blue-500 rounded-[10px] flex items-center justify-center font-bold text-lg text-white flex-shrink-0">
              C
            </div>
-           <div className={`ml-3 font-semibold text-slate-800 dark:text-slate-200 tracking-wide transition-all duration-300 overflow-hidden whitespace-nowrap ${isSidebarExpanded ? 'opacity-100 w-auto' : 'opacity-0 w-0'}`}>
+           <div className="ml-3 font-semibold text-slate-800 dark:text-slate-200 tracking-wide whitespace-nowrap">
              CURATOR
            </div>
         </div>
@@ -138,9 +124,8 @@ const App: React.FC = () => {
                       ? 'bg-blue-500/15 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400'
                       : 'text-slate-500 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-white/5 hover:text-slate-800 dark:hover:text-slate-200'
                    }
-                   ${isSidebarExpanded ? 'px-3 justify-start' : 'justify-center px-0'}
+                   px-3 justify-start
                  `}
-                 title={!isSidebarExpanded ? item.label : undefined}
                >
                  <item.icon
                     size={18}
@@ -149,19 +134,9 @@ const App: React.FC = () => {
                  />
 
                  {/* Text Label */}
-                 <span className={`
-                   ml-3 font-medium text-sm whitespace-nowrap transition-all duration-300 ease-in-out
-                   ${isSidebarExpanded ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4 absolute left-10 pointer-events-none w-0 overflow-hidden'}
-                 `}>
+                 <span className="ml-3 font-medium text-sm whitespace-nowrap">
                    {item.label}
                  </span>
-
-                 {/* Tooltip for collapsed state */}
-                 {!isSidebarExpanded && (
-                   <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2.5 py-1.5 bg-slate-800/90 dark:bg-[#3A3A3C] backdrop-blur-sm text-white text-xs font-medium rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 delay-300 z-50 whitespace-nowrap shadow-lg">
-                     {item.label}
-                   </div>
-                 )}
                </button>
              );
            })}
@@ -175,15 +150,11 @@ const App: React.FC = () => {
                flex items-center h-[38px] rounded-xl transition-all duration-200 group flex-shrink-0
                text-slate-500 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-white/5 hover:text-slate-800 dark:hover:text-slate-200
                focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-1 outline-none
-               ${isSidebarExpanded ? 'px-3 justify-start' : 'justify-center px-0'}
+               px-3 justify-start
              `}
-             title={!isSidebarExpanded ? (isDarkMode ? 'Light Mode' : 'Dark Mode') : undefined}
            >
               {isDarkMode ? <Sun size={18} strokeWidth={1.75} /> : <Moon size={18} strokeWidth={1.75} />}
-              <span className={`
-                 ml-3 font-medium text-sm whitespace-nowrap transition-all duration-300 ease-in-out
-                 ${isSidebarExpanded ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4 absolute left-10 pointer-events-none w-0 overflow-hidden'}
-              `}>
+              <span className="ml-3 font-medium text-sm whitespace-nowrap">
                 {isDarkMode ? 'Light Mode' : 'Dark Mode'}
               </span>
            </button>
@@ -191,7 +162,7 @@ const App: React.FC = () => {
       </aside>
 
       {/* Main Content Area */}
-      <main className={`flex flex-col min-h-screen transition-all duration-300 ease-in-out ${isSidebarExpanded ? 'ml-[240px]' : 'ml-[60px]'}`}>
+      <main className="flex flex-col min-h-screen ml-[240px]">
         {/* iOS-style translucent header */}
         <header className="h-12 bg-white/80 dark:bg-[#1C1C1E]/80 backdrop-blur-xl backdrop-saturate-150 border-b border-slate-200/60 dark:border-[#38383A] flex items-center justify-between px-6 sticky top-0 z-30 transition-colors">
           <h2 className="text-base font-semibold text-slate-800 dark:text-slate-200">
