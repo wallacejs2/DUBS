@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
-import { Plus, Sparkles, Trash2, Edit3, ExternalLink, Copy, Check, ArrowUpDown, ChevronUp, ChevronDown, Layers, ChevronRight, FileSpreadsheet, Bell, Megaphone, Rocket, Navigation, BarChart3 } from 'lucide-react';
+import { Plus, Sparkles, Trash2, Edit3, ExternalLink, Copy, Check, ArrowUpDown, ChevronUp, ChevronDown, Layers, ChevronRight, FileSpreadsheet, Bell, Megaphone, Rocket, Navigation, BarChart3, Search, X } from 'lucide-react';
 import { useNewFeatures } from '../hooks';
 import { NewFeature, NewFeatureFilterState } from '../types';
 import NewFeatureDetailPanel from '../components/NewFeatureDetailPanel';
@@ -413,22 +413,140 @@ const NewFeaturesPage: React.FC<NewFeaturesPageProps> = ({ filters, setFilters }
     );
   };
 
+  const hasActiveFilters = !!(filters.search || filters.source || filters.type || filters.quarter || filters.year || filters.status || filters.platform);
+
+  const handleResetFilters = () => {
+    setFilters({ search: '', source: '', type: '', quarter: '', year: '', status: '', platform: '' });
+  };
+
   return (
     <div className="animate-in fade-in duration-700">
-      <div className="flex justify-end items-center mb-6">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 mb-4">
+        <button
+          onClick={handleExportCSV}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl text-sm font-semibold hover:bg-blue-500/20 transition-colors focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"
+        >
+          <FileSpreadsheet size={14} /> Export CSV
+        </button>
+        <button
+          onClick={() => { setSelectedFeatureId(null); setIsCreating(true); }}
+          className="flex items-center gap-1.5 px-4 py-2 bg-blue-500 text-white rounded-xl font-semibold text-sm hover:bg-blue-600 transition-colors focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"
+        >
+          <Plus size={16} /> Add Feature
+        </button>
+        {hasActiveFilters && (
           <button
-            onClick={handleExportCSV}
-            className="flex items-center gap-1.5 px-3 py-2 bg-white/80 dark:bg-[#2C2C2E] rounded-xl text-slate-600 dark:text-slate-300 font-semibold text-sm hover:bg-slate-50 dark:hover:bg-white/10 transition-colors focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"
+            onClick={handleResetFilters}
+            className="text-xs text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 font-semibold transition-colors"
           >
-            <FileSpreadsheet size={14} /> Export CSV
+            Reset
           </button>
-          <button
-            onClick={() => { setSelectedFeatureId(null); setIsCreating(true); }}
-            className="flex items-center gap-1.5 px-4 py-2 bg-blue-500 text-white rounded-xl font-semibold text-sm hover:bg-blue-600 transition-colors focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"
-          >
-            <Plus size={16} /> Add Feature
-          </button>
+        )}
+      </div>
+
+      {/* Inline Filters */}
+      <div className="mb-4 p-3 bg-white/80 dark:bg-[#2C2C2E] rounded-2xl border border-slate-200/60 dark:border-[#38383A]">
+        <div className="flex flex-wrap gap-2 mb-2">
+          <div className="relative flex-1 min-w-[160px]">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+            <input
+              value={filters.search}
+              onChange={(e) => setFilters({...filters, search: e.target.value})}
+              placeholder="Search features..."
+              className="w-full pl-8 pr-7 py-1.5 bg-slate-100/50 dark:bg-[#1C1C1E] border border-slate-200/60 dark:border-[#38383A] rounded-xl text-sm text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all"
+            />
+            {filters.search && (
+              <button onClick={() => setFilters({...filters, search: ''})} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                <X size={12} />
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative min-w-[110px]">
+            <select
+              value={filters.source}
+              onChange={(e) => setFilters({...filters, source: e.target.value})}
+              className="w-full pl-2.5 pr-7 py-1.5 bg-slate-100/50 dark:bg-[#1C1C1E] border border-slate-200/60 dark:border-[#38383A] rounded-xl text-sm text-slate-700 dark:text-slate-300 appearance-none focus:ring-1 focus:ring-blue-500 outline-none cursor-pointer"
+            >
+              <option value="">All Sources</option>
+              <option value="Fullpath">Fullpath</option>
+              <option value="Reynolds">Reynolds</option>
+            </select>
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={12} />
+          </div>
+
+          <div className="relative min-w-[100px]">
+            <select
+              value={filters.type}
+              onChange={(e) => setFilters({...filters, type: e.target.value})}
+              className="w-full pl-2.5 pr-7 py-1.5 bg-slate-100/50 dark:bg-[#1C1C1E] border border-slate-200/60 dark:border-[#38383A] rounded-xl text-sm text-slate-700 dark:text-slate-300 appearance-none focus:ring-1 focus:ring-blue-500 outline-none cursor-pointer"
+            >
+              <option value="">All Types</option>
+              <option value="New">New</option>
+              <option value="Updated">Updated</option>
+            </select>
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={12} />
+          </div>
+
+          <div className="relative min-w-[110px]">
+            <select
+              value={filters.quarter}
+              onChange={(e) => setFilters({...filters, quarter: e.target.value})}
+              className="w-full pl-2.5 pr-7 py-1.5 bg-slate-100/50 dark:bg-[#1C1C1E] border border-slate-200/60 dark:border-[#38383A] rounded-xl text-sm text-slate-700 dark:text-slate-300 appearance-none focus:ring-1 focus:ring-blue-500 outline-none cursor-pointer"
+            >
+              <option value="">All Quarters</option>
+              <option value="Q1">Q1</option>
+              <option value="Q2">Q2</option>
+              <option value="Q3">Q3</option>
+              <option value="Q4">Q4</option>
+            </select>
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={12} />
+          </div>
+
+          <div className="relative min-w-[100px]">
+            <select
+              value={filters.year}
+              onChange={(e) => setFilters({...filters, year: e.target.value})}
+              className="w-full pl-2.5 pr-7 py-1.5 bg-slate-100/50 dark:bg-[#1C1C1E] border border-slate-200/60 dark:border-[#38383A] rounded-xl text-sm text-slate-700 dark:text-slate-300 appearance-none focus:ring-1 focus:ring-blue-500 outline-none cursor-pointer"
+            >
+              <option value="">All Years</option>
+              <option value="2024">2024</option>
+              <option value="2025">2025</option>
+              <option value="2026">2026</option>
+              <option value="2027">2027</option>
+              <option value="2028">2028</option>
+            </select>
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={12} />
+          </div>
+
+          <div className="relative min-w-[110px]">
+            <select
+              value={filters.status}
+              onChange={(e) => setFilters({...filters, status: e.target.value})}
+              className="w-full pl-2.5 pr-7 py-1.5 bg-slate-100/50 dark:bg-[#1C1C1E] border border-slate-200/60 dark:border-[#38383A] rounded-xl text-sm text-slate-700 dark:text-slate-300 appearance-none focus:ring-1 focus:ring-blue-500 outline-none cursor-pointer"
+            >
+              <option value="">All Statuses</option>
+              <option value="Pending">Pending</option>
+              <option value="Launched">Launched</option>
+            </select>
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={12} />
+          </div>
+
+          <div className="relative min-w-[120px]">
+            <select
+              value={filters.platform}
+              onChange={(e) => setFilters({...filters, platform: e.target.value})}
+              className="w-full pl-2.5 pr-7 py-1.5 bg-slate-100/50 dark:bg-[#1C1C1E] border border-slate-200/60 dark:border-[#38383A] rounded-xl text-sm text-slate-700 dark:text-slate-300 appearance-none focus:ring-1 focus:ring-blue-500 outline-none cursor-pointer"
+            >
+              <option value="">All Platforms</option>
+              <option value="UCP">UCP</option>
+              <option value="Curator">Curator</option>
+              <option value="FOCUS">FOCUS</option>
+            </select>
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={12} />
+          </div>
         </div>
       </div>
 
