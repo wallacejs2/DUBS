@@ -371,6 +371,8 @@ class CuratorLocalDB extends EventTarget {
     };
   }
 
+  getContacts(): DealershipContacts[] { return [...this.data.contacts]; }
+
   upsertDealership(payload: Partial<DealershipWithRelations>) {
     const id = payload.id || this.generateId();
     const now = new Date().toISOString();
