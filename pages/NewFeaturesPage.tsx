@@ -444,8 +444,66 @@ const NewFeaturesPage: React.FC<NewFeaturesPageProps> = ({ filters, setFilters }
         )}
       </div>
 
+      {/* Metrics Cards */}
+      <div className="grid grid-cols-3 gap-3">
+        {/* Total Features */}
+        <div className="rounded-2xl bg-white/80 dark:bg-[#2C2C2E] p-4 flex flex-col justify-between h-24 transition-colors">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg text-blue-600 dark:text-blue-400">
+              <Sparkles size={16} />
+            </div>
+            <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Total Features</span>
+          </div>
+          <div className="text-2xl font-bold text-slate-800 dark:text-slate-100">{metrics.total}</div>
+        </div>
+
+        {/* Source Breakdown */}
+        <div className="rounded-2xl bg-white/80 dark:bg-[#2C2C2E] p-4 flex flex-col justify-between h-24 transition-colors">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 bg-purple-50 dark:bg-purple-900/30 rounded-lg text-purple-600 dark:text-purple-400">
+              <BarChart3 size={16} />
+            </div>
+            <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">By Source</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1.5">
+              <span className="text-lg font-bold text-purple-600 dark:text-purple-400">{metrics.fullpathCount}</span>
+              <span className="text-xs font-bold text-slate-400 uppercase">Fullpath</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-lg font-bold text-blue-600 dark:text-blue-400">{metrics.reynoldsCount}</span>
+              <span className="text-xs font-bold text-slate-400 uppercase">Reynolds</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Platform Breakdown */}
+        <div className="rounded-2xl bg-white/80 dark:bg-[#2C2C2E] p-4 flex flex-col justify-between h-24 transition-colors">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-300">
+              <Layers size={16} />
+            </div>
+            <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">By Platform</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1">
+              <span className="text-lg font-bold text-blue-600 dark:text-blue-400">{metrics.ucpCount}</span>
+              <span className="text-xs font-bold text-slate-400 uppercase">UCP</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="text-lg font-bold text-purple-600 dark:text-purple-400">{metrics.curatorCount}</span>
+              <span className="text-xs font-bold text-slate-400 uppercase">Curator</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="text-lg font-bold text-orange-600 dark:text-orange-400">{metrics.focusCount}</span>
+              <span className="text-xs font-bold text-slate-400 uppercase">FOCUS</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Inline Filters */}
-      <div className="mb-4 p-3 bg-white/80 dark:bg-[#2C2C2E] rounded-2xl border border-slate-200/60 dark:border-[#38383A]">
+      <div className="mt-3 p-3 bg-white/80 dark:bg-[#2C2C2E] rounded-2xl border border-slate-200/60 dark:border-[#38383A]">
         <div className="flex flex-wrap gap-2 mb-2">
           <div className="relative flex-1 min-w-[160px]">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
@@ -546,64 +604,6 @@ const NewFeaturesPage: React.FC<NewFeaturesPageProps> = ({ filters, setFilters }
               <option value="FOCUS">FOCUS</option>
             </select>
             <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={12} />
-          </div>
-        </div>
-      </div>
-
-      {/* Metrics Cards */}
-      <div className="grid grid-cols-3 gap-3">
-        {/* Total Features */}
-        <div className="rounded-2xl bg-white/80 dark:bg-[#2C2C2E] p-4 flex flex-col justify-between h-24 transition-colors">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg text-blue-600 dark:text-blue-400">
-              <Sparkles size={16} />
-            </div>
-            <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Total Features</span>
-          </div>
-          <div className="text-2xl font-bold text-slate-800 dark:text-slate-100">{metrics.total}</div>
-        </div>
-
-        {/* Source Breakdown */}
-        <div className="rounded-2xl bg-white/80 dark:bg-[#2C2C2E] p-4 flex flex-col justify-between h-24 transition-colors">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-purple-50 dark:bg-purple-900/30 rounded-lg text-purple-600 dark:text-purple-400">
-              <BarChart3 size={16} />
-            </div>
-            <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">By Source</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1.5">
-              <span className="text-lg font-bold text-purple-600 dark:text-purple-400">{metrics.fullpathCount}</span>
-              <span className="text-xs font-bold text-slate-400 uppercase">Fullpath</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-lg font-bold text-blue-600 dark:text-blue-400">{metrics.reynoldsCount}</span>
-              <span className="text-xs font-bold text-slate-400 uppercase">Reynolds</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Platform Breakdown */}
-        <div className="rounded-2xl bg-white/80 dark:bg-[#2C2C2E] p-4 flex flex-col justify-between h-24 transition-colors">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-300">
-              <Layers size={16} />
-            </div>
-            <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">By Platform</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1">
-              <span className="text-lg font-bold text-blue-600 dark:text-blue-400">{metrics.ucpCount}</span>
-              <span className="text-xs font-bold text-slate-400 uppercase">UCP</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="text-lg font-bold text-purple-600 dark:text-purple-400">{metrics.curatorCount}</span>
-              <span className="text-xs font-bold text-slate-400 uppercase">Curator</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="text-lg font-bold text-orange-600 dark:text-orange-400">{metrics.focusCount}</span>
-              <span className="text-xs font-bold text-slate-400 uppercase">FOCUS</span>
-            </div>
           </div>
         </div>
       </div>
