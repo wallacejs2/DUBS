@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Plus, FileSpreadsheet, Search, Hash, X, ChevronDown, SlidersHorizontal } from 'lucide-react';
+import { Plus, FileSpreadsheet, Search, Hash, X, ChevronDown } from 'lucide-react';
 import { useDealerships, useEnterpriseGroups, useOrders, useProvidersProducts, useTeamMembers } from '../hooks';
 import { DealershipWithRelations, ProductCode, DealershipFilterState, DealershipStatus } from '../types';
 import { db } from '../db';
@@ -195,10 +195,7 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
 
   const activeSubPanel = panelStack[panelStack.length - 1];
 
-  const [showFilters, setShowFilters] = useState(false);
-
   const hasActiveFilters = !!(filters.search || filters.cif || filters.client_id || filters.status || filters.group || filters.issue || filters.managed || filters.addl_web || filters.sms || filters.received_month || filters.onboarding_month || filters.go_live_month || filters.term_month);
-  const activeFilterCount = [filters.search, filters.cif, filters.client_id, filters.status, filters.group, filters.issue, filters.managed, filters.addl_web, filters.sms, filters.received_month, filters.onboarding_month, filters.go_live_month, filters.term_month].filter(Boolean).length;
 
   const handleResetFilters = () => {
     setFilters({ search: '', status: '', group: '', issue: '', managed: '', addl_web: '', cif: '', client_id: '', sms: '', received_month: '', onboarding_month: '', go_live_month: '', term_month: '' });
@@ -219,22 +216,6 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
         >
           <Plus size={16} /> New Dealership
         </button>
-        <button
-          onClick={() => setShowFilters(!showFilters)}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none ${
-            showFilters || hasActiveFilters
-              ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400'
-              : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'
-          }`}
-        >
-          <SlidersHorizontal size={14} />
-          Filters
-          {activeFilterCount > 0 && (
-            <span className="ml-0.5 min-w-[18px] h-[18px] px-1 inline-flex items-center justify-center text-[10px] font-bold text-white bg-blue-500 rounded-full leading-none">
-              {activeFilterCount}
-            </span>
-          )}
-        </button>
         {hasActiveFilters && (
           <button
             onClick={handleResetFilters}
@@ -246,8 +227,7 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
       </div>
 
       {/* Inline Filters */}
-      {showFilters && (
-        <div className="mb-4 p-3 bg-white/80 dark:bg-[#2C2C2E] rounded-2xl border border-slate-200/60 dark:border-[#38383A] animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="mb-4 p-3 bg-white/80 dark:bg-[#2C2C2E] rounded-2xl border border-slate-200/60 dark:border-[#38383A]">
           {/* Dashboard lifecycle month filter indicator */}
           {(filters.received_month || filters.onboarding_month || filters.go_live_month || filters.term_month) && (
             <div className="mb-3 px-3 py-2 bg-cyan-50 dark:bg-cyan-900/30 border border-cyan-200 dark:border-cyan-700/50 rounded-xl flex items-center justify-between gap-2">
@@ -387,7 +367,6 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
             </div>
           </div>
         </div>
-      )}
 
       <div className="flex gap-6 items-start h-full">
         <div className="flex-1 w-full min-w-0">
