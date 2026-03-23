@@ -24,10 +24,10 @@ interface FilterBarProps {
   layout?: 'inline' | 'stacked';
 }
 
-const FilterBar: React.FC<FilterBarProps> = ({ 
-  searchPlaceholder = "Search...", 
-  searchValue, 
-  onSearchChange, 
+const FilterBar: React.FC<FilterBarProps> = ({
+  searchPlaceholder = "Search...",
+  searchValue,
+  onSearchChange,
   secondarySearchValue,
   onSecondarySearchChange,
   secondarySearchPlaceholder = "Secondary Search...",
@@ -36,25 +36,25 @@ const FilterBar: React.FC<FilterBarProps> = ({
   layout = 'inline'
 }) => {
   return (
-    <div className={`flex flex-col gap-4 mb-6 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm transition-colors ${
+    <div className={`flex flex-col gap-3 mb-6 transition-colors ${
       layout === 'stacked' ? 'items-start' : 'lg:flex-row lg:items-center'
     }`}>
-      <div className={`flex flex-col sm:flex-row gap-4 w-full ${layout === 'stacked' || !onSecondarySearchChange ? 'flex-1' : 'lg:flex-1'}`}>
-        
+      <div className={`flex flex-col sm:flex-row gap-3 w-full ${layout === 'stacked' || !onSecondarySearchChange ? 'flex-1' : 'lg:flex-1'}`}>
+
         {onSecondarySearchChange && (
           <div className="relative w-full sm:w-48 xl:w-64">
-            <Hash className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" size={16} />
-            <input 
-              type="text" 
+            <Hash className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" size={16} />
+            <input
+              type="text"
               value={secondarySearchValue || ''}
               onChange={(e) => onSecondarySearchChange(e.target.value)}
               placeholder={secondarySearchPlaceholder}
-              className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all outline-none font-normal text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-600"
+              className="w-full pl-9 pr-4 py-2.5 text-sm rounded-xl bg-slate-200/50 dark:bg-[#2C2C2E] border-none focus-visible:ring-2 focus-visible:ring-blue-500/50 transition-all outline-none font-normal text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
             />
             {secondarySearchValue && (
-              <button 
+              <button
                 onClick={() => onSecondarySearchChange('')}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
               >
                 <X size={14} />
               </button>
@@ -63,18 +63,18 @@ const FilterBar: React.FC<FilterBarProps> = ({
         )}
 
         <div className="relative flex-1 w-full">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" size={18} />
-          <input 
-            type="text" 
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" size={16} />
+          <input
+            type="text"
             value={searchValue}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder={searchPlaceholder}
-            className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all outline-none font-normal text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-600"
+            className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl bg-slate-200/50 dark:bg-[#2C2C2E] border-none focus-visible:ring-2 focus-visible:ring-blue-500/50 transition-all outline-none font-normal text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
           />
           {searchValue && (
-            <button 
+            <button
               onClick={() => onSearchChange('')}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
             >
               <X size={16} />
             </button>
@@ -83,24 +83,24 @@ const FilterBar: React.FC<FilterBarProps> = ({
 
       </div>
 
-      <div className={`flex flex-wrap gap-3 w-full ${layout === 'stacked' ? '' : 'lg:w-auto'}`}>
+      <div className={`flex flex-wrap gap-2 w-full ${layout === 'stacked' ? '' : 'lg:w-auto'}`}>
         {filters.map((filter, idx) => (
-          <div key={idx} className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 px-3 py-1 rounded-xl">
+          <div key={idx} className="flex items-center gap-2 rounded-xl bg-slate-200/50 dark:bg-[#2C2C2E] border-none px-3 py-1">
             <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{filter.label}</span>
-            <select 
+            <select
               value={filter.value}
               onChange={(e) => filter.onChange(e.target.value)}
-              className="bg-transparent text-sm font-normal text-slate-700 dark:text-slate-200 outline-none cursor-pointer py-2 pr-2"
+              className="bg-transparent text-sm font-normal text-slate-700 dark:text-slate-200 outline-none cursor-pointer py-2 pr-2 focus-visible:ring-2 focus-visible:ring-blue-500/50 rounded-lg"
             >
-              <option value="" className="bg-white dark:bg-slate-800">All</option>
+              <option value="" className="bg-white dark:bg-[#2C2C2E]">All</option>
               {filter.options.map(opt => (
-                <option key={opt.value} value={opt.value} className="bg-white dark:bg-slate-800">{opt.label}</option>
+                <option key={opt.value} value={opt.value} className="bg-white dark:bg-[#2C2C2E]">{opt.label}</option>
               ))}
             </select>
           </div>
         ))}
         {onClear && (
-          <button 
+          <button
             onClick={onClear}
             className="px-4 py-2 text-sm text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 font-medium transition-colors"
           >

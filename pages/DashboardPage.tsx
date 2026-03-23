@@ -11,7 +11,7 @@ const DeltaBadge: React.FC<{ current: number; prev: number }> = ({ current, prev
   const delta = current - prev;
   if (delta === 0) return null;
   return (
-    <span className={`text-[9px] font-bold ml-1 ${delta > 0 ? 'text-emerald-500' : 'text-red-400'}`}>
+    <span className={`text-xs font-bold ml-1 ${delta > 0 ? 'text-emerald-500' : 'text-red-400'}`}>
       {delta > 0 ? '▲' : '▼'}{Math.abs(delta)}
     </span>
   );
@@ -287,169 +287,160 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
       label: 'Live',
       statuses: [DealershipStatus.LIVE, DealershipStatus.LEGACY],
       color: 'text-emerald-600 dark:text-emerald-400',
-      bg: 'bg-white dark:bg-slate-900',
-      border: 'border-slate-200 dark:border-slate-800',
+      bg: 'bg-white/80 dark:bg-[#2C2C2E]',
+      border: 'border-slate-200/60 dark:border-[#38383A]',
     },
     {
       label: 'Onboarding',
       statuses: [DealershipStatus.ONBOARDING],
-      color: 'text-indigo-600 dark:text-indigo-400',
-      bg: 'bg-white dark:bg-slate-900',
-      border: 'border-slate-200 dark:border-slate-800',
+      color: 'text-blue-600 dark:text-blue-400',
+      bg: 'bg-white/80 dark:bg-[#2C2C2E]',
+      border: 'border-slate-200/60 dark:border-[#38383A]',
     },
     {
       label: 'Pending',
       statuses: [DealershipStatus.DMT_PENDING, DealershipStatus.DMT_APPROVED],
       color: 'text-slate-600 dark:text-slate-400',
-      bg: 'bg-white dark:bg-slate-900',
-      border: 'border-slate-200 dark:border-slate-800',
+      bg: 'bg-white/80 dark:bg-[#2C2C2E]',
+      border: 'border-slate-200/60 dark:border-[#38383A]',
     },
     {
       label: 'Hold',
       statuses: [DealershipStatus.HOLD],
       color: 'text-orange-600 dark:text-orange-400',
-      bg: 'bg-white dark:bg-slate-900',
-      border: 'border-slate-200 dark:border-slate-800',
+      bg: 'bg-white/80 dark:bg-[#2C2C2E]',
+      border: 'border-slate-200/60 dark:border-[#38383A]',
     },
     {
       label: 'Cancelled',
       statuses: [DealershipStatus.CANCELLED],
       color: 'text-red-600 dark:text-red-400',
-      bg: 'bg-white dark:bg-slate-900',
-      border: 'border-slate-200 dark:border-slate-800',
+      bg: 'bg-white/80 dark:bg-[#2C2C2E]',
+      border: 'border-slate-200/60 dark:border-[#38383A]',
     },
   ];
 
   return (
     <div className="animate-in fade-in duration-700">
-      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-4 mb-8">
-        <div>
-          <h1 className="text-2xl font-extrabold text-slate-800 dark:text-slate-100 tracking-tight">Dashboard</h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Monthly pipeline flow: order received, onboarding, go-live, and term/cancelled.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 bg-white dark:bg-slate-900 p-2 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
-            <div className="flex items-center gap-2 px-2 border-r border-slate-100 dark:border-slate-800">
-              <Calendar size={16} className="text-slate-400" />
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Order Date</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <input
-                type="date"
-                value={orderDateRange.start}
-                onChange={e => setOrderDateRange({ ...orderDateRange, start: e.target.value })}
-                className="text-xs border-none outline-none bg-transparent text-slate-600 dark:text-slate-300 font-medium dark:color-scheme-dark"
-              />
-              <span className="text-slate-300 dark:text-slate-600">-</span>
-              <input
-                type="date"
-                value={orderDateRange.end}
-                onChange={e => setOrderDateRange({ ...orderDateRange, end: e.target.value })}
-                className="text-xs border-none outline-none bg-transparent text-slate-600 dark:text-slate-300 font-medium dark:color-scheme-dark"
-              />
-            </div>
-            {(orderDateRange.start || orderDateRange.end) && (
-              <button
-                onClick={() => setOrderDateRange({ start: '', end: '' })}
-                className="ml-2 px-2 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1"
-              >
-                <X size={12} /> Clear
-              </button>
-            )}
+      <div className="flex flex-wrap items-center gap-3 mb-8">
+        <div className="flex items-center gap-2 bg-white/80 dark:bg-[#2C2C2E] backdrop-blur-sm p-2 rounded-xl border border-slate-200/60 dark:border-[#38383A] transition-colors">
+          <div className="flex items-center gap-2 px-2 border-r border-slate-200/60 dark:border-[#38383A]">
+            <Calendar size={16} className="text-slate-400" />
+            <span className="text-xs font-semibold text-slate-400">Order Date</span>
           </div>
-
-          <div className="flex items-center gap-2 bg-white dark:bg-slate-900 p-2 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Lifecycle Month</span>
+          <div className="flex items-center gap-2">
             <input
-              type="month"
-              value={reportingMonth}
-              onChange={e => setReportingMonth(e.target.value)}
+              type="date"
+              value={orderDateRange.start}
+              onChange={e => setOrderDateRange({ ...orderDateRange, start: e.target.value })}
+              className="text-xs border-none outline-none bg-transparent text-slate-600 dark:text-slate-300 font-medium dark:color-scheme-dark"
+            />
+            <span className="text-slate-300 dark:text-slate-600">-</span>
+            <input
+              type="date"
+              value={orderDateRange.end}
+              onChange={e => setOrderDateRange({ ...orderDateRange, end: e.target.value })}
               className="text-xs border-none outline-none bg-transparent text-slate-600 dark:text-slate-300 font-medium dark:color-scheme-dark"
             />
           </div>
+          {(orderDateRange.start || orderDateRange.end) && (
+            <button
+              onClick={() => setOrderDateRange({ start: '', end: '' })}
+              className="ml-2 px-2 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg text-xs font-bold transition-all flex items-center gap-1"
+            >
+              <X size={12} /> Clear
+            </button>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 bg-white/80 dark:bg-[#2C2C2E] backdrop-blur-sm p-2 rounded-xl border border-slate-200/60 dark:border-[#38383A] transition-colors">
+          <span className="text-xs font-semibold text-slate-400">Lifecycle Month</span>
+          <input
+            type="month"
+            value={reportingMonth}
+            onChange={e => setReportingMonth(e.target.value)}
+            className="text-xs border-none outline-none bg-transparent text-slate-600 dark:text-slate-300 font-medium dark:color-scheme-dark"
+          />
         </div>
       </div>
 
       {/* Top metric cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-9 gap-3 mb-3">
-        <div className="col-span-1 md:col-span-2 xl:col-span-2 bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between h-24 transition-colors">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-3">
+        <div className="p-5 rounded-2xl bg-white/80 dark:bg-[#2C2C2E] backdrop-blur-sm border border-slate-200/60 dark:border-[#38383A] flex flex-col justify-between transition-colors">
           <div className="flex items-center gap-3 mb-2">
             <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-300">
               <Building2 size={16} />
             </div>
-            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Dealerships</span>
+            <span className="text-xs font-semibold text-slate-400 dark:text-slate-500">Dealerships</span>
           </div>
-          <div className="text-2xl font-extrabold text-slate-800 dark:text-slate-100">{dashboardMetrics.totalDealershipsCount}</div>
+          <div className="text-2xl font-bold text-slate-800 dark:text-slate-100">{dashboardMetrics.totalDealershipsCount}</div>
         </div>
 
-        <div className="col-span-1 md:col-span-2 xl:col-span-2 bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between h-24 transition-colors">
+        <div className="p-5 rounded-2xl bg-white/80 dark:bg-[#2C2C2E] backdrop-blur-sm border border-slate-200/60 dark:border-[#38383A] flex flex-col justify-between transition-colors">
           <div className="flex items-center gap-3 mb-2">
             <div className="p-2 bg-emerald-50 dark:bg-emerald-900/30 rounded-lg text-emerald-600 dark:text-emerald-400">
               <DollarSign size={16} />
             </div>
-            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Revenue Booked</span>
+            <span className="text-xs font-semibold text-slate-400 dark:text-slate-500">Revenue Booked</span>
           </div>
-          <div className="text-2xl font-extrabold text-slate-800 dark:text-slate-100">{formatCurrency(dashboardMetrics.totalRevenue)}</div>
+          <div className="text-2xl font-bold text-slate-800 dark:text-slate-100">{formatCurrency(dashboardMetrics.totalRevenue)}</div>
         </div>
 
-        <div className="col-span-1 bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm h-24">
-          <div className="flex items-center gap-2 text-[10px] text-slate-400 uppercase font-bold"><Calendar size={13} /> Received</div>
-          <div className="text-2xl font-extrabold text-cyan-600 dark:text-cyan-400 mt-2">
+        <div className="p-5 rounded-2xl bg-white/80 dark:bg-[#2C2C2E] backdrop-blur-sm border border-slate-200/60 dark:border-[#38383A]">
+          <div className="flex items-center gap-2 text-xs text-slate-400 font-semibold"><Calendar size={13} /> Received</div>
+          <div className="text-2xl font-bold text-cyan-600 dark:text-cyan-400 mt-2">
             {dashboardMetrics.lifecycle.receivedThisMonth}
             <DeltaBadge current={dashboardMetrics.lifecycle.receivedThisMonth} prev={dashboardMetrics.prevLifecycle.receivedThisMonth} />
           </div>
         </div>
 
-        <div className="col-span-1 bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm h-24">
-          <div className="flex items-center gap-2 text-[10px] text-slate-400 uppercase font-bold"><UserPlus size={13} /> Onboarding</div>
-          <div className="text-2xl font-extrabold text-indigo-600 dark:text-indigo-400 mt-2">
+        <div className="p-5 rounded-2xl bg-white/80 dark:bg-[#2C2C2E] backdrop-blur-sm border border-slate-200/60 dark:border-[#38383A]">
+          <div className="flex items-center gap-2 text-xs text-slate-400 font-semibold"><UserPlus size={13} /> Onboarding</div>
+          <div className="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-2">
             {dashboardMetrics.lifecycle.onboardingThisMonth}
             <DeltaBadge current={dashboardMetrics.lifecycle.onboardingThisMonth} prev={dashboardMetrics.prevLifecycle.onboardingThisMonth} />
           </div>
         </div>
 
-        <div className="col-span-1 bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm h-24">
-          <div className="flex items-center gap-2 text-[10px] text-slate-400 uppercase font-bold"><Rocket size={13} /> Go-Live</div>
-          <div className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-2">
+        <div className="p-5 rounded-2xl bg-white/80 dark:bg-[#2C2C2E] backdrop-blur-sm border border-slate-200/60 dark:border-[#38383A]">
+          <div className="flex items-center gap-2 text-xs text-slate-400 font-semibold"><Rocket size={13} /> Go-Live</div>
+          <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-2">
             {dashboardMetrics.lifecycle.goLiveThisMonth}
             <DeltaBadge current={dashboardMetrics.lifecycle.goLiveThisMonth} prev={dashboardMetrics.prevLifecycle.goLiveThisMonth} />
           </div>
         </div>
 
-        <div className="col-span-1 bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm h-24">
-          <div className="flex items-center gap-2 text-[10px] text-slate-400 uppercase font-bold"><X size={13} /> Termed</div>
-          <div className="text-2xl font-extrabold text-red-600 dark:text-red-400 mt-2">
+        <div className="p-5 rounded-2xl bg-white/80 dark:bg-[#2C2C2E] backdrop-blur-sm border border-slate-200/60 dark:border-[#38383A]">
+          <div className="flex items-center gap-2 text-xs text-slate-400 font-semibold"><X size={13} /> Termed</div>
+          <div className="text-2xl font-bold text-red-600 dark:text-red-400 mt-2">
             {dashboardMetrics.lifecycle.termedThisMonth}
             <DeltaBadge current={dashboardMetrics.lifecycle.termedThisMonth} prev={dashboardMetrics.prevLifecycle.termedThisMonth} />
           </div>
         </div>
 
-        <div className="col-span-1 bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm h-24">
-          <div className="flex items-center gap-2 text-[10px] text-slate-400 uppercase font-bold"><TrendingUp size={13} /> Net Live</div>
-          <div className="text-2xl font-extrabold text-slate-800 dark:text-slate-200 mt-2">{dashboardMetrics.netLiveChangeThisMonth}</div>
+        <div className="p-5 rounded-2xl bg-white/80 dark:bg-[#2C2C2E] backdrop-blur-sm border border-slate-200/60 dark:border-[#38383A]">
+          <div className="flex items-center gap-2 text-xs text-slate-400 font-semibold"><TrendingUp size={13} /> Net Live</div>
+          <div className="text-2xl font-bold text-slate-800 dark:text-slate-200 mt-2">{dashboardMetrics.netLiveChangeThisMonth}</div>
         </div>
       </div>
 
       {/* Average days KPI cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-9 gap-3 mb-3">
-        <div className="col-span-1 md:col-span-2 xl:col-span-3 bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm h-20 flex flex-col justify-between">
-          <div className="flex items-center gap-2 text-[10px] text-slate-400 uppercase font-bold"><Clock size={13} /> Avg Days: Received → Onboarding</div>
-          <div className="text-2xl font-extrabold text-violet-600 dark:text-violet-400">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-3">
+        <div className="p-5 rounded-2xl bg-white/80 dark:bg-[#2C2C2E] backdrop-blur-sm border border-slate-200/60 dark:border-[#38383A] flex flex-col justify-between">
+          <div className="flex items-center gap-2 text-xs text-slate-400 font-semibold"><Clock size={13} /> Avg Days: Received → Onboarding</div>
+          <div className="text-2xl font-bold text-violet-600 dark:text-violet-400">
             {dashboardMetrics.avgRecvToOnb !== null ? dashboardMetrics.avgRecvToOnb : '—'}
           </div>
         </div>
-        <div className="col-span-1 md:col-span-2 xl:col-span-3 bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm h-20 flex flex-col justify-between">
-          <div className="flex items-center gap-2 text-[10px] text-slate-400 uppercase font-bold"><Clock size={13} /> Avg Days: Onboarding → Live</div>
-          <div className="text-2xl font-extrabold text-teal-600 dark:text-teal-400">
+        <div className="p-5 rounded-2xl bg-white/80 dark:bg-[#2C2C2E] backdrop-blur-sm border border-slate-200/60 dark:border-[#38383A] flex flex-col justify-between">
+          <div className="flex items-center gap-2 text-xs text-slate-400 font-semibold"><Clock size={13} /> Avg Days: Onboarding → Live</div>
+          <div className="text-2xl font-bold text-teal-600 dark:text-teal-400">
             {dashboardMetrics.avgOnbToLive !== null ? dashboardMetrics.avgOnbToLive : '—'}
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-9 gap-3 mb-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
         {statusGroups.map(group => {
           const excluded = isExcluded(group.statuses);
           const count = group.statuses.reduce((sum, status) => sum + (dashboardMetrics.statusCounts[status] || 0), 0);
@@ -459,21 +450,21 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
             <button
               key={group.label}
               onClick={() => toggleStatus(group.statuses)}
-              className={`col-span-1 p-3 rounded-xl border shadow-sm flex flex-col justify-center h-24 transition-all duration-200 text-left relative overflow-hidden group
+              className={`p-5 rounded-2xl border backdrop-blur-sm flex flex-col justify-center transition-all duration-200 text-left relative overflow-hidden group
                 ${group.bg} ${group.border}
-                ${excluded ? 'opacity-40 grayscale hover:opacity-60' : 'hover:-translate-y-1 hover:shadow-md ring-1 ring-transparent hover:ring-indigo-100 dark:hover:ring-indigo-900'}
+                ${excluded ? 'opacity-40 grayscale hover:opacity-60' : 'hover:ring-1 hover:ring-blue-500/30 dark:hover:ring-blue-400/30'}
               `}
             >
               <div className="flex items-center justify-between w-full mb-1">
-                <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase">{group.label}</span>
+                <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase">{group.label}</span>
                 {excluded && (
-                  <span className="text-[8px] font-bold text-red-400 uppercase bg-red-50 dark:bg-red-900/30 px-1.5 py-0.5 rounded">
+                  <span className="text-xs font-bold text-red-400 uppercase bg-red-50 dark:bg-red-900/30 px-1.5 py-0.5 rounded">
                     Excluded
                   </span>
                 )}
               </div>
               <span className={`text-xl font-bold ${group.color}`}>{count}</span>
-              <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500">{formatCurrency(groupRevenue)}</span>
+              <span className="text-xs font-medium text-slate-400 dark:text-slate-500">{formatCurrency(groupRevenue)}</span>
               {!excluded && (
                 <div className={`absolute bottom-0 left-0 h-1 bg-current opacity-20 w-full ${group.color.replace('text-', 'bg-')}`}></div>
               )}
@@ -482,19 +473,19 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
         })}
       </div>
 
-      <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3 mt-6">
+      <h3 className="text-sm font-semibold text-slate-400 mb-3 mt-6">
         Product Breakdown
         {dashboardMetrics.isOrderDateFiltered && <span className="font-normal text-slate-300 dark:text-slate-600 ml-2">(In Order Date Range)</span>}
       </h3>
-      <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mb-6">
         {Object.values(ProductCode).map(code => {
           const count = dashboardMetrics.productBreakdown[code] || 0;
           return (
             <div
               key={code}
-              className="bg-slate-50 dark:bg-slate-900 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 flex flex-col justify-center items-center text-center transition-colors"
+              className="p-5 rounded-2xl bg-white/80 dark:bg-[#2C2C2E] backdrop-blur-sm border border-slate-200/60 dark:border-[#38383A] flex flex-col justify-center items-center text-center transition-colors"
             >
-              <span className="text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-1 break-words w-full">
+              <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-1 break-words w-full">
                 {code.replace(/^\d+\s*-?\s*/, '')}
               </span>
               <span className="text-lg font-bold text-slate-700 dark:text-slate-200">{count}</span>
@@ -503,76 +494,78 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
         })}
       </div>
 
-      <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3 mt-6 flex items-center gap-2">
+      <h3 className="text-sm font-semibold text-slate-400 mb-3 mt-6 flex items-center gap-2">
         <BarChart3 size={13} /> Onboarding Pipeline — Last 18 Months
       </h3>
-      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm mb-6 overflow-hidden">
-        <div className="grid grid-cols-7 px-4 py-2 text-[10px] font-bold uppercase text-slate-400 border-b border-slate-200 dark:border-slate-800">
-          <div className="col-span-1">Month</div>
-          <div className="col-span-1 text-center">Received</div>
-          <div className="col-span-1 text-center">Onboarding</div>
-          <div className="col-span-1 text-center">Go-Live</div>
-          <div className="col-span-1 text-center">Termed / Cxl</div>
-          <div className="col-span-1 text-center">Recv→Onb</div>
-          <div className="col-span-1 text-center">Onb→Live</div>
+      <div className="overflow-x-auto rounded-2xl bg-white/80 dark:bg-[#2C2C2E] backdrop-blur-sm mb-6">
+        <div className="min-w-[800px]">
+          <div className="grid grid-cols-7 px-4 py-2 text-xs font-bold uppercase text-slate-400 border-b border-slate-200/60 dark:border-[#38383A]">
+            <div className="col-span-1">Month</div>
+            <div className="col-span-1 text-center">Received</div>
+            <div className="col-span-1 text-center">Onboarding</div>
+            <div className="col-span-1 text-center">Go-Live</div>
+            <div className="col-span-1 text-center">Termed / Cxl</div>
+            <div className="col-span-1 text-center">Recv→Onb</div>
+            <div className="col-span-1 text-center">Onb→Live</div>
+          </div>
+          {dashboardMetrics.pipelineMonths.map(row => {
+            const isSelected = row.monthKey === reportingMonth;
+            const heatIntensity = row.received / dashboardMetrics.maxPipelineReceived;
+            return (
+              <div
+                key={row.monthKey}
+                className={`grid grid-cols-7 text-xs border-b border-slate-200/60 dark:border-[#38383A] last:border-b-0 cursor-pointer transition-colors
+                  ${isSelected
+                    ? 'bg-blue-50 dark:bg-blue-900/20 ring-1 ring-inset ring-blue-200 dark:ring-blue-700'
+                    : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                  }`}
+                onClick={() => setReportingMonth(row.monthKey)}
+              >
+                <div className={`col-span-1 px-4 py-2 font-semibold ${isSelected ? 'text-blue-700 dark:text-blue-300' : 'text-slate-700 dark:text-slate-200'}`}>
+                  {row.label}
+                  {isSelected && <span className="ml-1.5 text-xs font-bold text-blue-500 uppercase">Selected</span>}
+                </div>
+                {/* Received — heatmap + click-through */}
+                <div
+                  className="col-span-1 text-center py-2 font-bold text-cyan-700 dark:text-cyan-300 hover:underline"
+                  style={{ backgroundColor: row.received > 0 ? `rgba(6,182,212,${heatIntensity * 0.25})` : undefined }}
+                  onClick={e => { e.stopPropagation(); onNavigateToDealerships?.({ received_month: row.monthKey, status: '', onboarding_month: '', go_live_month: '', term_month: '' }); }}
+                >
+                  {row.received || '—'}
+                </div>
+                {/* Onboarding — click-through */}
+                <div
+                  className="col-span-1 text-center py-2 font-bold text-blue-600 dark:text-blue-400 hover:underline"
+                  onClick={e => { e.stopPropagation(); onNavigateToDealerships?.({ onboarding_month: row.monthKey, status: '', received_month: '', go_live_month: '', term_month: '' }); }}
+                >
+                  {row.onboarding || '—'}
+                </div>
+                {/* Go-Live — click-through */}
+                <div
+                  className="col-span-1 text-center py-2 font-bold text-emerald-600 dark:text-emerald-400 hover:underline"
+                  onClick={e => { e.stopPropagation(); onNavigateToDealerships?.({ go_live_month: row.monthKey, status: '', received_month: '', onboarding_month: '', term_month: '' }); }}
+                >
+                  {row.goLive || '—'}
+                </div>
+                {/* Termed — click-through */}
+                <div
+                  className="col-span-1 text-center py-2 font-bold text-red-600 dark:text-red-400 hover:underline"
+                  onClick={e => { e.stopPropagation(); onNavigateToDealerships?.({ term_month: row.monthKey, status: '', received_month: '', onboarding_month: '', go_live_month: '' }); }}
+                >
+                  {row.termed || '—'}
+                </div>
+                {/* Recv→Onb % */}
+                <div className="col-span-1 text-center py-2 text-slate-500 dark:text-slate-400">
+                  {row.recvToOnbPct !== null ? `${row.recvToOnbPct}%` : '—'}
+                </div>
+                {/* Onb→Live % */}
+                <div className="col-span-1 text-center py-2 text-slate-500 dark:text-slate-400">
+                  {row.onbToLivePct !== null ? `${row.onbToLivePct}%` : '—'}
+                </div>
+              </div>
+            );
+          })}
         </div>
-        {dashboardMetrics.pipelineMonths.map(row => {
-          const isSelected = row.monthKey === reportingMonth;
-          const heatIntensity = row.received / dashboardMetrics.maxPipelineReceived;
-          return (
-            <div
-              key={row.monthKey}
-              className={`grid grid-cols-7 text-xs border-b border-slate-100 dark:border-slate-800 last:border-b-0 cursor-pointer transition-colors
-                ${isSelected
-                  ? 'bg-indigo-50 dark:bg-indigo-900/20 ring-1 ring-inset ring-indigo-200 dark:ring-indigo-700'
-                  : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
-                }`}
-              onClick={() => setReportingMonth(row.monthKey)}
-            >
-              <div className={`col-span-1 px-4 py-2 font-semibold ${isSelected ? 'text-indigo-700 dark:text-indigo-300' : 'text-slate-700 dark:text-slate-200'}`}>
-                {row.label}
-                {isSelected && <span className="ml-1.5 text-[9px] font-bold text-indigo-500 uppercase">Selected</span>}
-              </div>
-              {/* Received — heatmap + click-through */}
-              <div
-                className="col-span-1 text-center py-2 font-bold text-cyan-700 dark:text-cyan-300 hover:underline"
-                style={{ backgroundColor: row.received > 0 ? `rgba(6,182,212,${heatIntensity * 0.25})` : undefined }}
-                onClick={e => { e.stopPropagation(); onNavigateToDealerships?.({ received_month: row.monthKey, status: '', onboarding_month: '', go_live_month: '', term_month: '' }); }}
-              >
-                {row.received || '—'}
-              </div>
-              {/* Onboarding — click-through */}
-              <div
-                className="col-span-1 text-center py-2 font-bold text-indigo-600 dark:text-indigo-400 hover:underline"
-                onClick={e => { e.stopPropagation(); onNavigateToDealerships?.({ onboarding_month: row.monthKey, status: '', received_month: '', go_live_month: '', term_month: '' }); }}
-              >
-                {row.onboarding || '—'}
-              </div>
-              {/* Go-Live — click-through */}
-              <div
-                className="col-span-1 text-center py-2 font-bold text-emerald-600 dark:text-emerald-400 hover:underline"
-                onClick={e => { e.stopPropagation(); onNavigateToDealerships?.({ go_live_month: row.monthKey, status: '', received_month: '', onboarding_month: '', term_month: '' }); }}
-              >
-                {row.goLive || '—'}
-              </div>
-              {/* Termed — click-through */}
-              <div
-                className="col-span-1 text-center py-2 font-bold text-red-600 dark:text-red-400 hover:underline"
-                onClick={e => { e.stopPropagation(); onNavigateToDealerships?.({ term_month: row.monthKey, status: '', received_month: '', onboarding_month: '', go_live_month: '' }); }}
-              >
-                {row.termed || '—'}
-              </div>
-              {/* Recv→Onb % */}
-              <div className="col-span-1 text-center py-2 text-slate-500 dark:text-slate-400">
-                {row.recvToOnbPct !== null ? `${row.recvToOnbPct}%` : '—'}
-              </div>
-              {/* Onb→Live % */}
-              <div className="col-span-1 text-center py-2 text-slate-500 dark:text-slate-400">
-                {row.onbToLivePct !== null ? `${row.onbToLivePct}%` : '—'}
-              </div>
-            </div>
-          );
-        })}
       </div>
 
     </div>

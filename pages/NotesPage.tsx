@@ -11,7 +11,7 @@ import RichTextEditor from '../components/RichTextEditor';
 // ─── Shared primitives ───────────────────────────────────────────────────────
 
 const Label = ({ children }: { children: React.ReactNode }) => (
-  <label className="block text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">
+  <label className="block text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">
     {children}
   </label>
 );
@@ -27,7 +27,7 @@ const Input = ({
     value={value || ''}
     onChange={(e) => onChange(e.target.value)}
     placeholder={placeholder}
-    className={`w-full px-3 py-1.5 text-[12px] border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-600 transition-all ${className}`}
+    className={`w-full px-3 py-1.5 text-xs border border-slate-200/60 dark:border-[#38383A] rounded-lg focus:ring-1 focus:ring-blue-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-600 transition-all ${className}`}
   />
 );
 
@@ -61,12 +61,12 @@ const NoteForm: React.FC<NoteFormProps> = ({ initial = {}, onSave, onClose }) =>
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
-      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]" onClick={onClose} />
-      <div className="relative w-full max-w-2xl bg-white dark:bg-slate-900 h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-2xl rounded-2xl bg-white dark:bg-[#2C2C2E] shadow-2xl h-full flex flex-col animate-in slide-in-from-right duration-300">
         {/* Header */}
-        <div className="border-b border-slate-100 dark:border-slate-800 p-4 flex items-center justify-between gap-4">
+        <div className="border-b border-slate-200/60 dark:border-[#38383A] p-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+            <div className="w-9 h-9 rounded-xl bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center text-blue-600 dark:text-blue-400">
               <StickyNote size={18} />
             </div>
             <span className="text-sm font-bold text-slate-800 dark:text-slate-100">
@@ -74,10 +74,10 @@ const NoteForm: React.FC<NoteFormProps> = ({ initial = {}, onSave, onClose }) =>
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={handleSave} className="px-4 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-indigo-700 flex items-center gap-1.5 shadow-md shadow-indigo-100 transition-all">
+            <button onClick={handleSave} className="px-4 py-1.5 bg-blue-500 text-white rounded-xl text-sm font-semibold hover:bg-blue-600 flex items-center gap-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none">
               <Save size={13} /> Save
             </button>
-            <button onClick={onClose} className="p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all">
+            <button onClick={onClose} className="p-1.5 text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 rounded-lg transition-all focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none">
               <X size={18} />
             </button>
           </div>
@@ -132,10 +132,10 @@ const TaskForm: React.FC<TaskFormProps> = ({ initial = {}, onSave, onClose }) =>
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
-      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]" onClick={onClose} />
-      <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-lg rounded-2xl bg-white dark:bg-[#2C2C2E] shadow-2xl h-full flex flex-col animate-in slide-in-from-right duration-300">
         {/* Header */}
-        <div className="border-b border-slate-100 dark:border-slate-800 p-4 flex items-center justify-between gap-4">
+        <div className="border-b border-slate-200/60 dark:border-[#38383A] p-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-violet-100 dark:bg-violet-900/40 flex items-center justify-center text-violet-600 dark:text-violet-400">
               <ListTodo size={18} />
@@ -145,10 +145,10 @@ const TaskForm: React.FC<TaskFormProps> = ({ initial = {}, onSave, onClose }) =>
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={handleSave} className="px-4 py-1.5 bg-violet-600 text-white rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-violet-700 flex items-center gap-1.5 shadow-md shadow-violet-100 transition-all">
+            <button onClick={handleSave} className="px-4 py-1.5 bg-violet-600 text-white rounded-xl text-sm font-semibold hover:bg-violet-700 flex items-center gap-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none">
               <Save size={13} /> Save
             </button>
-            <button onClick={onClose} className="p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all">
+            <button onClick={onClose} className="p-1.5 text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 rounded-lg transition-all focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none">
               <X size={18} />
             </button>
           </div>
@@ -173,7 +173,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initial = {}, onSave, onClose }) =>
               onChange={(e) => update('description', e.target.value)}
               placeholder="Add more details..."
               rows={3}
-              className="w-full px-3 py-1.5 text-[12px] border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-violet-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-600 resize-none transition-all"
+              className="w-full px-3 py-1.5 text-xs border border-slate-200/60 dark:border-[#38383A] rounded-lg focus:ring-1 focus:ring-violet-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-600 resize-none transition-all"
             />
           </div>
 
@@ -183,7 +183,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initial = {}, onSave, onClose }) =>
               <select
                 value={formData.priority || TaskPriority.MEDIUM}
                 onChange={(e) => update('priority', e.target.value as TaskPriority)}
-                className="w-full px-3 py-1.5 text-[12px] border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-violet-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 transition-all"
+                className="w-full px-3 py-1.5 text-xs border border-slate-200/60 dark:border-[#38383A] rounded-lg focus:ring-1 focus:ring-violet-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 transition-all"
               >
                 <option value={TaskPriority.HIGH}>High</option>
                 <option value={TaskPriority.MEDIUM}>Medium</option>
@@ -236,16 +236,6 @@ const NotesPage: React.FC = () => {
 
   return (
     <div className="animate-in fade-in duration-700 h-full">
-      {/* Page Header */}
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-extrabold text-slate-800 dark:text-slate-100 tracking-tight">Notes & Tasks</h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            {notes.length} note{notes.length !== 1 ? 's' : ''} · {tasks.length - completedCount} task{tasks.length - completedCount !== 1 ? 's' : ''} remaining
-          </p>
-        </div>
-      </div>
-
       {/* Split Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
@@ -254,15 +244,15 @@ const NotesPage: React.FC = () => {
           {/* Notes header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+              <div className="w-7 h-7 rounded-lg bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center text-blue-600 dark:text-blue-400">
                 <StickyNote size={14} />
               </div>
-              <h2 className="text-sm font-bold text-slate-700 dark:text-slate-200">Notes</h2>
-              <span className="text-[10px] font-bold px-1.5 py-0.5 bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 rounded-full">{notes.length}</span>
+              <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Notes</h2>
+              <span className="text-xs font-bold px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 rounded-full">{notes.length}</span>
             </div>
             <button
               onClick={() => setNoteForm({ open: true, data: undefined })}
-              className="flex items-center gap-1 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-bold shadow-md shadow-indigo-100 hover:bg-indigo-700 hover:-translate-y-0.5 transition-all dark:shadow-none"
+              className="flex items-center gap-1 px-3 py-1.5 bg-blue-500 text-white rounded-xl text-sm font-semibold hover:bg-blue-600 transition-colors focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"
             >
               <Plus size={13} /> Add Note
             </button>
@@ -270,53 +260,49 @@ const NotesPage: React.FC = () => {
 
           {/* Notes List */}
           {notesLoading ? (
-            <div className="space-y-3">
-              {[1, 2, 3].map(i => <div key={i} className="h-24 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 animate-pulse" />)}
+            <div className="rounded-2xl overflow-hidden">
+              {[1, 2, 3].map(i => <div key={i} className="h-16 ios-shimmer" />)}
             </div>
           ) : notes.length === 0 ? (
-            <div className="bg-white dark:bg-slate-900 rounded-2xl p-10 text-center border border-dashed border-slate-200 dark:border-slate-800 transition-colors">
-              <div className="w-12 h-12 bg-indigo-50 dark:bg-indigo-900/30 rounded-full flex items-center justify-center mx-auto mb-3 text-indigo-400">
-                <FileText size={22} />
-              </div>
-              <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">No notes yet</p>
-              <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Click "Add Note" to get started.</p>
+            <div className="py-16 text-center">
+              <FileText size={48} className="mx-auto mb-3 text-slate-300 dark:text-slate-600" />
+              <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200">No notes yet</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Click "Add Note" to get started.</p>
             </div>
           ) : (
-            <div className="flex flex-col gap-3">
+            <div className="rounded-2xl bg-white/80 dark:bg-[#2C2C2E] overflow-hidden divide-y divide-slate-200/60 dark:divide-[#38383A]">
               {notes.map(note => (
                 <div
                   key={note.id}
-                  className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-indigo-200 dark:hover:border-indigo-700 transition-all group"
+                  className="p-4 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors cursor-pointer group focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"
                 >
-                  <div className="p-4">
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors leading-tight line-clamp-1">
-                        {note.title || 'Untitled Note'}
-                      </h3>
-                      <div className="flex items-center gap-0.5 flex-shrink-0">
-                        <button
-                          onClick={() => setNoteForm({ open: true, data: note })}
-                          className="p-1.5 text-slate-300 dark:text-slate-600 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 rounded-lg transition-all"
-                        >
-                          <Edit3 size={14} />
-                        </button>
-                        <button
-                          onClick={() => { if (window.confirm('Delete this note?')) removeNote(note.id); }}
-                          className="p-1.5 text-slate-300 dark:text-slate-600 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-all"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors leading-tight line-clamp-1">
+                      {note.title || 'Untitled Note'}
+                    </h3>
+                    <div className="flex items-center gap-0.5 flex-shrink-0">
+                      <button
+                        onClick={() => setNoteForm({ open: true, data: note })}
+                        className="p-1.5 text-slate-300 dark:text-slate-600 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/50 rounded-lg transition-all focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"
+                      >
+                        <Edit3 size={14} />
+                      </button>
+                      <button
+                        onClick={() => { if (window.confirm('Delete this note?')) removeNote(note.id); }}
+                        className="p-1.5 text-slate-300 dark:text-slate-600 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-all focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"
+                      >
+                        <Trash2 size={14} />
+                      </button>
                     </div>
-                    {note.content && (
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
-                        {stripHtml(note.content)}
-                      </p>
-                    )}
-                    <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-2">
-                      {formatDate(note.created_at)}
-                    </p>
                   </div>
+                  {note.content && (
+                    <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                      {stripHtml(note.content)}
+                    </p>
+                  )}
+                  <p className="text-xs text-slate-400 dark:text-slate-500 mt-2">
+                    {formatDate(note.created_at)}
+                  </p>
                 </div>
               ))}
             </div>
@@ -331,14 +317,14 @@ const NotesPage: React.FC = () => {
               <div className="w-7 h-7 rounded-lg bg-violet-100 dark:bg-violet-900/40 flex items-center justify-center text-violet-600 dark:text-violet-400">
                 <CheckSquare size={14} />
               </div>
-              <h2 className="text-sm font-bold text-slate-700 dark:text-slate-200">Tasks</h2>
-              <span className="text-[10px] font-bold px-1.5 py-0.5 bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-400 rounded-full">
+              <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Tasks</h2>
+              <span className="text-xs font-bold px-1.5 py-0.5 bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-400 rounded-full">
                 {tasks.length - completedCount} left
               </span>
             </div>
             <button
               onClick={() => setTaskForm({ open: true, data: undefined })}
-              className="flex items-center gap-1 px-3 py-1.5 bg-violet-600 text-white rounded-lg text-xs font-bold shadow-md shadow-violet-100 hover:bg-violet-700 hover:-translate-y-0.5 transition-all dark:shadow-none"
+              className="flex items-center gap-1 px-3 py-1.5 bg-violet-600 text-white rounded-xl text-sm font-semibold hover:bg-violet-700 transition-colors focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"
             >
               <Plus size={13} /> Add Task
             </button>
@@ -346,83 +332,77 @@ const NotesPage: React.FC = () => {
 
           {/* Tasks List */}
           {tasksLoading ? (
-            <div className="space-y-3">
-              {[1, 2, 3].map(i => <div key={i} className="h-16 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 animate-pulse" />)}
+            <div className="rounded-2xl overflow-hidden">
+              {[1, 2, 3].map(i => <div key={i} className="h-16 ios-shimmer" />)}
             </div>
           ) : tasks.length === 0 ? (
-            <div className="bg-white dark:bg-slate-900 rounded-2xl p-10 text-center border border-dashed border-slate-200 dark:border-slate-800 transition-colors">
-              <div className="w-12 h-12 bg-violet-50 dark:bg-violet-900/30 rounded-full flex items-center justify-center mx-auto mb-3 text-violet-400">
-                <ListTodo size={22} />
-              </div>
-              <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">No tasks yet</p>
-              <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Click "Add Task" to get started.</p>
+            <div className="py-16 text-center">
+              <ListTodo size={48} className="mx-auto mb-3 text-slate-300 dark:text-slate-600" />
+              <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200">No tasks yet</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Click "Add Task" to get started.</p>
             </div>
           ) : (
-            <div className="flex flex-col gap-2">
+            <div className="rounded-2xl bg-white/80 dark:bg-[#2C2C2E] overflow-hidden divide-y divide-slate-200/60 dark:divide-[#38383A]">
               {tasks.map(task => {
                 const dueDateInfo = task.due_date ? formatDueDate(task.due_date) : null;
                 return (
                   <div
                     key={task.id}
-                    className={`bg-white dark:bg-slate-900 rounded-xl border shadow-sm transition-all group ${
-                      task.completed
-                        ? 'border-slate-100 dark:border-slate-800/50 opacity-60'
-                        : 'border-slate-200 dark:border-slate-800 hover:shadow-md hover:border-violet-200 dark:hover:border-violet-700'
+                    className={`p-3.5 flex items-start gap-3 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none ${
+                      task.completed ? 'opacity-60' : ''
                     }`}
                   >
-                    <div className="p-3.5 flex items-start gap-3">
-                      {/* Checkbox */}
-                      <button
-                        onClick={() => toggleComplete(task.id)}
-                        className={`mt-0.5 flex-shrink-0 transition-colors ${
-                          task.completed
-                            ? 'text-green-500 dark:text-green-400'
-                            : 'text-slate-300 dark:text-slate-600 hover:text-violet-500 dark:hover:text-violet-400'
-                        }`}
-                      >
-                        {task.completed
-                          ? <CheckCircle2 size={18} />
-                          : <Circle size={18} />
-                        }
-                      </button>
+                    {/* Checkbox */}
+                    <button
+                      onClick={() => toggleComplete(task.id)}
+                      className={`mt-0.5 flex-shrink-0 transition-colors focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none ${
+                        task.completed
+                          ? 'text-green-500 dark:text-green-400'
+                          : 'text-slate-300 dark:text-slate-600 hover:text-violet-500 dark:hover:text-violet-400'
+                      }`}
+                    >
+                      {task.completed
+                        ? <CheckCircle2 size={18} />
+                        : <Circle size={18} />
+                      }
+                    </button>
 
-                      {/* Content */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-2">
-                          <p className={`text-sm font-semibold leading-tight ${task.completed ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-800 dark:text-slate-100'}`}>
-                            {task.title}
-                          </p>
-                          <div className="flex items-center gap-0.5 flex-shrink-0">
-                            {task.priority && (
-                              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wide ${PRIORITY_COLORS[task.priority]}`}>
-                                {task.priority}
-                              </span>
-                            )}
-                            <button
-                              onClick={() => setTaskForm({ open: true, data: task })}
-                              className="p-1.5 text-slate-300 dark:text-slate-600 hover:text-violet-600 dark:hover:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/50 rounded-lg transition-all"
-                            >
-                              <Edit3 size={13} />
-                            </button>
-                            <button
-                              onClick={() => { if (window.confirm('Delete this task?')) removeTask(task.id); }}
-                              className="p-1.5 text-slate-300 dark:text-slate-600 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-all"
-                            >
-                              <Trash2 size={13} />
-                            </button>
-                          </div>
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <p className={`text-sm font-semibold leading-tight ${task.completed ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-800 dark:text-slate-100'}`}>
+                          {task.title}
+                        </p>
+                        <div className="flex items-center gap-0.5 flex-shrink-0">
+                          {task.priority && (
+                            <span className={`text-xs font-bold px-1.5 py-0.5 rounded border uppercase tracking-wide ${PRIORITY_COLORS[task.priority]}`}>
+                              {task.priority}
+                            </span>
+                          )}
+                          <button
+                            onClick={() => setTaskForm({ open: true, data: task })}
+                            className="p-1.5 text-slate-300 dark:text-slate-600 hover:text-violet-600 dark:hover:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/50 rounded-lg transition-all focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"
+                          >
+                            <Edit3 size={14} />
+                          </button>
+                          <button
+                            onClick={() => { if (window.confirm('Delete this task?')) removeTask(task.id); }}
+                            className="p-1.5 text-slate-300 dark:text-slate-600 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-all focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"
+                          >
+                            <Trash2 size={14} />
+                          </button>
                         </div>
-                        {task.description && (
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed line-clamp-2">
-                            {task.description}
-                          </p>
-                        )}
-                        {dueDateInfo && (
-                          <p className={`text-[10px] mt-1 font-medium ${dueDateInfo.isOverdue && !task.completed ? 'text-red-500 dark:text-red-400' : 'text-slate-400 dark:text-slate-500'}`}>
-                            Due {dueDateInfo.label}{dueDateInfo.isOverdue && !task.completed ? ' · Overdue' : ''}
-                          </p>
-                        )}
                       </div>
+                      {task.description && (
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed line-clamp-2">
+                          {task.description}
+                        </p>
+                      )}
+                      {dueDateInfo && (
+                        <p className={`text-xs mt-1 font-medium ${dueDateInfo.isOverdue && !task.completed ? 'text-red-500 dark:text-red-400' : 'text-slate-400 dark:text-slate-500'}`}>
+                          Due {dueDateInfo.label}{dueDateInfo.isOverdue && !task.completed ? ' · Overdue' : ''}
+                        </p>
+                      )}
                     </div>
                   </div>
                 );
@@ -430,7 +410,7 @@ const NotesPage: React.FC = () => {
 
               {/* Completion summary */}
               {completedCount > 0 && (
-                <p className="text-[11px] text-center text-slate-400 dark:text-slate-500 pt-1">
+                <p className="text-xs text-center text-slate-400 dark:text-slate-500 py-3">
                   {completedCount} of {tasks.length} task{tasks.length !== 1 ? 's' : ''} completed
                 </p>
               )}

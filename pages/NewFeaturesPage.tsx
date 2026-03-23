@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
-import { Plus, Sparkles, Trash2, Edit3, ExternalLink, Copy, Check, ArrowUpDown, ChevronUp, ChevronDown, Layers, ChevronRight, FileSpreadsheet, Bell, Megaphone, Rocket, Navigation, BarChart3 } from 'lucide-react';
+import { Plus, Sparkles, Trash2, Edit3, ExternalLink, Copy, Check, ArrowUpDown, ChevronUp, ChevronDown, Layers, ChevronRight, FileSpreadsheet, Bell, Megaphone, Rocket, Navigation, BarChart3, Search, X } from 'lucide-react';
 import { useNewFeatures } from '../hooks';
 import { NewFeature, NewFeatureFilterState } from '../types';
 import NewFeatureDetailPanel from '../components/NewFeatureDetailPanel';
@@ -27,7 +27,7 @@ interface NewFeaturesPageProps {
 
 const NewFeaturesPage: React.FC<NewFeaturesPageProps> = ({ filters, setFilters }) => {
   const { features, allFeatures, loading, upsert, remove } = useNewFeatures(filters);
-  
+
   const [selectedFeatureId, setSelectedFeatureId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [copiedFeatureId, setCopiedFeatureId] = useState<string | null>(null);
@@ -125,9 +125,9 @@ const NewFeaturesPage: React.FC<NewFeaturesPageProps> = ({ filters, setFilters }
 
   const handleCopyFeature = (e: React.MouseEvent, feature: NewFeature) => {
     e.stopPropagation();
-    
+
     // Header: TYPE: TITLE
-    const titleLine = feature.type 
+    const titleLine = feature.type
         ? `${feature.type.toUpperCase()}: ${feature.title.toUpperCase()}`
         : feature.title.toUpperCase();
 
@@ -141,7 +141,7 @@ const NewFeaturesPage: React.FC<NewFeaturesPageProps> = ({ filters, setFilters }
     if (feature.status) metaParts.push(feature.status);
     if (feature.quarterly_release) metaParts.push(feature.quarterly_release);
     if (feature.launch_date) metaParts.push(feature.launch_date);
-    
+
     if (metaParts.length > 0) {
         lines.push(metaParts.join(' | '));
     }
@@ -157,10 +157,10 @@ const NewFeaturesPage: React.FC<NewFeaturesPageProps> = ({ filters, setFilters }
     if (feature.location) lines.push(`Location: ${feature.location}`);
     if (feature.navigation) lines.push(`Navigation: ${feature.navigation}`);
     if (feature.categories) lines.push(`Categories: ${feature.categories}`);
-    
+
     // PMRs
-    const displayPMRs = feature.pmrs && feature.pmrs.length > 0 
-        ? feature.pmrs 
+    const displayPMRs = feature.pmrs && feature.pmrs.length > 0
+        ? feature.pmrs
         : (feature.pmr_number ? [{ id: 'legacy', number: feature.pmr_number, link: feature.pmr_link || '' }] : []);
 
     if (displayPMRs.length > 0) {
@@ -252,7 +252,7 @@ const NewFeaturesPage: React.FC<NewFeaturesPageProps> = ({ filters, setFilters }
       <div
         key={feature.id}
         onClick={() => handleRowClick(feature.id)}
-        className="group bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-700 transition-all duration-200 cursor-pointer overflow-hidden relative flex"
+        className="group hover:bg-slate-50 dark:hover:bg-white/5 transition-colors cursor-pointer overflow-hidden relative flex"
       >
         {/* Left edge status bar */}
         <div className={`w-1.5 flex-shrink-0 ${isLaunched ? 'bg-emerald-500' : feature.status === 'Pending' ? 'bg-purple-500' : 'bg-slate-400'}`} />
@@ -264,7 +264,7 @@ const NewFeaturesPage: React.FC<NewFeaturesPageProps> = ({ filters, setFilters }
           <div className="flex items-center justify-between gap-2">
             <div className="flex flex-wrap items-center gap-2">
               {feature.status && (
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider ${
+                <span className={`text-xs font-bold px-1.5 py-0.5 rounded uppercase tracking-wider ${
                   isLaunched
                     ? 'text-emerald-700 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-300'
                     : 'text-purple-700 bg-purple-50 dark:bg-purple-900/30 dark:text-purple-300'
@@ -273,12 +273,12 @@ const NewFeaturesPage: React.FC<NewFeaturesPageProps> = ({ filters, setFilters }
                 </span>
               )}
               {feature.quarterly_release && (
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded text-indigo-700 bg-indigo-50 dark:bg-indigo-900/30 dark:text-indigo-300 uppercase tracking-wider">
+                <span className="text-xs font-bold px-1.5 py-0.5 rounded text-blue-700 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-300 uppercase tracking-wider">
                   {feature.quarterly_release}
                 </span>
               )}
               {feature.source && (
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider ${
+                <span className={`text-xs font-bold px-1.5 py-0.5 rounded uppercase tracking-wider ${
                   feature.source === 'Fullpath'
                     ? 'bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
                     : 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
@@ -287,7 +287,7 @@ const NewFeaturesPage: React.FC<NewFeaturesPageProps> = ({ filters, setFilters }
                 </span>
               )}
               {feature.type && (
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider ${
+                <span className={`text-xs font-bold px-1.5 py-0.5 rounded uppercase tracking-wider ${
                   feature.type === 'New'
                     ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
                     : feature.type === 'Add'
@@ -298,17 +298,17 @@ const NewFeaturesPage: React.FC<NewFeaturesPageProps> = ({ filters, setFilters }
                 </span>
               )}
               {feature.platform && (
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider ${platformColors[feature.platform] || 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'}`}>
+                <span className={`text-xs font-bold px-1.5 py-0.5 rounded uppercase tracking-wider ${platformColors[feature.platform] || 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'}`}>
                   {feature.platform}
                 </span>
               )}
               {feature.product_area && (
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider bg-teal-50 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300">
+                <span className="text-xs font-bold px-1.5 py-0.5 rounded uppercase tracking-wider bg-teal-50 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300">
                   {feature.product_area}
                 </span>
               )}
               {feature.location && (
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                <span className="text-xs font-bold px-1.5 py-0.5 rounded uppercase tracking-wider bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
                   {feature.location}
                 </span>
               )}
@@ -318,7 +318,7 @@ const NewFeaturesPage: React.FC<NewFeaturesPageProps> = ({ filters, setFilters }
             <div className="flex items-center gap-0.5 flex-shrink-0">
               <button
                 onClick={(e) => handleCopyFeature(e, feature)}
-                className="p-1.5 text-slate-300 dark:text-slate-600 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 rounded-lg transition-all"
+                className="p-1.5 text-slate-300 dark:text-slate-600 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/50 rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"
                 title="Copy details to clipboard"
               >
                 {copiedFeatureId === feature.id ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
@@ -329,7 +329,7 @@ const NewFeaturesPage: React.FC<NewFeaturesPageProps> = ({ filters, setFilters }
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}
-                  className="p-1.5 text-slate-300 dark:text-slate-600 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 rounded-lg transition-all"
+                  className="p-1.5 text-slate-300 dark:text-slate-600 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/50 rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"
                   title="Open PMR Link"
                 >
                   <ExternalLink size={14} />
@@ -337,13 +337,13 @@ const NewFeaturesPage: React.FC<NewFeaturesPageProps> = ({ filters, setFilters }
               )}
               <button
                 onClick={(e) => { e.stopPropagation(); handleRowClick(feature.id); }}
-                className="p-1.5 text-slate-300 dark:text-slate-600 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 rounded-lg transition-all"
+                className="p-1.5 text-slate-300 dark:text-slate-600 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/50 rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"
               >
                 <Edit3 size={14} />
               </button>
               <button
                 onClick={(e) => { e.stopPropagation(); if(window.confirm('Delete feature?')) remove(feature.id); }}
-                className="p-1.5 text-slate-300 dark:text-slate-600 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-all"
+                className="p-1.5 text-slate-300 dark:text-slate-600 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"
               >
                 <Trash2 size={14} />
               </button>
@@ -352,28 +352,28 @@ const NewFeaturesPage: React.FC<NewFeaturesPageProps> = ({ filters, setFilters }
 
           {/* Row 2: Title + PMR chips */}
           <div className="flex items-center gap-2">
-            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors leading-tight truncate">
+            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors leading-tight truncate">
               {feature.title}
             </h3>
             {displayPMRs.length > 0 && (
               <div className="flex gap-1 flex-shrink-0">
                 {displayPMRs.slice(0, 2).map((pmr, idx) => (
-                  <span key={idx} className="text-[9px] font-mono font-bold bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-500 dark:text-slate-400">{pmr.number}</span>
+                  <span key={idx} className="text-xs font-mono font-bold bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-500 dark:text-slate-400">{pmr.number}</span>
                 ))}
-                {displayPMRs.length > 2 && <span className="text-[9px] font-mono font-bold bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-500 dark:text-slate-400">+{displayPMRs.length - 2}</span>}
+                {displayPMRs.length > 2 && <span className="text-xs font-mono font-bold bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-500 dark:text-slate-400">+{displayPMRs.length - 2}</span>}
               </div>
             )}
           </div>
 
           {/* Row 3: Summary */}
           {(feature.summary || feature.description) && (
-            <p className="text-[10px] text-slate-400 dark:text-slate-500 italic line-clamp-1">
+            <p className="text-xs text-slate-400 dark:text-slate-500 italic line-clamp-1">
               {feature.summary || feature.description!.replace(/<[^>]*>/g, '')}
             </p>
           )}
 
           {/* Divider + Row 4: Details */}
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[10px] text-slate-500 dark:text-slate-400 mt-1 pt-2 border-t border-slate-50 dark:border-slate-800/50">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-500 dark:text-slate-400 mt-1 pt-2 border-t border-slate-200/60 dark:border-[#38383A]">
             {feature.navigation && (
               <div className="flex items-center gap-1.5 min-w-0" title="Navigation">
                 <Navigation size={10} className="text-slate-400 shrink-0" />
@@ -413,82 +413,90 @@ const NewFeaturesPage: React.FC<NewFeaturesPageProps> = ({ filters, setFilters }
     );
   };
 
+  const hasActiveFilters = !!(filters.search || filters.source || filters.type || filters.quarter || filters.year || filters.status || filters.platform);
+
+  const handleResetFilters = () => {
+    setFilters({ search: '', source: '', type: '', quarter: '', year: '', status: '', platform: '' });
+  };
+
   return (
     <div className="animate-in fade-in duration-700">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-extrabold text-slate-800 dark:text-slate-100 tracking-tight">New Features</h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Track upcoming platform features, PMRs, and release schedules.</p>
-        </div>
-        <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 mb-4">
+        <button
+          onClick={handleExportCSV}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl text-sm font-semibold hover:bg-blue-500/20 transition-colors focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"
+        >
+          <FileSpreadsheet size={14} /> Export CSV
+        </button>
+        <button
+          onClick={() => { setSelectedFeatureId(null); setIsCreating(true); }}
+          className="flex items-center gap-1.5 px-4 py-2 bg-blue-500 text-white rounded-xl font-semibold text-sm hover:bg-blue-600 transition-colors focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"
+        >
+          <Plus size={16} /> Add Feature
+        </button>
+        {hasActiveFilters && (
           <button
-            onClick={handleExportCSV}
-            className="flex items-center gap-1.5 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-600 dark:text-slate-300 font-bold text-xs hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm transition-all"
+            onClick={handleResetFilters}
+            className="text-xs text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 font-semibold transition-colors"
           >
-            <FileSpreadsheet size={14} /> Export CSV
+            Reset
           </button>
-          <button
-            onClick={() => { setSelectedFeatureId(null); setIsCreating(true); }}
-            className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold text-xs shadow-md shadow-indigo-100 hover:bg-indigo-700 hover:-translate-y-0.5 transition-all dark:shadow-none"
-          >
-            <Plus size={16} /> Add Feature
-          </button>
-        </div>
+        )}
       </div>
 
       {/* Metrics Cards */}
       <div className="grid grid-cols-3 gap-3">
         {/* Total Features */}
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between h-24 transition-colors">
+        <div className="rounded-2xl bg-white/80 dark:bg-[#2C2C2E] p-4 flex flex-col justify-between h-24 transition-colors">
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg text-indigo-600 dark:text-indigo-400">
+            <div className="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg text-blue-600 dark:text-blue-400">
               <Sparkles size={16} />
             </div>
-            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Total Features</span>
+            <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Total Features</span>
           </div>
-          <div className="text-2xl font-extrabold text-slate-800 dark:text-slate-100">{metrics.total}</div>
+          <div className="text-2xl font-bold text-slate-800 dark:text-slate-100">{metrics.total}</div>
         </div>
 
         {/* Source Breakdown */}
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between h-24 transition-colors">
+        <div className="rounded-2xl bg-white/80 dark:bg-[#2C2C2E] p-4 flex flex-col justify-between h-24 transition-colors">
           <div className="flex items-center gap-3 mb-2">
             <div className="p-2 bg-purple-50 dark:bg-purple-900/30 rounded-lg text-purple-600 dark:text-purple-400">
               <BarChart3 size={16} />
             </div>
-            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">By Source</span>
+            <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">By Source</span>
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1.5">
-              <span className="text-lg font-extrabold text-purple-600 dark:text-purple-400">{metrics.fullpathCount}</span>
-              <span className="text-[9px] font-bold text-slate-400 uppercase">Fullpath</span>
+              <span className="text-lg font-bold text-purple-600 dark:text-purple-400">{metrics.fullpathCount}</span>
+              <span className="text-xs font-bold text-slate-400 uppercase">Fullpath</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="text-lg font-extrabold text-blue-600 dark:text-blue-400">{metrics.reynoldsCount}</span>
-              <span className="text-[9px] font-bold text-slate-400 uppercase">Reynolds</span>
+              <span className="text-lg font-bold text-blue-600 dark:text-blue-400">{metrics.reynoldsCount}</span>
+              <span className="text-xs font-bold text-slate-400 uppercase">Reynolds</span>
             </div>
           </div>
         </div>
 
         {/* Platform Breakdown */}
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between h-24 transition-colors">
+        <div className="rounded-2xl bg-white/80 dark:bg-[#2C2C2E] p-4 flex flex-col justify-between h-24 transition-colors">
           <div className="flex items-center gap-3 mb-2">
             <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-300">
               <Layers size={16} />
             </div>
-            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">By Platform</span>
+            <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">By Platform</span>
           </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1">
-              <span className="text-lg font-extrabold text-blue-600 dark:text-blue-400">{metrics.ucpCount}</span>
-              <span className="text-[9px] font-bold text-slate-400 uppercase">UCP</span>
+              <span className="text-lg font-bold text-blue-600 dark:text-blue-400">{metrics.ucpCount}</span>
+              <span className="text-xs font-bold text-slate-400 uppercase">UCP</span>
             </div>
             <div className="flex items-center gap-1">
-              <span className="text-lg font-extrabold text-purple-600 dark:text-purple-400">{metrics.curatorCount}</span>
-              <span className="text-[9px] font-bold text-slate-400 uppercase">Curator</span>
+              <span className="text-lg font-bold text-purple-600 dark:text-purple-400">{metrics.curatorCount}</span>
+              <span className="text-xs font-bold text-slate-400 uppercase">Curator</span>
             </div>
             <div className="flex items-center gap-1">
-              <span className="text-lg font-extrabold text-orange-600 dark:text-orange-400">{metrics.focusCount}</span>
-              <span className="text-[9px] font-bold text-slate-400 uppercase">FOCUS</span>
+              <span className="text-lg font-bold text-orange-600 dark:text-orange-400">{metrics.focusCount}</span>
+              <span className="text-xs font-bold text-slate-400 uppercase">FOCUS</span>
             </div>
           </div>
         </div>
@@ -497,16 +505,16 @@ const NewFeaturesPage: React.FC<NewFeaturesPageProps> = ({ filters, setFilters }
       {/* Quarterly Breakdown */}
       <div className="mt-3">
         <div className="flex items-center gap-3 mb-3">
-          <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Quarterly Breakdown</h3>
+          <h3 className="text-sm font-semibold text-slate-400">Quarterly Breakdown</h3>
           <div className="flex items-center gap-1">
             {['2024', '2025', '2026', '2027', '2028'].map(year => (
               <button
                 key={year}
                 onClick={() => setQuarterYear(year)}
-                className={`px-2.5 py-0.5 text-[10px] font-bold rounded-full transition-all ${
+                className={`px-2.5 py-0.5 text-xs font-bold rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none ${
                   quarterYear === year
-                    ? 'bg-indigo-600 text-white shadow-sm'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-600 dark:hover:text-slate-300'
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-slate-200/50 dark:bg-[#2C2C2E] text-slate-400 dark:text-slate-500 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-600 dark:hover:text-slate-300'
                 }`}
               >
                 {year}
@@ -518,26 +526,108 @@ const NewFeaturesPage: React.FC<NewFeaturesPageProps> = ({ filters, setFilters }
           {quarterCounts.map(q => (
             <div
               key={q.label}
-              className="bg-slate-50 dark:bg-slate-900 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 flex flex-col justify-center items-center text-center transition-colors"
+              className="rounded-2xl bg-white/80 dark:bg-[#2C2C2E] p-2.5 flex flex-col justify-center items-center text-center transition-colors"
             >
-              <span className="text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-1">{q.label}</span>
+              <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-1">{q.label}</span>
               <span className="text-lg font-bold text-slate-700 dark:text-slate-200">{q.count}</span>
             </div>
           ))}
         </div>
       </div>
 
+      {/* Inline Filters */}
+      <div className="mt-3 p-3 bg-white/80 dark:bg-[#2C2C2E] rounded-2xl border border-slate-200/60 dark:border-[#38383A]">
+        <div className="flex flex-wrap gap-2 mb-2">
+          <div className="relative flex-1 min-w-[160px]">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+            <input
+              value={filters.search}
+              onChange={(e) => setFilters({...filters, search: e.target.value})}
+              placeholder="Search features..."
+              className="w-full pl-8 pr-7 py-1.5 bg-slate-100/50 dark:bg-[#1C1C1E] border border-slate-200/60 dark:border-[#38383A] rounded-xl text-sm text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all"
+            />
+            {filters.search && (
+              <button onClick={() => setFilters({...filters, search: ''})} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                <X size={12} />
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative min-w-[110px]">
+            <select value={filters.source} onChange={(e) => setFilters({...filters, source: e.target.value})} className="w-full pl-2.5 pr-7 py-1.5 bg-slate-100/50 dark:bg-[#1C1C1E] border border-slate-200/60 dark:border-[#38383A] rounded-xl text-sm text-slate-700 dark:text-slate-300 appearance-none focus:ring-1 focus:ring-blue-500 outline-none cursor-pointer">
+              <option value="">All Sources</option>
+              <option value="Fullpath">Fullpath</option>
+              <option value="Reynolds">Reynolds</option>
+            </select>
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={12} />
+          </div>
+
+          <div className="relative min-w-[100px]">
+            <select value={filters.type} onChange={(e) => setFilters({...filters, type: e.target.value})} className="w-full pl-2.5 pr-7 py-1.5 bg-slate-100/50 dark:bg-[#1C1C1E] border border-slate-200/60 dark:border-[#38383A] rounded-xl text-sm text-slate-700 dark:text-slate-300 appearance-none focus:ring-1 focus:ring-blue-500 outline-none cursor-pointer">
+              <option value="">All Types</option>
+              <option value="New">New</option>
+              <option value="Updated">Updated</option>
+            </select>
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={12} />
+          </div>
+
+          <div className="relative min-w-[110px]">
+            <select value={filters.quarter} onChange={(e) => setFilters({...filters, quarter: e.target.value})} className="w-full pl-2.5 pr-7 py-1.5 bg-slate-100/50 dark:bg-[#1C1C1E] border border-slate-200/60 dark:border-[#38383A] rounded-xl text-sm text-slate-700 dark:text-slate-300 appearance-none focus:ring-1 focus:ring-blue-500 outline-none cursor-pointer">
+              <option value="">All Quarters</option>
+              <option value="Q1">Q1</option>
+              <option value="Q2">Q2</option>
+              <option value="Q3">Q3</option>
+              <option value="Q4">Q4</option>
+            </select>
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={12} />
+          </div>
+
+          <div className="relative min-w-[100px]">
+            <select value={filters.year} onChange={(e) => setFilters({...filters, year: e.target.value})} className="w-full pl-2.5 pr-7 py-1.5 bg-slate-100/50 dark:bg-[#1C1C1E] border border-slate-200/60 dark:border-[#38383A] rounded-xl text-sm text-slate-700 dark:text-slate-300 appearance-none focus:ring-1 focus:ring-blue-500 outline-none cursor-pointer">
+              <option value="">All Years</option>
+              <option value="2024">2024</option>
+              <option value="2025">2025</option>
+              <option value="2026">2026</option>
+              <option value="2027">2027</option>
+              <option value="2028">2028</option>
+            </select>
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={12} />
+          </div>
+
+          <div className="relative min-w-[110px]">
+            <select value={filters.status} onChange={(e) => setFilters({...filters, status: e.target.value})} className="w-full pl-2.5 pr-7 py-1.5 bg-slate-100/50 dark:bg-[#1C1C1E] border border-slate-200/60 dark:border-[#38383A] rounded-xl text-sm text-slate-700 dark:text-slate-300 appearance-none focus:ring-1 focus:ring-blue-500 outline-none cursor-pointer">
+              <option value="">All Statuses</option>
+              <option value="Pending">Pending</option>
+              <option value="Launched">Launched</option>
+            </select>
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={12} />
+          </div>
+
+          <div className="relative min-w-[120px]">
+            <select value={filters.platform} onChange={(e) => setFilters({...filters, platform: e.target.value})} className="w-full pl-2.5 pr-7 py-1.5 bg-slate-100/50 dark:bg-[#1C1C1E] border border-slate-200/60 dark:border-[#38383A] rounded-xl text-sm text-slate-700 dark:text-slate-300 appearance-none focus:ring-1 focus:ring-blue-500 outline-none cursor-pointer">
+              <option value="">All Platforms</option>
+              <option value="UCP">UCP</option>
+              <option value="Curator">Curator</option>
+              <option value="FOCUS">FOCUS</option>
+            </select>
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={12} />
+          </div>
+        </div>
+      </div>
+
       {/* Sort & Group Controls */}
       <div className="flex items-center justify-between mt-4 mb-3">
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+          <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
             <ArrowUpDown size={12} />
             <span className="font-medium">Sort by</span>
           </div>
           <select
             value={sortField}
             onChange={(e) => setSortField(e.target.value)}
-            className="px-2 py-1 text-[11px] font-bold border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 outline-none focus:ring-1 focus:ring-indigo-500"
+            className="px-2 py-1 text-xs font-bold rounded-xl bg-slate-200/50 dark:bg-[#2C2C2E] border-none text-slate-700 dark:text-slate-300 focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"
           >
             <option value="launch_date">Launch Date</option>
             <option value="notified_date">Notified Date</option>
@@ -547,7 +637,7 @@ const NewFeaturesPage: React.FC<NewFeaturesPageProps> = ({ filters, setFilters }
           </select>
           <button
             onClick={() => setSortDir(d => d === 'asc' ? 'desc' : 'asc')}
-            className="p-1 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all"
+            className="p-1 rounded-xl bg-slate-200/50 dark:bg-[#2C2C2E] text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"
             title={sortDir === 'asc' ? 'Ascending' : 'Descending'}
           >
             {sortDir === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
@@ -555,10 +645,10 @@ const NewFeaturesPage: React.FC<NewFeaturesPageProps> = ({ filters, setFilters }
         </div>
         <button
           onClick={() => setGroupByQuarter(v => !v)}
-          className={`flex items-center gap-1.5 px-3 py-1 text-[11px] font-bold rounded-lg border transition-all ${
+          className={`flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-xl transition-colors focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none ${
             groupByQuarter
-              ? 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800'
-              : 'bg-white text-slate-500 border-slate-200 hover:text-indigo-600 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700 dark:hover:text-indigo-400'
+              ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+              : 'bg-slate-200/50 text-slate-500 hover:text-blue-600 dark:bg-[#2C2C2E] dark:text-slate-400 dark:hover:text-blue-400'
           }`}
         >
           <Layers size={12} /> Group by Quarter
@@ -567,12 +657,12 @@ const NewFeaturesPage: React.FC<NewFeaturesPageProps> = ({ filters, setFilters }
 
       {loading ? (
         <div className="space-y-3">
-          {[1,2,3,4].map(i => <div key={i} className="h-20 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 animate-pulse"></div>)}
+          {[1,2,3,4].map(i => <div key={i} className="h-20 rounded-2xl bg-white/80 dark:bg-[#2C2C2E] ios-shimmer"></div>)}
         </div>
       ) : sortedFeatures.length === 0 ? (
-        <div className="bg-white dark:bg-slate-900 rounded-[2rem] p-12 text-center border border-slate-100 dark:border-slate-800 border-dashed transition-colors">
-          <div className="w-16 h-16 bg-indigo-50 dark:bg-indigo-900/30 rounded-full flex items-center justify-center mx-auto mb-4 text-indigo-400">
-            <Sparkles size={32} />
+        <div className="rounded-2xl bg-white/80 dark:bg-[#2C2C2E] p-12 text-center transition-colors">
+          <div className="flex items-center justify-center mx-auto mb-4 text-slate-300 dark:text-slate-600">
+            <Sparkles size={48} />
           </div>
           <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100">No Features Tracked</h3>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Start by adding a new feature request or roadmap item.</p>
@@ -583,14 +673,14 @@ const NewFeaturesPage: React.FC<NewFeaturesPageProps> = ({ filters, setFilters }
             <div key={group.quarter}>
               <button
                 onClick={() => toggleGroup(group.quarter)}
-                className="flex items-center gap-2 w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all mb-2"
+                className="flex items-center gap-2 w-full px-3 py-2 rounded-xl bg-slate-200/30 dark:bg-white/5 border-none hover:bg-slate-200/50 dark:hover:bg-white/10 transition-colors mb-2 focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"
               >
                 <ChevronRight size={14} className={`text-slate-400 transition-transform ${collapsedGroups.has(group.quarter) ? '' : 'rotate-90'}`} />
-                <span className="text-xs font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-0.5 rounded-md border border-indigo-100 dark:border-indigo-800">{group.quarter}</span>
-                <span className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">{group.features.length} feature{group.features.length !== 1 ? 's' : ''}</span>
+                <span className="text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded-md">{group.quarter}</span>
+                <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">{group.features.length} feature{group.features.length !== 1 ? 's' : ''}</span>
               </button>
               {!collapsedGroups.has(group.quarter) && (
-                <div className="grid grid-cols-1 gap-3 ml-2">
+                <div className="rounded-2xl bg-white/80 dark:bg-[#2C2C2E] overflow-hidden divide-y divide-slate-200/60 dark:divide-[#38383A] ml-2">
                   {group.features.map(feature => renderFeatureCard(feature))}
                 </div>
               )}
@@ -598,7 +688,7 @@ const NewFeaturesPage: React.FC<NewFeaturesPageProps> = ({ filters, setFilters }
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-3">
+        <div className="rounded-2xl bg-white/80 dark:bg-[#2C2C2E] overflow-hidden divide-y divide-slate-200/60 dark:divide-[#38383A]">
           {sortedFeatures.map(feature => renderFeatureCard(feature))}
         </div>
       )}

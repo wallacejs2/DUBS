@@ -32,14 +32,14 @@ const statusColors: Record<DealershipStatus, string> = {
 };
 
 const Label = ({ children, icon: Icon }: { children?: React.ReactNode, icon?: any }) => (
-  <label className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">
+  <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 dark:text-slate-500 mb-1">
     {Icon && <Icon size={10} />}
     {children}
   </label>
 );
 
 const DataValue = ({ value, mono = false, children }: { value?: any, mono?: boolean, children?: React.ReactNode }) => (
-  <div className={`text-[12px] font-normal text-slate-700 dark:text-slate-300 leading-tight min-h-[1.5em] flex items-center ${mono ? 'font-mono' : ''}`}>
+  <div className={`text-sm font-normal text-slate-700 dark:text-slate-300 leading-tight min-h-[1.5em] flex items-center ${mono ? 'font-mono' : ''}`}>
     {children || value || '---'}
   </div>
 );
@@ -50,7 +50,7 @@ const Input = ({ value, onChange, type = "text", className = "", placeholder="" 
     value={value || ''}
     onChange={(e) => onChange(e.target.value)}
     placeholder={placeholder}
-    className={`w-full px-3 py-1.5 text-[12px] border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-normal transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 ${className}`}
+    className={`w-full px-3 py-1.5 text-sm border border-slate-200/60 dark:border-[#38383A] rounded-xl focus:ring-1 focus:ring-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none bg-slate-100/50 dark:bg-[#2C2C2E] text-slate-900 dark:text-slate-100 font-normal transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 ${className}`}
   />
 );
 
@@ -58,7 +58,7 @@ const Select = ({ value, onChange, options, className = "" }: { value: any, onCh
   <select 
     value={value || ''}
     onChange={(e) => onChange(e.target.value)}
-    className={`w-full px-3 py-1.5 text-[12px] border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-normal transition-all ${className}`}
+    className={`w-full px-3 py-1.5 text-sm border border-slate-200/60 dark:border-[#38383A] rounded-xl focus:ring-1 focus:ring-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none bg-slate-100/50 dark:bg-[#2C2C2E] text-slate-900 dark:text-slate-100 font-normal transition-all ${className}`}
   >
     {options.map(opt => (
       <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -131,23 +131,27 @@ const TeamMemberDetailPanel: React.FC<TeamMemberDetailPanelProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
-      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]" onClick={isEditing && isNew ? undefined : onClose}></div>
-      <div className="relative w-full max-w-xl bg-white dark:bg-slate-900 h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300 transition-colors">
-        
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={isEditing && isNew ? undefined : onClose}></div>
+      <div className="relative w-full max-w-xl bg-white/95 dark:bg-[#1C1C1E]/95 backdrop-blur-xl h-full flex flex-col animate-in slide-in-from-right duration-300 rounded-l-2xl transition-colors">
+        {/* Grabber pill */}
+        <div className="flex justify-center pt-2 pb-0">
+          <div className="w-9 h-1 bg-slate-300 dark:bg-slate-600 rounded-full"></div>
+        </div>
+
         {/* Header */}
-        <div className="bg-white dark:bg-slate-900 sticky top-0 z-30 border-b border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
+        <div className="sticky top-0 z-30 border-b border-slate-200/60 dark:border-[#38383A] bg-white/90 dark:bg-[#1C1C1E]/90 backdrop-blur-xl">
           <div className="p-4 flex justify-between items-center gap-4">
              <div className="flex items-center gap-3">
                {onBack && (
                   <button 
                     onClick={onBack}
-                    className="p-2 -ml-2 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 rounded-xl transition-all"
+                    className="p-2 -ml-2 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/50 rounded-xl transition-all"
                     title="Go Back"
                   >
                     <ArrowLeft size={20} />
                   </button>
                )}
-               <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg shadow-sm ${isNew ? 'bg-indigo-100 text-indigo-600' : 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white'}`}>
+               <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg shadow-sm ${isNew ? 'bg-blue-100 text-blue-600' : 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white'}`}>
                  <User size={20} />
                </div>
                <div>
@@ -170,26 +174,26 @@ const TeamMemberDetailPanel: React.FC<TeamMemberDetailPanelProps> = ({
              <div className="flex items-center gap-2">
                {isEditing ? (
                  <>
-                   <button onClick={handleSave} className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-indigo-700 shadow-md shadow-indigo-100 flex items-center gap-2 transition-all">
+                   <button onClick={handleSave} className="px-4 py-2 bg-blue-500 text-white rounded-xl text-sm font-semibold hover:bg-blue-600 transition-colors focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none flex items-center gap-2">
                      <Save size={14} /> Save
                    </button>
-                   <button onClick={handleCancel} className="p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all"><RefreshCw size={16} /></button>
+                   <button onClick={handleCancel} className="p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 rounded-lg transition-all"><RefreshCw size={16} /></button>
                  </>
                ) : (
-                 <button onClick={() => setIsEditing(true)} className="px-3 py-2 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 transition-all">
+                 <button onClick={() => setIsEditing(true)} className="px-3 py-2 border border-slate-200/60 dark:border-[#38383A] text-slate-600 dark:text-slate-300 rounded-lg text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 transition-all">
                     <Edit3 size={14} /> Edit
                  </button>
                )}
                {!isNew && (
                  <button onClick={onDelete} className="p-2 text-slate-300 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-all"><Trash2 size={18} /></button>
                )}
-               <button onClick={onClose} className="p-2 text-slate-300 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all"><X size={20} /></button>
+               <button onClick={onClose} className="p-2 text-slate-300 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 rounded-lg transition-all focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"><X size={20} /></button>
              </div>
           </div>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 bg-white dark:bg-slate-900 custom-scrollbar transition-colors">
+        <div className="flex-1 overflow-y-auto p-6 bg-white/95 dark:bg-[#1C1C1E]/95 custom-scrollbar transition-colors">
           <div className="space-y-6">
             
             {/* Role & ID Section */}
@@ -203,7 +207,7 @@ const TeamMemberDetailPanel: React.FC<TeamMemberDetailPanelProps> = ({
                        options={Object.values(TeamRole).map(s => ({ label: s, value: s }))}
                     />
                   ) : (
-                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border ${roleColors[formData.role || TeamRole.CSM]}`}>
+                    <span className={`px-2.5 py-1 rounded-full text-sm font-semibold border ${roleColors[formData.role || TeamRole.CSM]}`}>
                       {formData.role}
                     </span>
                   )}
@@ -219,8 +223,8 @@ const TeamMemberDetailPanel: React.FC<TeamMemberDetailPanelProps> = ({
             </div>
 
             {/* Contact Info */}
-            <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
-              <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-widest mb-3">Contact Information</h3>
+            <div className="pt-4 border-t border-slate-100/60 dark:border-[#38383A]">
+              <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">Contact Information</h3>
               <div className="space-y-4">
                 <div>
                   <Label icon={Mail}>Email Address</Label>
@@ -228,7 +232,7 @@ const TeamMemberDetailPanel: React.FC<TeamMemberDetailPanelProps> = ({
                     <Input type="email" value={formData.email} onChange={(v) => updateField('email', v)} />
                   ) : (
                     <DataValue>
-                      <a href={`mailto:${formData.email}`} className="text-indigo-600 dark:text-indigo-400 hover:underline">{formData.email}</a>
+                      <a href={`mailto:${formData.email}`} className="text-blue-600 dark:text-blue-400 hover:underline">{formData.email}</a>
                     </DataValue>
                   )}
                 </div>
@@ -241,7 +245,7 @@ const TeamMemberDetailPanel: React.FC<TeamMemberDetailPanelProps> = ({
                       onChange={(e) => updateField('phone', e.target.value)}
                       onBlur={(e) => updateField('phone', formatPhone(e.target.value))}
                       placeholder="(###) ###-####"
-                      className="w-full px-3 py-1.5 text-[12px] border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-normal transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600"
+                      className="w-full px-3 py-1.5 text-sm border border-slate-200/60 dark:border-[#38383A] rounded-xl focus:ring-1 focus:ring-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none bg-slate-100/50 dark:bg-[#2C2C2E] text-slate-900 dark:text-slate-100 font-normal transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600"
                     />
                   ) : (
                     <DataValue value={formatPhone(formData.phone)} />
@@ -252,32 +256,32 @@ const TeamMemberDetailPanel: React.FC<TeamMemberDetailPanelProps> = ({
 
             {/* Linked Dealerships */}
             {!isNew && (
-                <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+                <div className="pt-4 border-t border-slate-100/60 dark:border-[#38383A]">
                     <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-widest">Linked Dealerships</h3>
-                        <span className="text-[10px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">{linkedDealerships.length}</span>
+                        <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Linked Dealerships</h3>
+                        <span className="text-xs font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">{linkedDealerships.length}</span>
                     </div>
                     
                     {linkedDealerships.length === 0 ? (
-                        <div className="text-[11px] text-slate-400 dark:text-slate-500 italic p-2 border border-dashed border-slate-200 dark:border-slate-700 rounded-lg text-center">
+                        <div className="text-xs text-slate-400 dark:text-slate-500 italic p-2 border border-dashed border-slate-200/60 dark:border-[#38383A] rounded-lg text-center">
                             No dealerships linked to this team member.
                         </div>
                     ) : (
                         <div className="space-y-2">
                             {linkedDealerships.map(d => (
-                                <div key={d.id} className={`flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-800/50 rounded-lg border ${d.status === DealershipStatus.CANCELLED ? 'border-red-100 dark:border-red-900/30 bg-red-50/10 dark:bg-red-900/10' : 'border-slate-100 dark:border-slate-700'}`}>
+                                <div key={d.id} className={`flex items-center justify-between p-2.5 bg-slate-50/50 dark:bg-white/[0.02] rounded-lg border ${d.status === DealershipStatus.CANCELLED ? 'border-red-100 dark:border-red-900/30 bg-red-50/10 dark:bg-red-900/10' : 'border-slate-100 dark:border-slate-700'}`}>
                                     <div className="min-w-0 flex items-center gap-3">
-                                        <div className="p-1.5 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 text-slate-400">
+                                        <div className="p-1.5 bg-slate-100/50 dark:bg-[#2C2C2E] rounded border border-slate-200/60 dark:border-[#38383A] text-slate-400">
                                             <Building2 size={12} />
                                         </div>
                                         <div>
-                                            <div className={`text-[11px] font-bold truncate ${d.status === DealershipStatus.CANCELLED ? 'text-red-700 dark:text-red-400' : 'text-slate-700 dark:text-slate-200'}`}>
+                                            <div className={`text-xs font-bold truncate ${d.status === DealershipStatus.CANCELLED ? 'text-red-700 dark:text-red-400' : 'text-slate-700 dark:text-slate-200'}`}>
                                                 {d.name}
                                             </div>
-                                            <div className="text-[9px] font-mono text-slate-400 dark:text-slate-500">{d.pp_sys_id}</div>
+                                            <div className="text-xs font-mono text-slate-400 dark:text-slate-500">{d.pp_sys_id}</div>
                                         </div>
                                     </div>
-                                    <span className={`px-1.5 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-widest border ${statusColors[d.status]}`}>
+                                    <span className={`px-1.5 py-0.5 rounded-full text-sm font-semibold border ${statusColors[d.status]}`}>
                                         {d.status}
                                     </span>
                                 </div>
@@ -289,7 +293,7 @@ const TeamMemberDetailPanel: React.FC<TeamMemberDetailPanelProps> = ({
 
             {/* Timestamps */}
             {!isNew && (
-              <div className="pt-4 mt-4 border-t border-slate-100 dark:border-slate-800 flex gap-6 text-[10px] text-slate-400 dark:text-slate-500">
+              <div className="pt-4 mt-4 border-t border-slate-100/60 dark:border-[#38383A] flex gap-6 text-xs text-slate-400 dark:text-slate-500">
                 <span>Created: {new Date(formData.created_at || '').toLocaleDateString()}</span>
                 <span>ID: {formData.id}</span>
               </div>
