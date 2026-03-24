@@ -1,5 +1,4 @@
-import type { Config } from "tailwindcss";
-
+/** @type {import('tailwindcss').Config} */
 export default {
   darkMode: ["class"],
   content: [
@@ -10,12 +9,12 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Preserved custom tokens from DESIGN_SYSTEM.md
+        // Custom tokens from DESIGN_SYSTEM.md
         slate: {
-          850: '#1e293b',
-          950: '#020617',
+          850: "#1e293b",
+          950: "#020617",
         },
-        // shadcn CSS variable mappings
+        // shadcn semantic tokens (CSS-variable backed)
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -58,4 +57,4 @@ export default {
     },
   },
   plugins: [],
-} satisfies Config;
+}
