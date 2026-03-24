@@ -282,12 +282,12 @@ const NewFeatureDetailPanel: React.FC<NewFeatureDetailPanelProps> = ({
 
   const formatDateDisplay = (dateStr?: string) => {
     if (!dateStr) return '';
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return dateStr;
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    const dd = String(d.getDate()).padStart(2, '0');
-    const yy = String(d.getFullYear()).slice(-2);
-    return `${mm}-${dd}-${yy}`;
+    const datePart = dateStr.split('T')[0];
+    const parts = datePart.split('-');
+    if (parts.length !== 3) return dateStr;
+    const [yyyy, mm, dd] = parts;
+    if (!yyyy || !mm || !dd) return dateStr;
+    return `${mm}-${dd}-${yyyy.slice(-2)}`;
   };
 
   const parseRelease = (val: string = '') => {
