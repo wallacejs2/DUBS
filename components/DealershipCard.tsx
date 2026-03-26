@@ -169,9 +169,9 @@ const DealershipCard: React.FC<DealershipCardProps> = ({
           </div>
         </div>
 
-        {/* Row 2: Group / CRM / tags */}
+        {/* Row 2: CRM / tags */}
         <p className="text-sm text-slate-500 dark:text-slate-400 truncate mb-2">
-          {groupName || 'Single'} · {dealership.crm_provider}
+          {dealership.crm_provider}
           {isManaged && ' · Managed'}
           {hasAddlWeb && ' · Addl. Web'}
           {dealership.sms_activated && ' · SMS'}
@@ -179,14 +179,29 @@ const DealershipCard: React.FC<DealershipCardProps> = ({
 
         {/* Row 4: Metadata */}
         <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-200/40 dark:border-[#38383A]/50">
-          <div className="flex items-center gap-1.5" title="Store / Branch">
-            <span className="font-medium text-slate-400 dark:text-slate-500">St/Br:</span>
-            <span className="font-mono">{dealership.store_number || '--'} / {dealership.branch_number || '--'}</span>
+          <div className="flex items-center gap-1.5" title="Group">
+            <span className="font-medium text-slate-400 dark:text-slate-500">Grp:</span>
+            <span className="font-mono">{groupName || 'Single'}</span>
           </div>
 
-          <div className="flex items-center gap-1.5" title="PP / ERA Systems">
-            <span className="font-medium text-slate-400 dark:text-slate-500">PP/ERA:</span>
-            <span className="font-mono">{dealership.pp_sys_id || '--'} / {dealership.era_system_id || '--'}</span>
+          <div className="flex items-center gap-1.5" title="ERA System ID">
+            <span className="font-medium text-slate-400 dark:text-slate-500">ERA:</span>
+            <span className="font-mono">{dealership.era_system_id || '--'}</span>
+          </div>
+
+          <div className="flex items-center gap-1.5" title="PP System ID">
+            <span className="font-medium text-slate-400 dark:text-slate-500">PP:</span>
+            <span className="font-mono">{dealership.pp_sys_id || '--'}</span>
+          </div>
+
+          <div className="flex items-center gap-1.5" title="Store Number">
+            <span className="font-medium text-slate-400 dark:text-slate-500">St:</span>
+            <span className="font-mono">{dealership.store_number || '--'}</span>
+          </div>
+
+          <div className="flex items-center gap-1.5" title="Branch Number">
+            <span className="font-medium text-slate-400 dark:text-slate-500">Br:</span>
+            <span className="font-mono">{dealership.branch_number || '--'}</span>
           </div>
 
           <div className="flex items-center gap-1.5 ml-auto" title="Onboarding Date">
