@@ -244,24 +244,24 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
       })
       .filter(p => p.count > 0 || p.revenue > 0);
 
-    // Revenue trend (last 18 months)
+    // Revenue trend (last 18 months, cumulative by go-live date)
     const now = new Date();
     const revenueTrend: Array<{ month: string; revenue: number; label: string }> = [];
     for (let i = 17; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const mk = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
       const label = d.toLocaleString('default', { month: 'short', year: '2-digit' });
-      const monthStart = getTimestamp(`${mk}-01T00:00:00`);
-      const nextMk = new Date(d.getFullYear(), d.getMonth() + 1, 0);
-      const monthEnd = getTimestamp(`${nextMk.getFullYear()}-${String(nextMk.getMonth() + 1).padStart(2, '0')}-${String(nextMk.getDate()).padStart(2, '0')}T23:59:59`);
 
-      const monthOrders = orders.filter(o => {
-        if (!activeDealershipIds.has(o.dealership_id)) return false;
-        const ts = getTimestamp(o.received_date);
-        if (ts === null) return false;
-        return ts >= (monthStart || 0) && ts <= (monthEnd || Infinity);
-      });
-      revenueTrend.push({ month: mk, label, revenue: sumRevenue(monthOrders) });
+      const liveDealershipIds = new Set(
+        dealerships
+          .filter(dl => {
+            const glmk = getMonthKey(dl.go_live_date);
+            return glmk && glmk <= mk;
+          })
+          .map(dl => dl.id)
+      );
+      const liveOrders = orders.filter(o => liveDealershipIds.has(o.dealership_id));
+      revenueTrend.push({ month: mk, label, revenue: sumRevenue(liveOrders) });
     }
 
     // Avg days to go-live
@@ -381,7 +381,8 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
         const onboarding = statusBreakdown[DealershipStatus.ONBOARDING] || 0;
         const hold = statusBreakdown[DealershipStatus.HOLD] || 0;
         const pending = (statusBreakdown[DealershipStatus.DMT_PENDING] || 0) + (statusBreakdown[DealershipStatus.DMT_APPROVED] || 0);
-        return { name: member.name, role: member.role, total: mDealerships.length, live, onboarding, hold, pending };
+        const cancelled = statusBreakdown[DealershipStatus.CANCELLED] || 0;
+        return { name: member.name, role: member.role, total: mDealerships.length, live, onboarding, hold, pending, cancelled };
       })
       .filter(m => m.total > 0)
       .sort((a, b) => b.total - a.total);
@@ -588,10 +589,10 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
                 <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
                 <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '10px', fontSize: '12px' }} labelStyle={{ color: '#e2e8f0', fontWeight: 600 }} itemStyle={{ color: '#cbd5e1' }} cursor={{ fill: 'rgba(148,163,184,0.05)' }} />
-                <Area type="monotone" dataKey="received" stackId="1" stroke={PIPELINE_COLORS.received} fill={`url(#grad-received)`} strokeWidth={1.5} name="Received" />
-                <Area type="monotone" dataKey="onboarding" stackId="1" stroke={PIPELINE_COLORS.onboarding} fill={`url(#grad-onboarding)`} strokeWidth={1.5} name="Onboarding" />
-                <Area type="monotone" dataKey="goLive" stackId="1" stroke={PIPELINE_COLORS.goLive} fill={`url(#grad-goLive)`} strokeWidth={1.5} name="Go-Live" />
-                <Area type="monotone" dataKey="termed" stackId="1" stroke={PIPELINE_COLORS.termed} fill={`url(#grad-termed)`} strokeWidth={1.5} name="Termed" />
+                <Area type="monotone" dataKey="received" stroke={PIPELINE_COLORS.received} fill={`url(#grad-received)`} strokeWidth={1.5} name="Received" />
+                <Area type="monotone" dataKey="onboarding" stroke={PIPELINE_COLORS.onboarding} fill={`url(#grad-onboarding)`} strokeWidth={1.5} name="Onboarding" />
+                <Area type="monotone" dataKey="goLive" stroke={PIPELINE_COLORS.goLive} fill={`url(#grad-goLive)`} strokeWidth={1.5} name="Go-Live" />
+                <Area type="monotone" dataKey="termed" stroke={PIPELINE_COLORS.termed} fill={`url(#grad-termed)`} strokeWidth={1.5} name="Termed" />
                 <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: '11px', color: '#94a3b8' }} />
               </AreaChart>
             </ResponsiveContainer>
@@ -680,7 +681,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
 
           {/* Revenue trend */}
           <div className="md:col-span-2">
-            <div className="text-xs font-semibold text-slate-400 dark:text-slate-500 mb-2">Revenue Trend — Last 18 Months</div>
+            <div className="text-xs font-semibold text-slate-400 dark:text-slate-500 mb-2">Cumulative Revenue by Go-Live Date — Last 18 Months</div>
             <ResponsiveContainer width="100%" height={160}>
               <AreaChart data={metrics.revenueTrend} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
                 <defs>
@@ -728,6 +729,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
                   <th className="text-center pb-2 font-semibold text-emerald-500">Live</th>
                   <th className="text-center pb-2 font-semibold text-blue-500">Onboarding</th>
                   <th className="text-center pb-2 font-semibold text-orange-500">Hold</th>
+                  <th className="text-center pb-2 font-semibold text-red-500">Cancelled</th>
                   <th className="text-right pb-2 font-semibold">Revenue</th>
                 </tr>
               </thead>
@@ -736,6 +738,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
                   const live = (g.statusBreakdown[DealershipStatus.LIVE] || 0) + (g.statusBreakdown[DealershipStatus.LEGACY] || 0);
                   const onboarding = g.statusBreakdown[DealershipStatus.ONBOARDING] || 0;
                   const hold = g.statusBreakdown[DealershipStatus.HOLD] || 0;
+                  const cancelled = g.statusBreakdown[DealershipStatus.CANCELLED] || 0;
                   return (
                     <tr key={g.id} className="border-b border-slate-100/60 dark:border-slate-800/50 last:border-0 hover:bg-white/60 dark:hover:bg-white/5 cursor-pointer transition-colors" onClick={() => onNavigateToDealerships?.({ group: g.id })}>
                       <td className="py-2 font-medium text-slate-700 dark:text-slate-200 max-w-[200px] truncate">{g.name}</td>
@@ -743,6 +746,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
                       <td className="py-2 text-center font-semibold text-emerald-600 dark:text-emerald-400">{live || '—'}</td>
                       <td className="py-2 text-center font-semibold text-blue-600 dark:text-blue-400">{onboarding || '—'}</td>
                       <td className="py-2 text-center font-semibold text-orange-600 dark:text-orange-400">{hold || '—'}</td>
+                      <td className="py-2 text-center font-semibold text-red-600 dark:text-red-400">{cancelled || '—'}</td>
                       <td className="py-2 text-right font-semibold text-slate-600 dark:text-slate-300">{formatCurrency(g.revenue, true)}</td>
                     </tr>
                   );
@@ -766,6 +770,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
                   <th className="text-center pb-2 font-semibold text-blue-500">Onboarding</th>
                   <th className="text-center pb-2 font-semibold text-orange-500">Hold</th>
                   <th className="text-center pb-2 font-semibold text-slate-500">Pending</th>
+                  <th className="text-center pb-2 font-semibold text-red-500">Cancelled</th>
                 </tr>
               </thead>
               <tbody>
@@ -780,6 +785,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
                     <td className="py-2 text-center font-semibold text-blue-600 dark:text-blue-400">{m.onboarding || '—'}</td>
                     <td className="py-2 text-center font-semibold text-orange-600 dark:text-orange-400">{m.hold || '—'}</td>
                     <td className="py-2 text-center font-semibold text-slate-500">{m.pending || '—'}</td>
+                    <td className="py-2 text-center font-semibold text-red-600 dark:text-red-400">{m.cancelled || '—'}</td>
                   </tr>
                 ))}
               </tbody>
