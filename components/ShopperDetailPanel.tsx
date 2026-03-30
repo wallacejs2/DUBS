@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {
   X, Trash2, Edit3, Save, RefreshCw,
   User, Shield, Building2, Check, Hash, Link, ExternalLink, Plus, Copy,
-  AlertTriangle
+  AlertTriangle, ChevronDown, ChevronRight
 } from 'lucide-react';
 import { Shopper, ShopperStatus, DealershipStatus, CdpId, CdpIdSystem, ShopperProfile, ShopperDealership } from '../types';
 import { useDealerships, useEnterpriseGroups } from '../hooks';
@@ -237,6 +237,8 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
   const [formData, setFormData] = useState<Partial<Shopper>>(shopper);
   const [fullName, setFullName] = useState('');
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [collapsedDealerships, setCollapsedDealerships] = useState<Set<string>>(new Set());
+  const [collapsedProfiles, setCollapsedProfiles] = useState<Set<string>>(new Set());
 
   const { dealerships } = useDealerships();
   const { groups } = useEnterpriseGroups();
@@ -298,6 +300,36 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
       setCopiedField(field);
       setTimeout(() => setCopiedField(null), 2000);
     });
+  };
+
+  // === Collapse/expand helpers ===
+  const toggleDealership = (id: string) => setCollapsedDealerships(prev => {
+    const next = new Set(prev);
+    next.has(id) ? next.delete(id) : next.add(id);
+    return next;
+  });
+
+  const toggleProfile = (id: string) => setCollapsedProfiles(prev => {
+    const next = new Set(prev);
+    next.has(id) ? next.delete(id) : next.add(id);
+    return next;
+  });
+
+  const collapseAllDealerships = () =>
+    setCollapsedDealerships(new Set((formData.dealerships || []).map(d => d.id)));
+  const expandAllDealerships = () => setCollapsedDealerships(new Set());
+
+  const collapseAllProfiles = () =>
+    setCollapsedProfiles(new Set((formData.dealerships || []).flatMap(d => d.profiles.map(p => p.id))));
+  const expandAllProfiles = () => setCollapsedProfiles(new Set());
+
+  const collapseAllProfilesForDealership = (dIdx: number) => {
+    const ids = (formData.dealerships?.[dIdx]?.profiles || []).map(p => p.id);
+    setCollapsedProfiles(prev => new Set([...prev, ...ids]));
+  };
+  const expandAllProfilesForDealership = (dIdx: number) => {
+    const ids = new Set((formData.dealerships?.[dIdx]?.profiles || []).map(p => p.id));
+    setCollapsedProfiles(prev => new Set([...prev].filter(id => !ids.has(id))));
   };
 
   // === Dealership helpers ===
@@ -540,14 +572,54 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
             <div className="mt-4">
               <div className="flex items-center justify-between mb-3 border-b border-slate-100/60 dark:border-[#38383A] pb-2">
                 <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Dealerships</h3>
-                {isEditing && (
-                  <button
-                    onClick={addDealership}
-                    className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center gap-1 bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded transition-colors border border-blue-100 dark:border-blue-800"
-                  >
-                    <Plus size={12} /> Add Dealership
-                  </button>
-                )}
+                <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                  {(formData.dealerships || []).length > 0 && (
+                    <>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={collapseAllDealerships}
+                          className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 px-1.5 py-0.5 rounded hover:bg-slate-100 dark:hover:bg-white/5 transition-colors flex items-center gap-0.5"
+                          title="Collapse all dealerships"
+                        >
+                          <ChevronRight size={10} /> Dealerships
+                        </button>
+                        <button
+                          onClick={expandAllDealerships}
+                          className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 px-1.5 py-0.5 rounded hover:bg-slate-100 dark:hover:bg-white/5 transition-colors flex items-center gap-0.5"
+                          title="Expand all dealerships"
+                        >
+                          <ChevronDown size={10} /> Dealerships
+                        </button>
+                      </div>
+                      <span className="text-slate-200 dark:text-slate-700 text-xs">|</span>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={collapseAllProfiles}
+                          className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 px-1.5 py-0.5 rounded hover:bg-slate-100 dark:hover:bg-white/5 transition-colors flex items-center gap-0.5"
+                          title="Collapse all profiles"
+                        >
+                          <ChevronRight size={10} /> Profiles
+                        </button>
+                        <button
+                          onClick={expandAllProfiles}
+                          className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 px-1.5 py-0.5 rounded hover:bg-slate-100 dark:hover:bg-white/5 transition-colors flex items-center gap-0.5"
+                          title="Expand all profiles"
+                        >
+                          <ChevronDown size={10} /> Profiles
+                        </button>
+                      </div>
+                      <span className="text-slate-200 dark:text-slate-700 text-xs">|</span>
+                    </>
+                  )}
+                  {isEditing && (
+                    <button
+                      onClick={addDealership}
+                      className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center gap-1 bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded transition-colors border border-blue-100 dark:border-blue-800"
+                    >
+                      <Plus size={12} /> Add Dealership
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div className="space-y-6">
@@ -559,10 +631,20 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                     <div key={shopperDealership.id} className="border border-slate-200/60 dark:border-[#38383A] rounded-2xl p-4 bg-slate-100/50 dark:bg-[#2C2C2E]/30 relative">
 
                       {/* Dealership Header */}
-                      <div className="flex items-center justify-between mb-3">
+                      <div className={`flex items-center justify-between ${collapsedDealerships.has(shopperDealership.id) ? '' : 'mb-3'}`}>
                         <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => toggleDealership(shopperDealership.id)}
+                            className="p-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded transition-colors"
+                            title={collapsedDealerships.has(shopperDealership.id) ? 'Expand dealership' : 'Collapse dealership'}
+                          >
+                            {collapsedDealerships.has(shopperDealership.id) ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+                          </button>
                           <Building2 size={14} className="text-slate-400" />
                           <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Dealership {dIdx + 1}</span>
+                          {collapsedDealerships.has(shopperDealership.id) && dealer && (
+                            <span className="text-xs text-slate-400 dark:text-slate-500 truncate max-w-[140px]">{dealer.name}</span>
+                          )}
                         </div>
                         <div className="flex items-center gap-1">
                           {dealer && (
@@ -597,6 +679,8 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                           )}
                         </div>
                       </div>
+
+                      {!collapsedDealerships.has(shopperDealership.id) && (<>
 
                       {/* Dealership Dropdown */}
                       <div className="mb-3">
@@ -641,21 +725,54 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                       <div className="space-y-3">
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-semibold text-slate-400 dark:text-slate-500">Profiles</span>
-                          {isEditing && (
-                            <button
-                              onClick={() => addProfile(dIdx)}
-                              className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center gap-1 bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded transition-colors border border-blue-100 dark:border-blue-800"
-                            >
-                              <Plus size={10} /> Add Profile
-                            </button>
-                          )}
+                          <div className="flex items-center gap-1">
+                            {shopperDealership.profiles.length > 0 && (
+                              <>
+                                <button
+                                  onClick={() => collapseAllProfilesForDealership(dIdx)}
+                                  className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 px-1.5 py-0.5 rounded hover:bg-slate-100 dark:hover:bg-white/5 transition-colors flex items-center gap-0.5"
+                                  title="Collapse all profiles in this dealership"
+                                >
+                                  <ChevronRight size={10} /> All
+                                </button>
+                                <button
+                                  onClick={() => expandAllProfilesForDealership(dIdx)}
+                                  className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 px-1.5 py-0.5 rounded hover:bg-slate-100 dark:hover:bg-white/5 transition-colors flex items-center gap-0.5"
+                                  title="Expand all profiles in this dealership"
+                                >
+                                  <ChevronDown size={10} /> All
+                                </button>
+                                {isEditing && <span className="text-slate-200 dark:text-slate-700 text-xs">|</span>}
+                              </>
+                            )}
+                            {isEditing && (
+                              <button
+                                onClick={() => addProfile(dIdx)}
+                                className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center gap-1 bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded transition-colors border border-blue-100 dark:border-blue-800"
+                              >
+                                <Plus size={10} /> Add Profile
+                              </button>
+                            )}
+                          </div>
                         </div>
 
                         {shopperDealership.profiles.map((profile, pIdx) => (
                           <div key={profile.id} className="bg-slate-50/50 dark:bg-white/[0.02] border border-slate-200/60 dark:border-[#38383A] rounded-xl p-3 relative">
                             {/* Profile header with number and remove */}
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Profile [{pIdx + 1}]</span>
+                            <div className={`flex items-center justify-between ${collapsedProfiles.has(profile.id) ? '' : 'mb-2'}`}>
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  onClick={() => toggleProfile(profile.id)}
+                                  className="p-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded transition-colors"
+                                  title={collapsedProfiles.has(profile.id) ? 'Expand profile' : 'Collapse profile'}
+                                >
+                                  {collapsedProfiles.has(profile.id) ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
+                                </button>
+                                <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Profile [{pIdx + 1}]</span>
+                                {collapsedProfiles.has(profile.id) && profile.name && (
+                                  <span className="text-xs text-slate-400 dark:text-slate-500 truncate max-w-[120px]">{profile.name}</span>
+                                )}
+                              </div>
                               <div className="flex items-center gap-1">
                                 {!isEditing && (
                                   <button
@@ -677,6 +794,8 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                                 )}
                               </div>
                             </div>
+
+                            {!collapsedProfiles.has(profile.id) && (<>
 
                             {/* Profile fields - Row 1: Name, Email, Phone */}
                             <div className="grid grid-cols-3 gap-3 mb-2">
@@ -777,6 +896,7 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                               onCopy={copyToClipboard}
                               fieldPrefix={`${dIdx}-${pIdx}`}
                             />
+                            </>)}
                           </div>
                         ))}
 
@@ -784,6 +904,7 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                           <div className="text-xs text-slate-400 dark:text-slate-500 italic">No profiles recorded.</div>
                         )}
                       </div>
+                      </>)}
                     </div>
                   );
                 })}
