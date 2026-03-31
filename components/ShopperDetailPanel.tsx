@@ -488,8 +488,8 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
         {/* Sticky Header */}
         <div className="sticky top-0 z-30 border-b border-slate-200/60 dark:border-[#38383A] bg-white/90 dark:bg-[#1C1C1E]/90 backdrop-blur-xl">
           <div className="p-4 flex justify-between items-center gap-4">
-             <div className="flex items-center gap-3">
-               <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg shadow-sm ${isNew ? 'bg-blue-100 text-blue-600' : 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white'}`}>
+             <div className="flex items-center gap-3 flex-1 min-w-0">
+               <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg shadow-sm flex-shrink-0 ${isNew ? 'bg-blue-100 text-blue-600' : 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white'}`}>
                  {isNew ? <User size={20} /> : (formData.first_name?.[0]?.toUpperCase() || '?')}
                </div>
                <div className="flex-1 min-w-0">
