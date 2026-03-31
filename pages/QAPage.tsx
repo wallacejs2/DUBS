@@ -57,15 +57,17 @@ const ShopperCard: React.FC<ShopperCardProps> = ({ shopper, dealershipsMap, isEx
   const handleCopyAll = (e: React.MouseEvent) => {
     e.stopPropagation();
     const lines: string[] = [];
-    (shopper.dealerships || []).forEach(sd => {
+    (shopper.dealerships || []).forEach((sd, dIdx) => {
+      if (dIdx > 0) lines.push('');
       const dealer = dealershipsMap.get(sd.dealership_id);
       if (dealer) {
         const combo = `${dealer.pp_sys_id || ''}_${dealer.store_number || ''}_${dealer.branch_number || ''}`;
-        lines.push(`${dealer.name}  ${combo}`);
+        lines.push(`${dealer.name.toUpperCase()}  ${combo}`);
       } else {
-        lines.push('(unassigned dealership)');
+        lines.push('(UNASSIGNED DEALERSHIP)');
       }
       sd.profiles.forEach((profile, idx) => {
+        if (idx > 0) lines.push('');
         const parts: string[] = [];
         if (profile.name) parts.push(profile.name.toUpperCase());
         if (profile.email) parts.push(profile.email);
@@ -103,11 +105,11 @@ const ShopperCard: React.FC<ShopperCardProps> = ({ shopper, dealershipsMap, isEx
           {/* Left: Avatar + Name + Dealership chips */}
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
-              {shopper.first_name.charAt(0)}{shopper.last_name.charAt(0)}
+              {shopper.first_name?.charAt(0) || '?'}
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">{shopper.first_name} {shopper.last_name}</h3>
+                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">{shopper.first_name || '(Untitled)'}</h3>
                 <span className={`px-1.5 py-0.5 rounded-full text-xs font-bold uppercase flex-shrink-0 ${statusColors[shopper.status]}`}>
                   {shopper.status}
                 </span>
@@ -255,9 +257,9 @@ const ShopperCard: React.FC<ShopperCardProps> = ({ shopper, dealershipsMap, isEx
                             {profile.cdp_ids.map(cdpId => {
                               const sysLabel = cdpId.system === 'ucp' ? 'UCP' : cdpId.system === 'cdp_admin' ? 'CDP' : 'CUR';
                               const sysBadge = cdpId.system === 'ucp'
-                                ? 'text-blue-600 dark:text-blue-400'
+                                ? 'text-indigo-600 dark:text-indigo-400'
                                 : cdpId.system === 'cdp_admin'
-                                ? 'text-blue-600 dark:text-blue-400'
+                                ? 'text-emerald-600 dark:text-emerald-400'
                                 : 'text-purple-600 dark:text-purple-400';
                               return (
                                 <div key={cdpId.id} className="text-xs flex items-center gap-1 text-slate-400 dark:text-slate-500">

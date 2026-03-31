@@ -98,7 +98,7 @@ const CdpIdManager: React.FC<CdpIdManagerProps> = ({ cdpIds, onChange, isEditing
 
   const systemBadgeClass = (sys: CdpIdSystem) => {
     if (sys === 'ucp') return 'bg-indigo-50 text-indigo-700 border-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800';
-    if (sys === 'cdp_admin') return 'bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800';
+    if (sys === 'cdp_admin') return 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800';
     return 'bg-purple-50 text-purple-700 border-purple-100 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800';
   };
 
@@ -124,8 +124,8 @@ const CdpIdManager: React.FC<CdpIdManagerProps> = ({ cdpIds, onChange, isEditing
                   className="w-[100px] px-1 py-1 text-xs border border-slate-200/60 dark:border-[#38383A] rounded focus:ring-1 focus:ring-blue-500 outline-none bg-slate-100/50 dark:bg-[#2C2C2E] font-bold text-slate-700 dark:text-slate-200"
                 >
                   <option value="ucp">UCP</option>
-                  <option value="cdp_admin">CDP</option>
                   <option value="curator">CUR</option>
+                  <option value="cdp_admin">CDP</option>
                 </select>
               ) : (
                 <span className={`text-xs font-bold border px-1.5 py-1 rounded uppercase tracking-wider h-fit flex-shrink-0 ${systemBadgeClass(cdpId.system)}`}>
@@ -235,7 +235,6 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
   const isNew = !shopper.id;
   const [isEditing, setIsEditing] = useState(isNew);
   const [formData, setFormData] = useState<Partial<Shopper>>(shopper);
-  const [fullName, setFullName] = useState('');
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [collapsedDealerships, setCollapsedDealerships] = useState<Set<string>>(new Set());
   const [collapsedProfiles, setCollapsedProfiles] = useState<Set<string>>(new Set());
@@ -255,7 +254,6 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
 
   useEffect(() => {
     setFormData(shopper);
-    setFullName(`${shopper.first_name || ''} ${shopper.last_name || ''}`.trim());
   }, [shopper]);
 
   const handleSave = () => {
@@ -272,27 +270,12 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
       onClose();
     } else {
       setFormData(shopper);
-      setFullName(`${shopper.first_name || ''} ${shopper.last_name || ''}`.trim());
       setIsEditing(false);
     }
   };
 
   const updateField = (field: keyof Shopper, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleNameChange = (val: string) => {
-    setFullName(val);
-    const trimmed = val.trimStart();
-    const firstSpaceIndex = trimmed.indexOf(' ');
-
-    if (firstSpaceIndex === -1) {
-      updateField('first_name', trimmed);
-      updateField('last_name', '');
-    } else {
-      updateField('first_name', trimmed.substring(0, firstSpaceIndex));
-      updateField('last_name', trimmed.substring(firstSpaceIndex + 1));
-    }
   };
 
   const copyToClipboard = (text: string, field: string) => {
@@ -331,6 +314,12 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
     const ids = new Set((formData.dealerships?.[dIdx]?.profiles || []).map(p => p.id));
     setCollapsedProfiles(prev => new Set([...prev].filter(id => !ids.has(id))));
   };
+
+  // Derived collapse state
+  const allDealershipIds = (formData.dealerships || []).map(d => d.id);
+  const allProfileIds = (formData.dealerships || []).flatMap(d => d.profiles.map(p => p.id));
+  const allDealershipsCollapsed = allDealershipIds.length > 0 && allDealershipIds.every(id => collapsedDealerships.has(id));
+  const allProfilesCollapsed = allProfileIds.length > 0 && allProfileIds.every(id => collapsedProfiles.has(id));
 
   // === Dealership helpers ===
   const addDealership = () => {
@@ -418,16 +407,20 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
   const handleCopyAll = () => {
     const lines: string[] = [];
 
-    (formData.dealerships || []).forEach(sd => {
+    (formData.dealerships || []).forEach((sd, dIdx) => {
+      if (dIdx > 0) lines.push('');
+
       const dealer = getDealershipById(sd.dealership_id);
       if (dealer) {
         const combo = `${dealer.pp_sys_id || ''}_${dealer.store_number || ''}_${dealer.branch_number || ''}`;
-        lines.push(`${dealer.name}  ${combo}`);
+        lines.push(`${dealer.name.toUpperCase()}  ${combo}`);
       } else {
-        lines.push('(unassigned dealership)');
+        lines.push('(UNASSIGNED DEALERSHIP)');
       }
 
       sd.profiles.forEach((profile, idx) => {
+        if (idx > 0) lines.push('');
+
         const parts: string[] = [];
         if (profile.name) parts.push(profile.name.toUpperCase());
         if (profile.email) parts.push(profile.email);
@@ -495,22 +488,20 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
         {/* Sticky Header */}
         <div className="sticky top-0 z-30 border-b border-slate-200/60 dark:border-[#38383A] bg-white/90 dark:bg-[#1C1C1E]/90 backdrop-blur-xl">
           <div className="p-4 flex justify-between items-center gap-4">
-             <div className="flex items-center gap-3">
-               <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg shadow-sm ${isNew ? 'bg-blue-100 text-blue-600' : 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white'}`}>
-                 {isNew ? <User size={20} /> : (formData.first_name?.[0] || '') + (formData.last_name?.[0] || '')}
+             <div className="flex items-center gap-3 flex-1 min-w-0">
+               <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg shadow-sm flex-shrink-0 ${isNew ? 'bg-blue-100 text-blue-600' : 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white'}`}>
+                 {isNew ? <User size={20} /> : (formData.first_name?.[0]?.toUpperCase() || '?')}
                </div>
-               <div>
+               <div className="flex-1 min-w-0">
                  {isEditing ? (
-                   <div className="w-full">
-                     <Input
-                       value={fullName}
-                       onChange={handleNameChange}
-                       placeholder="Full Name"
-                       className="font-bold text-lg"
-                     />
-                   </div>
+                   <Input
+                     value={formData.first_name || ''}
+                     onChange={(v) => updateField('first_name', v)}
+                     placeholder="Ticket title..."
+                     className="font-bold text-lg"
+                   />
                  ) : (
-                   <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">{formData.first_name} {formData.last_name}</h2>
+                   <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">{formData.first_name || '(Untitled)'}</h2>
                  )}
                </div>
              </div>
@@ -568,6 +559,24 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                </div>
             </div>
 
+            {/* Description Section */}
+            {(isEditing || formData.qa_details) && (
+              <div className="bg-slate-50/50 dark:bg-white/[0.02] p-3 rounded-2xl border border-slate-100/60 dark:border-[#38383A]">
+                <Label>Description</Label>
+                {isEditing ? (
+                  <textarea
+                    value={formData.qa_details || ''}
+                    onChange={(e) => updateField('qa_details', e.target.value)}
+                    placeholder="Overall description / context for this ticket..."
+                    rows={3}
+                    className="w-full mt-1 px-3 py-1.5 text-sm border border-slate-200/60 dark:border-[#38383A] rounded-xl focus:ring-1 focus:ring-blue-500 outline-none bg-slate-100/50 dark:bg-[#2C2C2E] text-slate-900 dark:text-slate-100 resize-none placeholder:text-slate-400 dark:placeholder:text-slate-600"
+                  />
+                ) : (
+                  <p className="mt-1 text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">{formData.qa_details}</p>
+                )}
+              </div>
+            )}
+
             {/* Dealerships Section */}
             <div className="mt-4">
               <div className="flex items-center justify-between mb-3 border-b border-slate-100/60 dark:border-[#38383A] pb-2">
@@ -575,39 +584,20 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                 <div className="flex items-center gap-1.5 flex-wrap justify-end">
                   {(formData.dealerships || []).length > 0 && (
                     <>
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={collapseAllDealerships}
-                          className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 px-1.5 py-0.5 rounded hover:bg-slate-100 dark:hover:bg-white/5 transition-colors flex items-center gap-0.5"
-                          title="Collapse all dealerships"
-                        >
-                          <ChevronRight size={10} /> Dealerships
-                        </button>
-                        <button
-                          onClick={expandAllDealerships}
-                          className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 px-1.5 py-0.5 rounded hover:bg-slate-100 dark:hover:bg-white/5 transition-colors flex items-center gap-0.5"
-                          title="Expand all dealerships"
-                        >
-                          <ChevronDown size={10} /> Dealerships
-                        </button>
-                      </div>
-                      <span className="text-slate-200 dark:text-slate-700 text-xs">|</span>
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={collapseAllProfiles}
-                          className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 px-1.5 py-0.5 rounded hover:bg-slate-100 dark:hover:bg-white/5 transition-colors flex items-center gap-0.5"
-                          title="Collapse all profiles"
-                        >
-                          <ChevronRight size={10} /> Profiles
-                        </button>
-                        <button
-                          onClick={expandAllProfiles}
-                          className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 px-1.5 py-0.5 rounded hover:bg-slate-100 dark:hover:bg-white/5 transition-colors flex items-center gap-0.5"
-                          title="Expand all profiles"
-                        >
-                          <ChevronDown size={10} /> Profiles
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => allDealershipsCollapsed ? expandAllDealerships() : collapseAllDealerships()}
+                        className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 px-2 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 transition-colors flex items-center gap-1 border border-slate-200/60 dark:border-[#38383A]"
+                      >
+                        {allDealershipsCollapsed ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
+                        {allDealershipsCollapsed ? 'Expand' : 'Collapse'} Dealerships
+                      </button>
+                      <button
+                        onClick={() => allProfilesCollapsed ? expandAllProfiles() : collapseAllProfiles()}
+                        className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 px-2 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 transition-colors flex items-center gap-1 border border-slate-200/60 dark:border-[#38383A]"
+                      >
+                        {allProfilesCollapsed ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
+                        {allProfilesCollapsed ? 'Expand' : 'Collapse'} Profiles
+                      </button>
                       <span className="text-slate-200 dark:text-slate-700 text-xs">|</span>
                     </>
                   )}
@@ -726,25 +716,22 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-semibold text-slate-400 dark:text-slate-500">Profiles</span>
                           <div className="flex items-center gap-1">
-                            {shopperDealership.profiles.length > 0 && (
-                              <>
-                                <button
-                                  onClick={() => collapseAllProfilesForDealership(dIdx)}
-                                  className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 px-1.5 py-0.5 rounded hover:bg-slate-100 dark:hover:bg-white/5 transition-colors flex items-center gap-0.5"
-                                  title="Collapse all profiles in this dealership"
-                                >
-                                  <ChevronRight size={10} /> All
-                                </button>
-                                <button
-                                  onClick={() => expandAllProfilesForDealership(dIdx)}
-                                  className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 px-1.5 py-0.5 rounded hover:bg-slate-100 dark:hover:bg-white/5 transition-colors flex items-center gap-0.5"
-                                  title="Expand all profiles in this dealership"
-                                >
-                                  <ChevronDown size={10} /> All
-                                </button>
-                                {isEditing && <span className="text-slate-200 dark:text-slate-700 text-xs">|</span>}
-                              </>
-                            )}
+                            {shopperDealership.profiles.length > 0 && (() => {
+                              const dealerProfileIds = shopperDealership.profiles.map(p => p.id);
+                              const allThisDealerProfilesCollapsed = dealerProfileIds.length > 0 && dealerProfileIds.every(id => collapsedProfiles.has(id));
+                              return (
+                                <>
+                                  <button
+                                    onClick={() => allThisDealerProfilesCollapsed ? expandAllProfilesForDealership(dIdx) : collapseAllProfilesForDealership(dIdx)}
+                                    className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 px-2 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 transition-colors flex items-center gap-1 border border-slate-200/60 dark:border-[#38383A]"
+                                  >
+                                    {allThisDealerProfilesCollapsed ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
+                                    {allThisDealerProfilesCollapsed ? 'Expand' : 'Collapse'} All
+                                  </button>
+                                  {isEditing && <span className="text-slate-200 dark:text-slate-700 text-xs">|</span>}
+                                </>
+                              );
+                            })()}
                             {isEditing && (
                               <button
                                 onClick={() => addProfile(dIdx)}
