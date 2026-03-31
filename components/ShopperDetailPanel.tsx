@@ -494,28 +494,14 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                </div>
                <div className="flex-1 min-w-0">
                  {isEditing ? (
-                   <>
-                     <Input
-                       value={formData.first_name || ''}
-                       onChange={(v) => updateField('first_name', v)}
-                       placeholder="Ticket title..."
-                       className="font-bold text-lg"
-                     />
-                     <textarea
-                       value={formData.qa_details || ''}
-                       onChange={(e) => updateField('qa_details', e.target.value)}
-                       placeholder="Overall description / context for this ticket..."
-                       rows={2}
-                       className="w-full mt-1.5 px-3 py-1.5 text-sm border border-slate-200/60 dark:border-[#38383A] rounded-xl focus:ring-1 focus:ring-blue-500 outline-none bg-slate-100/50 dark:bg-[#2C2C2E] text-slate-900 dark:text-slate-100 resize-none placeholder:text-slate-400 dark:placeholder:text-slate-600"
-                     />
-                   </>
+                   <Input
+                     value={formData.first_name || ''}
+                     onChange={(v) => updateField('first_name', v)}
+                     placeholder="Ticket title..."
+                     className="font-bold text-lg"
+                   />
                  ) : (
-                   <>
-                     <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">{formData.first_name || '(Untitled)'}</h2>
-                     {formData.qa_details && (
-                       <p className="mt-1 text-sm text-slate-500 dark:text-slate-400 leading-snug">{formData.qa_details}</p>
-                     )}
-                   </>
+                   <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">{formData.first_name || '(Untitled)'}</h2>
                  )}
                </div>
              </div>
@@ -572,6 +558,24 @@ const ShopperDetailPanel: React.FC<ShopperDetailPanelProps> = ({
                   )}
                </div>
             </div>
+
+            {/* Description Section */}
+            {(isEditing || formData.qa_details) && (
+              <div className="bg-slate-50/50 dark:bg-white/[0.02] p-3 rounded-2xl border border-slate-100/60 dark:border-[#38383A]">
+                <Label>Description</Label>
+                {isEditing ? (
+                  <textarea
+                    value={formData.qa_details || ''}
+                    onChange={(e) => updateField('qa_details', e.target.value)}
+                    placeholder="Overall description / context for this ticket..."
+                    rows={3}
+                    className="w-full mt-1 px-3 py-1.5 text-sm border border-slate-200/60 dark:border-[#38383A] rounded-xl focus:ring-1 focus:ring-blue-500 outline-none bg-slate-100/50 dark:bg-[#2C2C2E] text-slate-900 dark:text-slate-100 resize-none placeholder:text-slate-400 dark:placeholder:text-slate-600"
+                  />
+                ) : (
+                  <p className="mt-1 text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">{formData.qa_details}</p>
+                )}
+              </div>
+            )}
 
             {/* Dealerships Section */}
             <div className="mt-4">
