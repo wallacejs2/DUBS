@@ -17,7 +17,7 @@ interface DashboardPageProps {
   onNavigateToDealerships?: (filters: Partial<DealershipFilterState>) => void;
 }
 
-type TimePreset = 'this_month' | 'last_month' | 'ytd' | 'last_12' | 'custom';
+type TimePreset = 'all' | 'this_month' | 'last_month' | 'ytd' | 'last_12' | 'custom';
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -52,6 +52,10 @@ const getDateRange = (preset: TimePreset, custom: { start: string; end: string }
   const m = now.getMonth();
 
   switch (preset) {
+    case 'all': {
+      const mk = `${y}-${String(m + 1).padStart(2, '0')}`;
+      return { start: '', end: '', primaryMonthKey: mk };
+    }
     case 'this_month': {
       const mk = `${y}-${String(m + 1).padStart(2, '0')}`;
       return { start: fmtDate(new Date(y, m, 1)), end: fmtDate(new Date(y, m + 1, 0)), primaryMonthKey: mk };
@@ -420,6 +424,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
   const isExcluded = (statuses: DealershipStatus[]) => statuses.every(s => excludedStatuses.includes(s));
 
   const presets: Array<{ key: TimePreset; label: string }> = [
+    { key: 'all', label: 'All' },
     { key: 'this_month', label: 'This Month' },
     { key: 'last_month', label: 'Last Month' },
     { key: 'ytd', label: 'YTD' },
