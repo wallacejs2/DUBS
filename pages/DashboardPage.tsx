@@ -287,11 +287,11 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
       }
       let onboarding = 0, goLive = 0, termed = 0;
       for (const d of dealerships) {
-        const onbTs = getTimestamp(d.onboarding_date);
+        const onbTs = d.onboarding_date ? getTimestamp(`${d.onboarding_date}T00:00:00`) : null;
         if (onbTs !== null && (rStartTs === null || onbTs >= rStartTs) && (rEndTs === null || onbTs <= rEndTs)) onboarding++;
-        const glTs = getTimestamp(d.go_live_date);
+        const glTs = d.go_live_date ? getTimestamp(`${d.go_live_date}T00:00:00`) : null;
         if (glTs !== null && (rStartTs === null || glTs >= rStartTs) && (rEndTs === null || glTs <= rEndTs)) goLive++;
-        const termTs = getTimestamp(d.term_date);
+        const termTs = d.term_date ? getTimestamp(`${d.term_date}T00:00:00`) : null;
         if (termTs !== null && (rStartTs === null || termTs >= rStartTs) && (rEndTs === null || termTs <= rEndTs)) termed++;
       }
       return { received: receivedSet.size, onboarding, goLive, termed };
