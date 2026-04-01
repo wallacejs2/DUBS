@@ -17,7 +17,7 @@ interface DashboardPageProps {
   onNavigateToDealerships?: (filters: Partial<DealershipFilterState>) => void;
 }
 
-type TimePreset = 'this_month' | 'last_month' | 'ytd' | 'last_12' | 'custom';
+type TimePreset = 'all' | 'this_month' | 'last_month' | 'ytd' | 'last_12' | 'custom';
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -52,6 +52,9 @@ const getDateRange = (preset: TimePreset, custom: { start: string; end: string }
   const m = now.getMonth();
 
   switch (preset) {
+    case 'all': {
+      return { start: '', end: '', primaryMonthKey: '' };
+    }
     case 'this_month': {
       const mk = `${y}-${String(m + 1).padStart(2, '0')}`;
       return { start: fmtDate(new Date(y, m, 1)), end: fmtDate(new Date(y, m + 1, 0)), primaryMonthKey: mk };
@@ -164,10 +167,6 @@ const PIPELINE_COLORS = {
 const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }) => {
   const [activePreset, setActivePreset] = useState<TimePreset>('this_month');
   const [customRange, setCustomRange] = useState({ start: '', end: '' });
-  const [reportingMonth, setReportingMonth] = useState(() => {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-  });
   const [excludedStatuses, setExcludedStatuses] = useState<DealershipStatus[]>([DealershipStatus.CANCELLED]);
   const [selectedChartMonth, setSelectedChartMonth] = useState<string | null>(null);
   const [pipelineTableOpen, setPipelineTableOpen] = useState(false);
@@ -182,8 +181,6 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
 
   const handlePresetClick = (preset: TimePreset) => {
     setActivePreset(preset);
-    const range = getDateRange(preset, customRange);
-    setReportingMonth(range.primaryMonthKey);
   };
 
   // ─── Metrics Computation ─────────────────────────────────────────────────────
@@ -278,35 +275,74 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
     );
     const avgDaysToGoLive = avgDaysAcc.count > 0 ? Math.round(avgDaysAcc.total / avgDaysAcc.count) : null;
 
-    // Lifecycle for reporting month (and previous month for delta)
-    const prevMonth = (() => {
-      const [y, m] = reportingMonth.split('-').map(Number);
-      const d = new Date(y, m - 2, 1);
-      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-    })();
-
-    const computeLifecycle = (month: string) => {
+    // Lifecycle for active date range (and previous equivalent period for delta)
+    const computeLifecycleByRange = (rStartTs: number | null, rEndTs: number | null) => {
       const receivedSet = new Set<string>();
       for (const o of orders) {
-        if (getMonthKey(o.received_date) === month) receivedSet.add(o.dealership_id);
+        const ts = getTimestamp(o.received_date);
+        if (ts === null) continue;
+        if (rStartTs !== null && ts < rStartTs) continue;
+        if (rEndTs !== null && ts > rEndTs) continue;
+        receivedSet.add(o.dealership_id);
       }
-      const { onboarding, goLive, termed } = dealerships.reduce(
-        (acc, d) => {
-          const hasOnb = getMonthKey(d.onboarding_date) === month;
-          const hasGoLive = getMonthKey(d.go_live_date) === month;
-          const hasTerm = getMonthKey(d.term_date) === month;
-          if (hasTerm) acc.termed += 1;
-          else if (hasGoLive) acc.goLive += 1;
-          else if (hasOnb) acc.onboarding += 1;
-          return acc;
-        },
-        { onboarding: 0, goLive: 0, termed: 0 }
-      );
+      let onboarding = 0, goLive = 0, termed = 0;
+      for (const d of dealerships) {
+        const onbTs = getTimestamp(d.onboarding_date);
+        if (onbTs !== null && (rStartTs === null || onbTs >= rStartTs) && (rEndTs === null || onbTs <= rEndTs)) onboarding++;
+        const glTs = getTimestamp(d.go_live_date);
+        if (glTs !== null && (rStartTs === null || glTs >= rStartTs) && (rEndTs === null || glTs <= rEndTs)) goLive++;
+        const termTs = getTimestamp(d.term_date);
+        if (termTs !== null && (rStartTs === null || termTs >= rStartTs) && (rEndTs === null || termTs <= rEndTs)) termed++;
+      }
       return { received: receivedSet.size, onboarding, goLive, termed };
     };
 
-    const lifecycle = computeLifecycle(reportingMonth);
-    const prevLifecycle = computeLifecycle(prevMonth);
+    const lifecycle = computeLifecycleByRange(startTs, endTs);
+
+    // Compute previous period for delta badges
+    const prevRangeTs = (() => {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = now.getMonth();
+      switch (activePreset) {
+        case 'this_month': {
+          const py = m === 0 ? y - 1 : y;
+          const pm = m === 0 ? 11 : m - 1;
+          return {
+            start: getTimestamp(`${fmtDate(new Date(py, pm, 1))}T00:00:00`),
+            end: getTimestamp(`${fmtDate(new Date(py, pm + 1, 0))}T23:59:59.999`),
+          };
+        }
+        case 'last_month': {
+          const ly = m === 0 ? y - 1 : y;
+          const lm = m === 0 ? 11 : m - 1;
+          const py = lm === 0 ? ly - 1 : ly;
+          const pm = lm === 0 ? 11 : lm - 1;
+          return {
+            start: getTimestamp(`${fmtDate(new Date(py, pm, 1))}T00:00:00`),
+            end: getTimestamp(`${fmtDate(new Date(py, pm + 1, 0))}T23:59:59.999`),
+          };
+        }
+        case 'ytd': {
+          return {
+            start: getTimestamp(`${y - 1}-01-01T00:00:00`),
+            end: getTimestamp(`${fmtDate(new Date(y - 1, m, now.getDate()))}T23:59:59.999`),
+          };
+        }
+        case 'last_12': {
+          return {
+            start: getTimestamp(`${fmtDate(new Date(y, m - 23, 1))}T00:00:00`),
+            end: getTimestamp(`${fmtDate(new Date(y, m - 12, 0))}T23:59:59.999`),
+          };
+        }
+        default: return null;
+      }
+    })();
+
+    const prevLifecycle = prevRangeTs
+      ? computeLifecycleByRange(prevRangeTs.start, prevRangeTs.end)
+      : { received: 0, onboarding: 0, goLive: 0, termed: 0 };
+
     const netLiveChange = lifecycle.goLive - lifecycle.termed;
 
     // Pipeline chart data (18 months, ordered oldest to newest)
@@ -403,7 +439,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
       groupStats,
       teamStats,
     };
-  }, [dealerships, orders, groups, members, excludedStatuses, reportingMonth, dateRange]);
+  }, [dealerships, orders, groups, members, excludedStatuses, activePreset, dateRange]);
 
   const toggleStatus = (statuses: DealershipStatus[]) => {
     setExcludedStatuses(prev => {
@@ -420,6 +456,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
   const isExcluded = (statuses: DealershipStatus[]) => statuses.every(s => excludedStatuses.includes(s));
 
   const presets: Array<{ key: TimePreset; label: string }> = [
+    { key: 'all', label: 'All' },
     { key: 'this_month', label: 'This Month' },
     { key: 'last_month', label: 'Last Month' },
     { key: 'ytd', label: 'YTD' },
@@ -434,7 +471,23 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
     { label: 'Cancelled', statuses: [DealershipStatus.CANCELLED], color: 'text-red-600 dark:text-red-400', dotColor: '#ef4444' },
   ];
 
-  const monthLabel = new Date(reportingMonth + '-15').toLocaleString('default', { month: 'long', year: 'numeric' });
+  const periodLabel = useMemo(() => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = now.getMonth();
+    switch (activePreset) {
+      case 'all': return 'All Time';
+      case 'this_month': return new Date(y, m, 1).toLocaleString('default', { month: 'long', year: 'numeric' });
+      case 'last_month': {
+        const pm = m === 0 ? 11 : m - 1;
+        const py = m === 0 ? y - 1 : y;
+        return new Date(py, pm, 1).toLocaleString('default', { month: 'long', year: 'numeric' });
+      }
+      case 'ytd': return `YTD ${y}`;
+      case 'last_12': return 'Last 12 Months';
+      case 'custom': return customRange.start && customRange.end ? `${customRange.start} – ${customRange.end}` : 'Custom Range';
+    }
+  }, [activePreset, customRange]);
 
   return (
     <div className="animate-in fade-in duration-700 relative">
@@ -490,16 +543,6 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
           )}
         </div>
 
-        {/* Reporting month selector */}
-        <div className="flex items-center gap-2 bg-white/80 dark:bg-[#2C2C2E] backdrop-blur-sm p-1.5 rounded-xl border border-slate-200/60 dark:border-[#38383A] ml-auto">
-          <span className="text-xs font-semibold text-slate-400 ml-1">Lifecycle Month</span>
-          <input
-            type="month"
-            value={reportingMonth}
-            onChange={e => setReportingMonth(e.target.value)}
-            className="text-xs bg-transparent border-none outline-none text-slate-600 dark:text-slate-300"
-          />
-        </div>
       </div>
 
       {/* ── Section 1: Portfolio Health ─────────────────────────────────────── */}
@@ -509,34 +552,38 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
           <KpiCard icon={<Building2 size={15} className="text-slate-500" />} label="Total Dealerships" value={metrics.totalDealershipsCount} iconBg="bg-slate-100 dark:bg-slate-700" clickable onClick={() => onNavigateToDealerships?.({})} />
           <KpiCard icon={<DollarSign size={15} className="text-emerald-500" />} label="Revenue Booked" value={formatCurrency(metrics.totalRevenue, true)} iconBg="bg-emerald-50 dark:bg-emerald-900/30" clickable onClick={() => onNavigateToDealerships?.({})} />
           <KpiCard icon={<Clock size={15} className="text-violet-500" />} label="Avg Days to Go-Live" value={metrics.avgDaysToGoLive !== null ? `${metrics.avgDaysToGoLive}d` : '—'} iconBg="bg-violet-50 dark:bg-violet-900/30" />
-          <KpiCard icon={<TrendingUp size={15} className="text-blue-500" />} label={`Net Live (${monthLabel})`} value={metrics.netLiveChange >= 0 ? `+${metrics.netLiveChange}` : `${metrics.netLiveChange}`} iconBg="bg-blue-50 dark:bg-blue-900/30" />
+          <KpiCard icon={<TrendingUp size={15} className="text-blue-500" />} label={`Net Live (${periodLabel})`} value={metrics.netLiveChange >= 0 ? `+${metrics.netLiveChange}` : `${metrics.netLiveChange}`} iconBg="bg-blue-50 dark:bg-blue-900/30" />
           <KpiCard icon={<CheckCircle size={15} className="text-emerald-500" />} label="Live / Legacy" value={(metrics.statusCounts[DealershipStatus.LIVE] || 0) + (metrics.statusCounts[DealershipStatus.LEGACY] || 0)} iconBg="bg-emerald-50 dark:bg-emerald-900/30" clickable onClick={() => onNavigateToDealerships?.({ status: DealershipStatus.LIVE })} />
         </div>
 
         {/* Lifecycle flow cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-          {[
-            { label: 'Received', value: metrics.lifecycle.received, prev: metrics.prevLifecycle.received, color: 'text-cyan-600 dark:text-cyan-400', iconBg: 'bg-cyan-50 dark:bg-cyan-900/30', icon: <Calendar size={15} className="text-cyan-500" />, filter: { received_month: reportingMonth } },
-            { label: 'Onboarding', value: metrics.lifecycle.onboarding, prev: metrics.prevLifecycle.onboarding, color: 'text-blue-600 dark:text-blue-400', iconBg: 'bg-blue-50 dark:bg-blue-900/30', icon: <UserPlus size={15} className="text-blue-500" />, filter: { onboarding_month: reportingMonth } },
-            { label: 'Go-Live', value: metrics.lifecycle.goLive, prev: metrics.prevLifecycle.goLive, color: 'text-emerald-600 dark:text-emerald-400', iconBg: 'bg-emerald-50 dark:bg-emerald-900/30', icon: <Rocket size={15} className="text-emerald-500" />, filter: { go_live_month: reportingMonth } },
-            { label: 'Termed', value: metrics.lifecycle.termed, prev: metrics.prevLifecycle.termed, color: 'text-red-600 dark:text-red-400', iconBg: 'bg-red-50 dark:bg-red-900/30', icon: <X size={15} className="text-red-500" />, filter: { term_month: reportingMonth } },
-          ].map(item => (
-            <div
-              key={item.label}
-              className="p-3 rounded-2xl bg-white/80 dark:bg-[#2C2C2E] backdrop-blur-sm border border-slate-200/60 dark:border-[#38383A] cursor-pointer hover:ring-1 hover:ring-blue-500/30 transition-all"
-              onClick={() => onNavigateToDealerships?.({ ...item.filter, status: '', received_month: '', onboarding_month: '', go_live_month: '', term_month: '', ...item.filter })}
-            >
-              <div className="flex items-center gap-2 mb-2">
-                <div className={`p-1.5 rounded-lg ${item.iconBg}`}>{item.icon}</div>
-                <span className="text-xs font-semibold text-slate-400 dark:text-slate-500">{item.label}</span>
+          {(() => {
+            // For single-month presets, pass the month key filter so click-through works
+            const mk = (activePreset === 'this_month' || activePreset === 'last_month') ? dateRange.primaryMonthKey : '';
+            return [
+              { label: 'Received', value: metrics.lifecycle.received, prev: metrics.prevLifecycle.received, color: 'text-cyan-600 dark:text-cyan-400', iconBg: 'bg-cyan-50 dark:bg-cyan-900/30', icon: <Calendar size={15} className="text-cyan-500" />, filter: mk ? { received_month: mk } : {} },
+              { label: 'Onboarding', value: metrics.lifecycle.onboarding, prev: metrics.prevLifecycle.onboarding, color: 'text-blue-600 dark:text-blue-400', iconBg: 'bg-blue-50 dark:bg-blue-900/30', icon: <UserPlus size={15} className="text-blue-500" />, filter: mk ? { onboarding_month: mk } : {} },
+              { label: 'Go-Live', value: metrics.lifecycle.goLive, prev: metrics.prevLifecycle.goLive, color: 'text-emerald-600 dark:text-emerald-400', iconBg: 'bg-emerald-50 dark:bg-emerald-900/30', icon: <Rocket size={15} className="text-emerald-500" />, filter: mk ? { go_live_month: mk } : {} },
+              { label: 'Termed', value: metrics.lifecycle.termed, prev: metrics.prevLifecycle.termed, color: 'text-red-600 dark:text-red-400', iconBg: 'bg-red-50 dark:bg-red-900/30', icon: <X size={15} className="text-red-500" />, filter: mk ? { term_month: mk } : {} },
+            ].map(item => (
+              <div
+                key={item.label}
+                className="p-3 rounded-2xl bg-white/80 dark:bg-[#2C2C2E] backdrop-blur-sm border border-slate-200/60 dark:border-[#38383A] cursor-pointer hover:ring-1 hover:ring-blue-500/30 transition-all"
+                onClick={() => onNavigateToDealerships?.({ status: '', received_month: '', onboarding_month: '', go_live_month: '', term_month: '', ...item.filter })}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <div className={`p-1.5 rounded-lg ${item.iconBg}`}>{item.icon}</div>
+                  <span className="text-xs font-semibold text-slate-400 dark:text-slate-500">{item.label}</span>
+                </div>
+                <div className={`text-2xl font-bold ${item.color}`}>
+                  {item.value}
+                  <DeltaBadge current={item.value} prev={item.prev} />
+                </div>
+                <div className="text-xs text-slate-400 dark:text-slate-600 mt-0.5">{periodLabel}</div>
               </div>
-              <div className={`text-2xl font-bold ${item.color}`}>
-                {item.value}
-                <DeltaBadge current={item.value} prev={item.prev} />
-              </div>
-              <div className="text-xs text-slate-400 dark:text-slate-600 mt-0.5">{monthLabel}</div>
-            </div>
-          ))}
+            ));
+          })()}
         </div>
 
         {/* Status exclusion toggles */}
@@ -815,18 +862,13 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
                 ))}
               </div>
               {metrics.pipelineTableData.map(row => {
-                const isSelected = row.month === reportingMonth;
                 return (
                   <div
                     key={row.month}
-                    className={`grid grid-cols-7 text-xs border-b border-slate-200/60 dark:border-[#38383A] last:border-0 cursor-pointer transition-colors ${
-                      isSelected ? 'bg-blue-50 dark:bg-blue-900/20 ring-1 ring-inset ring-blue-200 dark:ring-blue-700' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
-                    }`}
-                    onClick={() => setReportingMonth(row.month)}
+                    className="grid grid-cols-7 text-xs border-b border-slate-200/60 dark:border-[#38383A] last:border-0 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
                   >
-                    <div className={`px-3 py-2 font-semibold ${isSelected ? 'text-blue-700 dark:text-blue-300' : 'text-slate-700 dark:text-slate-200'}`}>
+                    <div className="px-3 py-2 font-semibold text-slate-700 dark:text-slate-200">
                       {row.label}
-                      {isSelected && <span className="ml-1 text-blue-500 text-[10px]">•</span>}
                     </div>
                     <div
                       className="text-center py-2 font-bold text-cyan-700 dark:text-cyan-300 hover:underline"
