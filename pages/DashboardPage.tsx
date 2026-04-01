@@ -36,7 +36,8 @@ const getTimestamp = (value?: string): number | null => {
   return Number.isNaN(parsed.getTime()) ? null : parsed.getTime();
 };
 
-const fmtDate = (d: Date) => d.toISOString().slice(0, 10);
+const fmtDate = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
 const formatCurrency = (val: number, compact = false): string => {
   if (compact && val >= 1000) {
@@ -203,13 +204,10 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
       return true;
     });
 
-    // All active orders (for total revenue snapshot)
-    const allActiveOrders = orders.filter(o => activeDealershipIds.has(o.dealership_id));
-
     const sumRevenue = (orderList: typeof orders) =>
       orderList.reduce((sum, o) => sum + (o.products?.reduce((ps, p) => ps + (Number(p.amount) || 0), 0) || 0), 0);
 
-    const totalRevenue = sumRevenue(allActiveOrders);
+    const totalRevenue = sumRevenue(rangeOrders);
 
     // Status counts
     const statusCounts = dealerships.reduce((acc, d) => {
@@ -227,7 +225,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
     ];
     const revenueByStatus = statusGroupDefs.map(sg => {
       const ids = new Set(dealerships.filter(d => sg.statuses.includes(d.status)).map(d => d.id));
-      const rev = sumRevenue(orders.filter(o => ids.has(o.dealership_id)));
+      const rev = sumRevenue(rangeOrders.filter(o => ids.has(o.dealership_id)));
       const count = sg.statuses.reduce((sum, s) => sum + (statusCounts[s] || 0), 0);
       return { ...sg, revenue: rev, count };
     });
@@ -348,7 +346,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
       .map(g => {
         const gDealerships = dealerships.filter(d => d.enterprise_group_id === g.id);
         const gIds = new Set(gDealerships.map(d => d.id));
-        const gRevenue = sumRevenue(orders.filter(o => gIds.has(o.dealership_id)));
+        const gRevenue = sumRevenue(rangeOrders.filter(o => gIds.has(o.dealership_id)));
         const statusBreakdown: Record<string, number> = {};
         for (const d of gDealerships) {
           statusBreakdown[d.status] = (statusBreakdown[d.status] || 0) + 1;
