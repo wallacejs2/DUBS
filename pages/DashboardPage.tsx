@@ -282,23 +282,25 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
     );
     const avgDaysToGoLive = avgDaysAcc.count > 0 ? Math.round(avgDaysAcc.total / avgDaysAcc.count) : null;
 
-    // Lifecycle for reporting month (and previous month for delta)
-    const prevMonth = (() => {
-      const [y, m] = reportingMonth.split('-').map(Number);
-      const d = new Date(y, m - 2, 1);
-      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-    })();
+    // Lifecycle for the active date range (and equivalent previous period for delta)
+    const inRange = (dateValue: string | undefined, sTs: number | null, eTs: number | null): boolean => {
+      const ts = getTimestamp(dateValue);
+      if (ts === null) return false;
+      if (sTs !== null && ts < sTs) return false;
+      if (eTs !== null && ts > eTs) return false;
+      return true;
+    };
 
-    const computeLifecycle = (month: string) => {
+    const computeLifecycleRange = (sTs: number | null, eTs: number | null) => {
       const receivedSet = new Set<string>();
       for (const o of orders) {
-        if (getMonthKey(o.received_date) === month) receivedSet.add(o.dealership_id);
+        if (inRange(o.received_date, sTs, eTs)) receivedSet.add(o.dealership_id);
       }
       const { onboarding, goLive, termed } = dealerships.reduce(
         (acc, d) => {
-          const hasOnb = getMonthKey(d.onboarding_date) === month;
-          const hasGoLive = getMonthKey(d.go_live_date) === month;
-          const hasTerm = getMonthKey(d.term_date) === month;
+          const hasTerm = inRange(d.term_date, sTs, eTs);
+          const hasGoLive = inRange(d.go_live_date, sTs, eTs);
+          const hasOnb = inRange(d.onboarding_date, sTs, eTs);
           if (hasTerm) acc.termed += 1;
           else if (hasGoLive) acc.goLive += 1;
           else if (hasOnb) acc.onboarding += 1;
@@ -309,8 +311,21 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
       return { received: receivedSet.size, onboarding, goLive, termed };
     };
 
-    const lifecycle = computeLifecycle(reportingMonth);
-    const prevLifecycle = computeLifecycle(prevMonth);
+    // Compute previous period of equal length for delta comparison
+    const prevRange = (() => {
+      if (!dateRange.start || !dateRange.end) return { start: '', end: '' };
+      const s = new Date(dateRange.start + 'T00:00:00');
+      const e = new Date(dateRange.end + 'T23:59:59.999');
+      const durationMs = e.getTime() - s.getTime();
+      const prevEnd = new Date(s.getTime() - 1);
+      const prevStart = new Date(prevEnd.getTime() - durationMs);
+      return { start: fmtDate(prevStart), end: fmtDate(prevEnd) };
+    })();
+    const prevStartTs = prevRange.start ? getTimestamp(`${prevRange.start}T00:00:00`) : null;
+    const prevEndTs = prevRange.end ? getTimestamp(`${prevRange.end}T23:59:59.999`) : null;
+
+    const lifecycle = computeLifecycleRange(startTs, endTs);
+    const prevLifecycle = computeLifecycleRange(prevStartTs, prevEndTs);
     const netLiveChange = lifecycle.goLive - lifecycle.termed;
 
     // Pipeline chart data (18 months, ordered oldest to newest)
@@ -441,6 +456,14 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
 
   const monthLabel = new Date(reportingMonth + '-15').toLocaleString('default', { month: 'long', year: 'numeric' });
 
+  const rangeLabel = (() => {
+    const preset = presets.find(p => p.key === activePreset);
+    if (activePreset === 'custom' && dateRange.start && dateRange.end) {
+      return `${dateRange.start} – ${dateRange.end}`;
+    }
+    return preset?.label ?? monthLabel;
+  })();
+
   return (
     <div className="animate-in fade-in duration-700 relative">
       {/* ── Time Filter Bar ──────────────────────────────────────────────────── */}
@@ -514,7 +537,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
           <KpiCard icon={<Building2 size={15} className="text-slate-500" />} label="Total Dealerships" value={metrics.totalDealershipsCount} iconBg="bg-slate-100 dark:bg-slate-700" clickable onClick={() => onNavigateToDealerships?.({})} />
           <KpiCard icon={<DollarSign size={15} className="text-emerald-500" />} label="Revenue Booked" value={formatCurrency(metrics.totalRevenue, true)} iconBg="bg-emerald-50 dark:bg-emerald-900/30" clickable onClick={() => onNavigateToDealerships?.({})} />
           <KpiCard icon={<Clock size={15} className="text-violet-500" />} label="Avg Days to Go-Live" value={metrics.avgDaysToGoLive !== null ? `${metrics.avgDaysToGoLive}d` : '—'} iconBg="bg-violet-50 dark:bg-violet-900/30" />
-          <KpiCard icon={<TrendingUp size={15} className="text-blue-500" />} label={`Net Live (${monthLabel})`} value={metrics.netLiveChange >= 0 ? `+${metrics.netLiveChange}` : `${metrics.netLiveChange}`} iconBg="bg-blue-50 dark:bg-blue-900/30" />
+          <KpiCard icon={<TrendingUp size={15} className="text-blue-500" />} label={`Net Live (${rangeLabel})`} value={metrics.netLiveChange >= 0 ? `+${metrics.netLiveChange}` : `${metrics.netLiveChange}`} iconBg="bg-blue-50 dark:bg-blue-900/30" />
           <KpiCard icon={<CheckCircle size={15} className="text-emerald-500" />} label="Live / Legacy" value={(metrics.statusCounts[DealershipStatus.LIVE] || 0) + (metrics.statusCounts[DealershipStatus.LEGACY] || 0)} iconBg="bg-emerald-50 dark:bg-emerald-900/30" clickable onClick={() => onNavigateToDealerships?.({ status: DealershipStatus.LIVE })} />
         </div>
 
@@ -539,7 +562,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
                 {item.value}
                 <DeltaBadge current={item.value} prev={item.prev} />
               </div>
-              <div className="text-xs text-slate-400 dark:text-slate-600 mt-0.5">{monthLabel}</div>
+              <div className="text-xs text-slate-400 dark:text-slate-600 mt-0.5">{rangeLabel}</div>
             </div>
           ))}
         </div>
