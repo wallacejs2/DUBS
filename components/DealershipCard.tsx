@@ -177,41 +177,41 @@ const DealershipCard: React.FC<DealershipCardProps> = ({
           {dealership.sms_activated && ' · SMS'}
         </p>
 
-        {/* Row 4: Metadata */}
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-200/40 dark:border-[#38383A]/50">
-          <div className="flex items-center gap-1.5" title="Group">
+        {/* Row 4: Metadata — single-line nowrap, Onb/Live pushed to the right */}
+        <div className="flex items-center gap-x-5 text-xs text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-200/40 dark:border-[#38383A]/50 whitespace-nowrap overflow-hidden">
+          <div className="flex items-center gap-1.5 flex-shrink-0" title="Group">
             <span className="font-medium text-slate-400 dark:text-slate-500">Grp:</span>
             <span className="font-mono">{groupName || 'Single'}</span>
           </div>
 
-          <div className="flex items-center gap-1.5" title="ERA System ID">
+          <div className="flex items-center gap-1.5 flex-shrink-0" title="ERA System ID">
             <span className="font-medium text-slate-400 dark:text-slate-500">ERA:</span>
             <span className="font-mono">{dealership.era_system_id || '--'}</span>
           </div>
 
-          <div className="flex items-center gap-1.5" title="PP System ID">
+          <div className="flex items-center gap-1.5 flex-shrink-0" title="PP System ID">
             <span className="font-medium text-slate-400 dark:text-slate-500">PP:</span>
             <span className="font-mono">{dealership.pp_sys_id || '--'}</span>
           </div>
 
-          <div className="flex items-center gap-1.5" title="Store Number">
+          <div className="flex items-center gap-1.5 flex-shrink-0" title="Store Number">
             <span className="font-medium text-slate-400 dark:text-slate-500">St:</span>
             <span className="font-mono">{dealership.store_number || '--'}</span>
           </div>
 
-          <div className="flex items-center gap-1.5" title="Branch Number">
+          <div className="flex items-center gap-1.5 flex-shrink-0" title="Branch Number">
             <span className="font-medium text-slate-400 dark:text-slate-500">Br:</span>
             <span className="font-mono">{dealership.branch_number || '--'}</span>
           </div>
 
-          <div className="flex items-center gap-1.5 ml-auto" title="Onboarding Date">
+          <div className="flex items-center gap-1.5 ml-auto flex-shrink-0" title="Onboarding Date">
             <span className="font-medium text-slate-400 dark:text-slate-500">Onb:</span>
-            <span>{formatDate(dealership.onboarding_date)}</span>
+            <span className="font-mono">{formatDate(dealership.onboarding_date)}</span>
           </div>
 
-          <div className="flex items-center gap-1.5" title="Go Live Date">
+          <div className="flex items-center gap-1.5 flex-shrink-0" title="Go Live Date">
             <span className="font-medium text-slate-400 dark:text-slate-500">Live:</span>
-            <span>{formatDate(dealership.go_live_date)}</span>
+            <span className="font-mono">{formatDate(dealership.go_live_date)}</span>
           </div>
         </div>
       </div>

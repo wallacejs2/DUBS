@@ -1189,6 +1189,16 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                ))}
             </div>
 
+            <hr className="border-slate-100/60 dark:border-[#38383A]" />
+
+            {/* Notes & Activity */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Notes & Activity</h3>
+              <div className="text-sm text-slate-500 dark:text-slate-400 py-2">
+                No notes yet. Use the Notes tab in the main nav to add activity for this dealership.
+              </div>
+            </div>
+
           </div>
         </div>
       </div>

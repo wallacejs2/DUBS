@@ -85,7 +85,7 @@ const getDateRange = (preset: TimePreset, custom: { start: string; end: string }
 const DeltaBadge: React.FC<{ current: number; prev: number }> = ({ current, prev }) => {
   const delta = current - prev;
   if (delta === 0) return null;
-  return <span className={`text-xs font-bold ml-1.5 ${delta > 0 ? 'text-emerald-500' : 'text-red-400'}`}>{delta > 0 ? '▲' : '▼'}{Math.abs(delta)}</span>;
+  return <span className={`text-[11px] font-bold ${delta > 0 ? 'text-emerald-500' : 'text-red-400'}`}>{delta > 0 ? '▲' : '▼'}{Math.abs(delta)}</span>;
 };
 
 interface KpiCardProps {
@@ -102,9 +102,9 @@ const KpiCard: React.FC<KpiCardProps> = ({ icon, label, value, sub, iconBg = 'bg
   <div className={`p-4 rounded-2xl bg-white/80 dark:bg-[#2C2C2E] backdrop-blur-sm border border-slate-200/60 dark:border-[#38383A] flex items-center gap-3 transition-all ${clickable ? 'cursor-pointer hover:ring-1 hover:ring-blue-500/40 hover:bg-white dark:hover:bg-[#3A3A3C]' : ''}`} onClick={onClick}>
     <div className={`p-2 rounded-xl flex-shrink-0 ${iconBg}`}>{icon}</div>
     <div className="min-w-0 flex-1">
-      <div className="text-xs font-semibold text-slate-400 dark:text-slate-500 truncate">{label}</div>
-      <div className="text-xl font-bold text-slate-800 dark:text-slate-100 leading-tight">
-        {value}
+      <div className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 truncate">{label}</div>
+      <div className="flex items-baseline gap-2 min-w-0">
+        <span className="text-[20px] font-bold text-slate-900 dark:text-slate-100 leading-tight truncate">{value}</span>
         {sub}
       </div>
     </div>
@@ -576,8 +576,8 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
                   <div className={`p-1.5 rounded-lg ${item.iconBg}`}>{item.icon}</div>
                   <span className="text-xs font-semibold text-slate-400 dark:text-slate-500">{item.label}</span>
                 </div>
-                <div className={`text-2xl font-bold ${item.color}`}>
-                  {item.value}
+                <div className={`flex items-baseline gap-2 text-2xl font-bold ${item.color}`}>
+                  <span>{item.value}</span>
                   <DeltaBadge current={item.value} prev={item.prev} />
                 </div>
                 <div className="text-xs text-slate-400 dark:text-slate-600 mt-0.5">{periodLabel}</div>
