@@ -1,13 +1,13 @@
 import React, { useMemo, useState } from 'react';
 import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
+  AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
 import {
   BarChart3, Building2, Calendar, Clock, DollarSign,
   Rocket, TrendingUp, UserPlus, X, ArrowRight
 } from 'lucide-react';
 import { useDealerships, useOrders } from '../hooks';
-import { DealershipFilterState, DealershipStatus, Order } from '../types';
+import { DealershipFilterState, DealershipStatus, Order, ProductCode } from '../types';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -133,6 +133,16 @@ const Section: React.FC<SectionProps> = ({ title, icon, accent, children, header
 // ─── Constants ─────────────────────────────────────────────────────────────────
 
 const GOLIVE_COLOR = '#10b981';
+
+const PRODUCT_COLORS: Record<ProductCode, string> = {
+  [ProductCode.P15391_SE]: '#3b82f6',
+  [ProductCode.P15392_MANAGED]: '#10b981',
+  [ProductCode.P15435_ADDL_WEB]: '#8b5cf6',
+  [ProductCode.P15436_MNGD_ADDL]: '#f59e0b',
+  [ProductCode.P15382_PREV_SE]: '#06b6d4',
+  [ProductCode.P15381_PREV_AA]: '#f97316',
+  [ProductCode.P15390_SMS]: '#ec4899',
+};
 
 const STATUS_TOGGLE_GROUPS = [
   {
@@ -287,6 +297,71 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
     }
     return data;
   }, [dealerships]);
+
+  // ─── Section 4 Chart Data: Cumulative Product Revenue ──────────────────────
+  const productRevenue = useMemo(() => {
+    const now = new Date();
+    const months: Array<{ month: string; label: string }> = [];
+    for (let i = 17; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const mk = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const label = d.toLocaleString('default', { month: 'short', year: '2-digit' });
+      months.push({ month: mk, label });
+    }
+
+    // Group per-month revenue per product (non-cumulative)
+    const perMonth = new Map<string, Map<ProductCode, number>>();
+    for (const o of orders) {
+      const mk = getMonthKey(o.received_date);
+      if (!mk) continue;
+      if (!o.products) continue;
+      const bucket = perMonth.get(mk) ?? new Map<ProductCode, number>();
+      for (const p of o.products) {
+        const amount = Number(p.amount) || 0;
+        bucket.set(p.product_code, (bucket.get(p.product_code) ?? 0) + amount);
+      }
+      perMonth.set(mk, bucket);
+    }
+
+    // Running totals in chronological order — include ALL earlier orders
+    // in the first visible bucket (so buckets reflect cumulative all-time
+    // revenue on or before the last day of that month).
+    const firstMk = months[0].month;
+    const priorTotals: Record<string, number> = {};
+    for (const code of Object.values(ProductCode)) priorTotals[code] = 0;
+    for (const [mk, bucket] of perMonth.entries()) {
+      if (mk < firstMk) {
+        for (const [code, v] of bucket.entries()) {
+          priorTotals[code] = (priorTotals[code] ?? 0) + v;
+        }
+      }
+    }
+
+    const running: Record<string, number> = { ...priorTotals };
+    const chartData = months.map(({ month, label }) => {
+      const bucket = perMonth.get(month);
+      if (bucket) {
+        for (const [code, v] of bucket.entries()) {
+          running[code] = (running[code] ?? 0) + v;
+        }
+      }
+      const row: Record<string, string | number> = { month, label };
+      for (const code of Object.values(ProductCode)) {
+        row[code] = running[code] ?? 0;
+      }
+      return row;
+    });
+
+    // Omit product codes with zero cumulative revenue across all 18 months
+    const activeCodes = Object.values(ProductCode).filter(code =>
+      chartData.some(row => {
+        const v = row[code];
+        return typeof v === 'number' && v > 0;
+      })
+    );
+
+    return { chartData, activeCodes };
+  }, [orders]);
 
   // ─── Section 1 Toggle Helpers ──────────────────────────────────────────────
   const toggleS1Group = (statuses: readonly DealershipStatus[]) => {
@@ -482,6 +557,43 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
               name="Go-Live"
             />
           </AreaChart>
+        </ResponsiveContainer>
+      </Section>
+
+      {/* ── Section 4: Product Revenue — Last 18 Months ────────────────────── */}
+      <Section
+        title="Product Revenue — Last 18 Months"
+        icon={<DollarSign size={15} />}
+        accent="bg-violet-500/5 dark:bg-violet-500/10 border-violet-200/40 dark:border-violet-500/20"
+      >
+        <ResponsiveContainer width="100%" height={260}>
+          <BarChart data={productRevenue.chartData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.1)" />
+            <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+            <YAxis
+              tickFormatter={v => formatCurrency(v, true)}
+              tick={{ fontSize: 10, fill: '#94a3b8' }}
+              axisLine={false}
+              tickLine={false}
+            />
+            <Tooltip
+              formatter={(v: number) => formatCurrency(v)}
+              contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '10px', fontSize: '12px' }}
+              labelStyle={{ color: '#e2e8f0', fontWeight: 600 }}
+              itemStyle={{ color: '#cbd5e1' }}
+              cursor={{ fill: 'rgba(148,163,184,0.05)' }}
+            />
+            <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: '11px', color: '#94a3b8' }} />
+            {productRevenue.activeCodes.map(code => (
+              <Bar
+                key={code}
+                dataKey={code}
+                name={code}
+                fill={PRODUCT_COLORS[code]}
+                radius={[4, 4, 0, 0]}
+              />
+            ))}
+          </BarChart>
         </ResponsiveContainer>
       </Section>
 
