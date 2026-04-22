@@ -26,11 +26,12 @@ Page padding: `p-4` mobile, `p-6` desktop.
 
 ## Border Radius
 
-| Element            | Tailwind      | Value |
-|-------------------|---------------|-------|
-| Buttons / Inputs  | `rounded-xl`  | 12px  |
-| Cards / Containers| `rounded-2xl` | 16px  |
-| Avatars / Pills   | `rounded-full`| 9999  |
+| Element                   | Tailwind         | Value |
+|--------------------------|------------------|-------|
+| Buttons / Inputs         | `rounded-xl`     | 12px  |
+| Cards / Containers       | `rounded-2xl`    | 16px  |
+| Avatars / Pills          | `rounded-full`   | 9999  |
+| Brand mark (sidebar tile)| `rounded-[10px]` | 10px  |
 
 ## Color Tokens
 
@@ -62,11 +63,19 @@ Page padding: `p-4` mobile, `p-6` desktop.
 
 ## Materials (Translucency)
 
-| Material | Classes                                    | Usage              |
-|----------|--------------------------------------------|--------------------|
-| Thick    | `backdrop-blur-xl backdrop-saturate-150`   | Header, sidebar    |
-| Regular  | `backdrop-blur-sm`                         | Cards, containers  |
-| Thin     | `backdrop-blur-[2px]`                      | Overlays           |
+| Material | Classes                                                          | Usage              |
+|----------|------------------------------------------------------------------|--------------------|
+| Thick    | `bg-white/90 dark:bg-[#1C1C1E]/95 backdrop-blur-xl backdrop-saturate-150` | Header, sidebar    |
+| Regular  | `bg-white/80 dark:bg-[#2C2C2E] backdrop-blur-sm`                 | Cards, containers  |
+| Thin     | `bg-white/95 backdrop-blur-[2px]`                                | Overlays, popovers |
+
+## Card Hover
+
+A standard card's default surface is Regular material. On hover, swap the surface tint and shift the border to the accent family — no translate, scale, or shadow change.
+
+```
+hover:bg-slate-50/80 hover:border-blue-200
+```
 
 ## Button Variants
 

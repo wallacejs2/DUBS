@@ -163,9 +163,9 @@ const App: React.FC = () => {
 
       {/* Main Content Area */}
       <main className="flex flex-col min-h-screen ml-[240px]">
-        {/* iOS-style translucent header */}
-        <header className="h-12 bg-white/80 dark:bg-[#1C1C1E]/80 backdrop-blur-xl backdrop-saturate-150 border-b border-slate-200/60 dark:border-[#38383A] flex items-center justify-between px-6 sticky top-0 z-30 transition-colors">
-          <h2 className="text-base font-semibold text-slate-800 dark:text-slate-200">
+        {/* iOS-style translucent header — Thick material */}
+        <header className="h-12 bg-white/90 dark:bg-[#1C1C1E]/95 backdrop-blur-xl backdrop-saturate-150 border-b border-slate-200/60 dark:border-[#38383A] flex items-center justify-between px-6 sticky top-0 z-30 transition-colors">
+          <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100 truncate">
             {navItems.find(i => i.id === activePage)?.label}
           </h2>
         </header>
