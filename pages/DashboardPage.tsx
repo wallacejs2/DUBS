@@ -1,15 +1,13 @@
 import React, { useMemo, useState } from 'react';
 import {
-  AreaChart, Area, BarChart, Bar, LineChart, Line,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
 import {
-  BarChart3, Building2, Calendar, ChevronDown, ChevronUp, Clock, DollarSign,
-  Rocket, TrendingUp, UserPlus, X, Users, Briefcase, ArrowRight, CheckCircle
+  BarChart3, Building2, Calendar, Clock, DollarSign,
+  Rocket, TrendingUp, UserPlus, X, ArrowRight
 } from 'lucide-react';
-import { useDealerships, useOrders, useEnterpriseGroups, useTeamMembers } from '../hooks';
-import { db } from '../db';
-import { DealershipFilterState, DealershipStatus, ProductCode, Dealership } from '../types';
+import { useDealerships, useOrders } from '../hooks';
+import { DealershipFilterState, DealershipStatus, Order } from '../types';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -17,7 +15,7 @@ interface DashboardPageProps {
   onNavigateToDealerships?: (filters: Partial<DealershipFilterState>) => void;
 }
 
-type TimePreset = 'all' | 'this_month' | 'last_month' | 'ytd' | 'last_12' | 'custom';
+type S2Preset = 'this_month' | 'last_month' | 'this_quarter' | 'last_quarter' | 'this_year' | 'last_year' | 'custom';
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -40,53 +38,49 @@ const fmtDate = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
 const formatCurrency = (val: number, compact = false): string => {
-  if (compact && val >= 1000) {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact', maximumFractionDigits: 1 }).format(val);
+  if (compact && Math.abs(val) >= 1000) {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency', currency: 'USD', notation: 'compact', maximumFractionDigits: 1,
+    }).format(val);
   }
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency', currency: 'USD', maximumFractionDigits: 0,
+  }).format(val);
 };
 
-const getDateRange = (preset: TimePreset, custom: { start: string; end: string }) => {
+const getS2DateRange = (preset: S2Preset, custom: { start: string; end: string }): { start: string; end: string } => {
   const now = new Date();
   const y = now.getFullYear();
   const m = now.getMonth();
 
   switch (preset) {
-    case 'all': {
-      return { start: '', end: '', primaryMonthKey: '' };
-    }
-    case 'this_month': {
-      const mk = `${y}-${String(m + 1).padStart(2, '0')}`;
-      return { start: fmtDate(new Date(y, m, 1)), end: fmtDate(new Date(y, m + 1, 0)), primaryMonthKey: mk };
-    }
+    case 'this_month':
+      return { start: fmtDate(new Date(y, m, 1)), end: fmtDate(new Date(y, m + 1, 0)) };
     case 'last_month': {
-      const ly = m === 0 ? y - 1 : y;
       const lm = m === 0 ? 11 : m - 1;
-      const mk = `${ly}-${String(lm + 1).padStart(2, '0')}`;
-      return { start: fmtDate(new Date(ly, lm, 1)), end: fmtDate(new Date(ly, lm + 1, 0)), primaryMonthKey: mk };
+      const ly = m === 0 ? y - 1 : y;
+      return { start: fmtDate(new Date(ly, lm, 1)), end: fmtDate(new Date(ly, lm + 1, 0)) };
     }
-    case 'ytd': {
-      const mk = `${y}-${String(m + 1).padStart(2, '0')}`;
-      return { start: `${y}-01-01`, end: fmtDate(now), primaryMonthKey: mk };
+    case 'this_quarter': {
+      const q = Math.floor(m / 3);
+      return { start: fmtDate(new Date(y, q * 3, 1)), end: fmtDate(new Date(y, q * 3 + 3, 0)) };
     }
-    case 'last_12': {
-      const mk = `${y}-${String(m + 1).padStart(2, '0')}`;
-      return { start: fmtDate(new Date(y, m - 11, 1)), end: fmtDate(now), primaryMonthKey: mk };
+    case 'last_quarter': {
+      const q = Math.floor(m / 3);
+      const lq = q === 0 ? 3 : q - 1;
+      const lqy = q === 0 ? y - 1 : y;
+      return { start: fmtDate(new Date(lqy, lq * 3, 1)), end: fmtDate(new Date(lqy, lq * 3 + 3, 0)) };
     }
-    case 'custom': {
-      const mk = custom.start ? custom.start.slice(0, 7) : `${y}-${String(m + 1).padStart(2, '0')}`;
-      return { start: custom.start, end: custom.end, primaryMonthKey: mk };
-    }
+    case 'this_year':
+      return { start: fmtDate(new Date(y, 0, 1)), end: fmtDate(new Date(y, 11, 31)) };
+    case 'last_year':
+      return { start: fmtDate(new Date(y - 1, 0, 1)), end: fmtDate(new Date(y - 1, 11, 31)) };
+    case 'custom':
+      return { start: custom.start, end: custom.end };
   }
 };
 
 // ─── Sub-components ────────────────────────────────────────────────────────────
-
-const DeltaBadge: React.FC<{ current: number; prev: number }> = ({ current, prev }) => {
-  const delta = current - prev;
-  if (delta === 0) return null;
-  return <span className={`text-xs font-bold ml-1.5 ${delta > 0 ? 'text-emerald-500' : 'text-red-400'}`}>{delta > 0 ? '▲' : '▼'}{Math.abs(delta)}</span>;
-};
 
 interface KpiCardProps {
   icon: React.ReactNode;
@@ -99,7 +93,10 @@ interface KpiCardProps {
 }
 
 const KpiCard: React.FC<KpiCardProps> = ({ icon, label, value, sub, iconBg = 'bg-slate-100 dark:bg-slate-800', onClick, clickable }) => (
-  <div className={`p-4 rounded-2xl bg-white/80 dark:bg-[#2C2C2E] backdrop-blur-sm border border-slate-200/60 dark:border-[#38383A] flex items-center gap-3 transition-all ${clickable ? 'cursor-pointer hover:ring-1 hover:ring-blue-500/40 hover:bg-white dark:hover:bg-[#3A3A3C]' : ''}`} onClick={onClick}>
+  <div
+    className={`p-4 rounded-2xl bg-white/80 dark:bg-[#2C2C2E] backdrop-blur-sm border border-slate-200/60 dark:border-[#38383A] flex items-center gap-3 transition-all ${clickable ? 'cursor-pointer hover:ring-1 hover:ring-blue-500/40 hover:bg-white dark:hover:bg-[#3A3A3C]' : ''}`}
+    onClick={onClick}
+  >
     <div className={`p-2 rounded-xl flex-shrink-0 ${iconBg}`}>{icon}</div>
     <div className="min-w-0 flex-1">
       <div className="text-xs font-semibold text-slate-400 dark:text-slate-500 truncate">{label}</div>
@@ -133,792 +130,361 @@ const Section: React.FC<SectionProps> = ({ title, icon, accent, children, header
   </div>
 );
 
-// ─── Colors & Labels ─────────────────────────────────────────────────────────
+// ─── Constants ─────────────────────────────────────────────────────────────────
 
-const STATUS_COLORS: Record<string, string> = {
-  [DealershipStatus.LIVE]: '#10b981',
-  [DealershipStatus.LEGACY]: '#6ee7b7',
-  [DealershipStatus.ONBOARDING]: '#3b82f6',
-  [DealershipStatus.DMT_PENDING]: '#94a3b8',
-  [DealershipStatus.DMT_APPROVED]: '#64748b',
-  [DealershipStatus.HOLD]: '#f97316',
-  [DealershipStatus.CANCELLED]: '#ef4444',
-};
+const GOLIVE_COLOR = '#10b981';
 
-const STATUS_LABEL: Record<string, string> = {
-  [DealershipStatus.LIVE]: 'Live',
-  [DealershipStatus.LEGACY]: 'Legacy',
-  [DealershipStatus.ONBOARDING]: 'Onboarding',
-  [DealershipStatus.DMT_PENDING]: 'DMT-Pending',
-  [DealershipStatus.DMT_APPROVED]: 'DMT-Approved',
-  [DealershipStatus.HOLD]: 'Hold',
-  [DealershipStatus.CANCELLED]: 'Cancelled',
-};
+const STATUS_TOGGLE_GROUPS = [
+  {
+    label: 'Live',
+    statuses: [DealershipStatus.LIVE, DealershipStatus.LEGACY],
+    color: 'text-emerald-600 dark:text-emerald-400',
+    dotColor: '#10b981',
+  },
+  {
+    label: 'Onboarding',
+    statuses: [DealershipStatus.ONBOARDING],
+    color: 'text-indigo-600 dark:text-indigo-400',
+    dotColor: '#6366f1',
+  },
+  {
+    label: 'Pending',
+    statuses: [DealershipStatus.DMT_PENDING, DealershipStatus.DMT_APPROVED],
+    color: 'text-slate-500 dark:text-slate-400',
+    dotColor: '#94a3b8',
+  },
+  {
+    label: 'Hold',
+    statuses: [DealershipStatus.HOLD],
+    color: 'text-orange-600 dark:text-orange-400',
+    dotColor: '#f97316',
+  },
+  {
+    label: 'Cancelled',
+    statuses: [DealershipStatus.CANCELLED],
+    color: 'text-red-600 dark:text-red-400',
+    dotColor: '#ef4444',
+  },
+] as const;
 
-const PIPELINE_COLORS = {
-  received: '#06b6d4',
-  onboarding: '#3b82f6',
-  goLive: '#10b981',
-  termed: '#ef4444',
-};
+const S2_PRESETS: Array<{ key: S2Preset; label: string }> = [
+  { key: 'this_month', label: 'This Month' },
+  { key: 'last_month', label: 'Last Month' },
+  { key: 'this_quarter', label: 'This Quarter' },
+  { key: 'last_quarter', label: 'Last Quarter' },
+  { key: 'this_year', label: 'This Year' },
+  { key: 'last_year', label: 'Last Year' },
+  { key: 'custom', label: 'Custom' },
+];
 
 // ─── Main Component ────────────────────────────────────────────────────────────
 
 const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }) => {
-  const [activePreset, setActivePreset] = useState<TimePreset>('this_month');
-  const [customRange, setCustomRange] = useState({ start: '', end: '' });
-  const [excludedStatuses, setExcludedStatuses] = useState<DealershipStatus[]>([DealershipStatus.CANCELLED]);
-  const [selectedChartMonth, setSelectedChartMonth] = useState<string | null>(null);
-  const [pipelineTableOpen, setPipelineTableOpen] = useState(false);
+  // Section 1: all toggles active by default (nothing excluded)
+  const [s1ExcludedStatuses, setS1ExcludedStatuses] = useState<DealershipStatus[]>([]);
+
+  // Section 2: date range filter
+  const [s2Preset, setS2Preset] = useState<S2Preset>('this_month');
+  const [s2CustomRange, setS2CustomRange] = useState({ start: '', end: '' });
 
   const { dealerships } = useDealerships();
   const { orders } = useOrders();
-  const { groups } = useEnterpriseGroups();
-  const { members } = useTeamMembers();
 
-  // ─── Date Range ──────────────────────────────────────────────────────────────
-  const dateRange = useMemo(() => getDateRange(activePreset, customRange), [activePreset, customRange]);
+  // ─── Section 1 Metrics ─────────────────────────────────────────────────────
+  const s1Metrics = useMemo(() => {
+    const filteredDealerships = dealerships.filter(d => !s1ExcludedStatuses.includes(d.status));
+    const filteredIds = new Set(filteredDealerships.map(d => d.id));
+    const filteredOrders = orders.filter(o => filteredIds.has(o.dealership_id));
 
-  const handlePresetClick = (preset: TimePreset) => {
-    setActivePreset(preset);
-  };
+    const totalDealerships = filteredDealerships.length;
+    const totalLineItems = filteredOrders.reduce((sum, o) => sum + (o.products?.length || 0), 0);
+    const totalRevenue = filteredOrders.reduce(
+      (sum, o) => sum + (o.products?.reduce((ps, p) => ps + (Number(p.amount) || 0), 0) || 0),
+      0
+    );
 
-  // ─── Metrics Computation ─────────────────────────────────────────────────────
-  const metrics = useMemo(() => {
-    const startTs = dateRange.start ? getTimestamp(`${dateRange.start}T00:00:00`) : null;
-    const endTs = dateRange.end ? getTimestamp(`${dateRange.end}T23:59:59.999`) : null;
+    // Build per-dealer order index for reallocated revenue
+    const ordersByDealer = new Map<string, Order[]>();
+    for (const o of filteredOrders) {
+      const list = ordersByDealer.get(o.dealership_id) ?? [];
+      list.push(o);
+      ordersByDealer.set(o.dealership_id, list);
+    }
+    const reallocatedRevenue = filteredDealerships.reduce((total, d) => {
+      const dealerOrders = ordersByDealer.get(d.id) ?? [];
+      const dealerRevenue = dealerOrders.reduce(
+        (sum, o) => sum + (o.products?.reduce((ps, p) => ps + (Number(p.amount) || 0), 0) || 0),
+        0
+      );
+      return total + (dealerRevenue - 2500);
+    }, 0);
 
-    const activeDealerships = dealerships.filter(d => !excludedStatuses.includes(d.status));
-    const activeDealershipIds = new Set(activeDealerships.map(d => d.id));
-
-    // Date-filtered orders (for revenue in range)
-    const rangeOrders = orders.filter(o => {
-      if (!activeDealershipIds.has(o.dealership_id)) return false;
-      const ts = getTimestamp(o.received_date);
-      if (ts === null) return false;
-      if (startTs !== null && ts < startTs) return false;
-      if (endTs !== null && ts > endTs) return false;
-      return true;
-    });
-
-    const sumRevenue = (orderList: typeof orders) =>
-      orderList.reduce((sum, o) => sum + (o.products?.reduce((ps, p) => ps + (Number(p.amount) || 0), 0) || 0), 0);
-
-    const totalRevenue = sumRevenue(rangeOrders);
-
-    // Status counts
+    // Status counts from unfiltered dataset (for toggle button labels)
     const statusCounts = dealerships.reduce((acc, d) => {
       acc[d.status] = (acc[d.status] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
 
-    // Revenue by status group
-    const statusGroupDefs = [
-      { label: 'Live', key: 'live', statuses: [DealershipStatus.LIVE, DealershipStatus.LEGACY], color: '#10b981' },
-      { label: 'Onboarding', key: 'onboarding', statuses: [DealershipStatus.ONBOARDING], color: '#3b82f6' },
-      { label: 'Pending', key: 'pending', statuses: [DealershipStatus.DMT_PENDING, DealershipStatus.DMT_APPROVED], color: '#94a3b8' },
-      { label: 'Hold', key: 'hold', statuses: [DealershipStatus.HOLD], color: '#f97316' },
-      { label: 'Cancelled', key: 'cancelled', statuses: [DealershipStatus.CANCELLED], color: '#ef4444' },
-    ];
-    const revenueByStatus = statusGroupDefs.map(sg => {
-      const ids = new Set(dealerships.filter(d => sg.statuses.includes(d.status)).map(d => d.id));
-      const rev = sumRevenue(rangeOrders.filter(o => ids.has(o.dealership_id)));
-      const count = sg.statuses.reduce((sum, s) => sum + (statusCounts[s] || 0), 0);
-      return { ...sg, revenue: rev, count };
-    });
+    return { totalDealerships, totalLineItems, totalRevenue, reallocatedRevenue, statusCounts };
+  }, [dealerships, orders, s1ExcludedStatuses]);
 
-    // Revenue by product (in date range)
-    const revenueByProduct = Object.values(ProductCode)
-      .map(code => {
-        const rev = rangeOrders.reduce((sum, o) => {
-          const p = o.products?.find(p => p.product_code === code);
-          return sum + (p ? Number(p.amount) || 0 : 0);
-        }, 0);
-        const count = rangeOrders.reduce((sum, o) => sum + (o.products?.some(p => p.product_code === code) ? 1 : 0), 0);
-        return { code, label: code.replace(/^\d+\s*-?\s*/, ''), revenue: rev, count };
-      })
-      .filter(p => p.count > 0 || p.revenue > 0);
+  // ─── Section 2 Metrics ─────────────────────────────────────────────────────
+  const s2Range = useMemo(() => getS2DateRange(s2Preset, s2CustomRange), [s2Preset, s2CustomRange]);
 
-    // Revenue trend (last 18 months, cumulative by go-live date)
-    const now = new Date();
-    const revenueTrend: Array<{ month: string; revenue: number; label: string }> = [];
-    for (let i = 17; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const mk = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      const label = d.toLocaleString('default', { month: 'short', year: '2-digit' });
+  const s2Metrics = useMemo(() => {
+    const startTs = s2Range.start ? getTimestamp(`${s2Range.start}T00:00:00`) : null;
+    const endTs = s2Range.end ? getTimestamp(`${s2Range.end}T23:59:59.999`) : null;
 
-      const liveDealershipIds = new Set(
-        dealerships
-          .filter(dl => {
-            const glmk = getMonthKey(dl.go_live_date);
-            return glmk && glmk <= mk;
-          })
-          .map(dl => dl.id)
-      );
-      const liveOrders = orders.filter(o => liveDealershipIds.has(o.dealership_id));
-      revenueTrend.push({ month: mk, label, revenue: sumRevenue(liveOrders) });
+    const inRange = (dateStr: string | undefined): boolean => {
+      if (!dateStr) return false;
+      const ts = getTimestamp(`${dateStr}T00:00:00`);
+      if (ts === null) return false;
+      if (startTs !== null && ts < startTs) return false;
+      if (endTs !== null && ts > endTs) return false;
+      return true;
+    };
+
+    // Distinct dealerships with ≥1 order whose received_date is in range
+    const receivedDealerIds = new Set<string>();
+    for (const o of orders) {
+      if (inRange(o.received_date)) receivedDealerIds.add(o.dealership_id);
     }
 
-    // Avg days to go-live
-    const avgDaysAcc = dealerships.reduce(
+    const received = receivedDealerIds.size;
+    const onboarding = dealerships.filter(d => inRange(d.onboarding_date)).length;
+    const live = dealerships.filter(d => inRange(d.go_live_date)).length;
+    const termed = dealerships.filter(d => inRange(d.term_date)).length;
+
+    // Avg days across ALL dealerships with both onboarding_date and go_live_date (not date-filtered)
+    const daysAcc = dealerships.reduce(
       (acc, d) => {
-        if (d.purchase_date && d.go_live_date) {
-          const diff = new Date(d.go_live_date).getTime() - new Date(d.purchase_date).getTime();
-          if (diff >= 0) {
-            acc.total += Math.round(diff / 86400000);
-            acc.count += 1;
-          }
+        if (d.onboarding_date && d.go_live_date) {
+          const days = Math.round(
+            (new Date(d.go_live_date).getTime() - new Date(d.onboarding_date).getTime()) / 86400000
+          );
+          acc.total += days;
+          acc.count += 1;
         }
         return acc;
       },
       { total: 0, count: 0 }
     );
-    const avgDaysToGoLive = avgDaysAcc.count > 0 ? Math.round(avgDaysAcc.total / avgDaysAcc.count) : null;
+    const avgDaysToGoLive = daysAcc.count > 0 ? Math.round(daysAcc.total / daysAcc.count) : null;
 
-    // Lifecycle for active date range (and previous equivalent period for delta)
-    const computeLifecycleByRange = (rStartTs: number | null, rEndTs: number | null) => {
-      const receivedSet = new Set<string>();
-      for (const o of orders) {
-        const ts = getTimestamp(o.received_date);
-        if (ts === null) continue;
-        if (rStartTs !== null && ts < rStartTs) continue;
-        if (rEndTs !== null && ts > rEndTs) continue;
-        receivedSet.add(o.dealership_id);
-      }
-      let onboarding = 0, goLive = 0, termed = 0;
-      for (const d of dealerships) {
-        const onbTs = d.onboarding_date ? getTimestamp(`${d.onboarding_date}T00:00:00`) : null;
-        if (onbTs !== null && (rStartTs === null || onbTs >= rStartTs) && (rEndTs === null || onbTs <= rEndTs)) onboarding++;
-        const glTs = d.go_live_date ? getTimestamp(`${d.go_live_date}T00:00:00`) : null;
-        if (glTs !== null && (rStartTs === null || glTs >= rStartTs) && (rEndTs === null || glTs <= rEndTs)) goLive++;
-        const termTs = d.term_date ? getTimestamp(`${d.term_date}T00:00:00`) : null;
-        if (termTs !== null && (rStartTs === null || termTs >= rStartTs) && (rEndTs === null || termTs <= rEndTs)) termed++;
-      }
-      return { received: receivedSet.size, onboarding, goLive, termed };
-    };
+    return { received, onboarding, live, termed, avgDaysToGoLive };
+  }, [dealerships, orders, s2Range]);
 
-    const lifecycle = computeLifecycleByRange(startTs, endTs);
-
-    // Compute previous period for delta badges
-    const prevRangeTs = (() => {
-      const now = new Date();
-      const y = now.getFullYear();
-      const m = now.getMonth();
-      switch (activePreset) {
-        case 'this_month': {
-          const py = m === 0 ? y - 1 : y;
-          const pm = m === 0 ? 11 : m - 1;
-          return {
-            start: getTimestamp(`${fmtDate(new Date(py, pm, 1))}T00:00:00`),
-            end: getTimestamp(`${fmtDate(new Date(py, pm + 1, 0))}T23:59:59.999`),
-          };
-        }
-        case 'last_month': {
-          const ly = m === 0 ? y - 1 : y;
-          const lm = m === 0 ? 11 : m - 1;
-          const py = lm === 0 ? ly - 1 : ly;
-          const pm = lm === 0 ? 11 : lm - 1;
-          return {
-            start: getTimestamp(`${fmtDate(new Date(py, pm, 1))}T00:00:00`),
-            end: getTimestamp(`${fmtDate(new Date(py, pm + 1, 0))}T23:59:59.999`),
-          };
-        }
-        case 'ytd': {
-          return {
-            start: getTimestamp(`${y - 1}-01-01T00:00:00`),
-            end: getTimestamp(`${fmtDate(new Date(y - 1, m, now.getDate()))}T23:59:59.999`),
-          };
-        }
-        case 'last_12': {
-          return {
-            start: getTimestamp(`${fmtDate(new Date(y, m - 23, 1))}T00:00:00`),
-            end: getTimestamp(`${fmtDate(new Date(y, m - 12, 0))}T23:59:59.999`),
-          };
-        }
-        default: return null;
-      }
-    })();
-
-    const prevLifecycle = prevRangeTs
-      ? computeLifecycleByRange(prevRangeTs.start, prevRangeTs.end)
-      : { received: 0, onboarding: 0, goLive: 0, termed: 0 };
-
-    const netLiveChange = lifecycle.goLive - lifecycle.termed;
-
-    // Pipeline chart data (18 months, ordered oldest to newest)
-    const pipelineChartData: Array<{ month: string; label: string; received: number; onboarding: number; goLive: number; termed: number }> = [];
-    const receivedByMonth = new Map<string, Set<string>>();
-    for (const o of orders) {
-      const mk = getMonthKey(o.received_date);
-      if (!mk) continue;
-      if (!receivedByMonth.has(mk)) receivedByMonth.set(mk, new Set());
-      receivedByMonth.get(mk)!.add(o.dealership_id);
-    }
+  // ─── Section 3 Chart Data ──────────────────────────────────────────────────
+  const s3ChartData = useMemo(() => {
+    const now = new Date();
+    const data: Array<{ month: string; label: string; goLive: number }> = [];
     for (let i = 17; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const mk = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
       const label = d.toLocaleString('default', { month: 'short', year: '2-digit' });
-      const row = { month: mk, label, received: receivedByMonth.get(mk)?.size || 0, onboarding: 0, goLive: 0, termed: 0 };
-      for (const dl of dealerships) {
-        if (getMonthKey(dl.term_date) === mk) row.termed += 1;
-        else if (getMonthKey(dl.go_live_date) === mk) row.goLive += 1;
-        else if (getMonthKey(dl.onboarding_date) === mk) row.onboarding += 1;
-      }
-      pipelineChartData.push(row);
+      const goLive = dealerships.filter(dl => getMonthKey(dl.go_live_date) === mk).length;
+      data.push({ month: mk, label, goLive });
     }
+    return data;
+  }, [dealerships]);
 
-    // Pipeline table (same 18 months but ordered newest first)
-    const pipelineTableData = [...pipelineChartData]
-      .reverse()
-      .map(row => ({
-        ...row,
-        recvToOnbPct: row.received > 0 ? Math.round((row.onboarding / row.received) * 100) : null,
-        onbToLivePct: row.onboarding > 0 ? Math.round((row.goLive / row.onboarding) * 100) : null,
-      }));
-    const maxReceived = Math.max(1, ...pipelineChartData.map(r => r.received));
-
-    // Enterprise group stats
-    const groupStats = groups
-      .map(g => {
-        const gDealerships = dealerships.filter(d => d.enterprise_group_id === g.id);
-        const gIds = new Set(gDealerships.map(d => d.id));
-        const gRevenue = sumRevenue(rangeOrders.filter(o => gIds.has(o.dealership_id)));
-        const statusBreakdown: Record<string, number> = {};
-        for (const d of gDealerships) {
-          statusBreakdown[d.status] = (statusBreakdown[d.status] || 0) + 1;
-        }
-        return { id: g.id, name: g.name, count: gDealerships.length, revenue: gRevenue, statusBreakdown };
-      })
-      .filter(g => g.count > 0)
-      .sort((a, b) => b.count - a.count);
-
-    // Revenue by enterprise group (top 8)
-    const revenueByGroupData = [...groupStats]
-      .sort((a, b) => b.revenue - a.revenue)
-      .slice(0, 8)
-      .map(g => ({ name: g.name.length > 20 ? g.name.slice(0, 18) + '…' : g.name, revenue: g.revenue, count: g.count }));
-
-    // Team performance
-    const contacts = db.getContacts();
-    const contactsByDealership = new Map(contacts.map(c => [c.dealership_id, c]));
-    const teamStats = members
-      .map(member => {
-        const mDealerships = dealerships.filter(d => {
-          const c = contactsByDealership.get(d.id);
-          return c?.assigned_specialist_name?.trim().toLowerCase() === member.name.trim().toLowerCase();
-        });
-        const statusBreakdown: Record<string, number> = {};
-        for (const d of mDealerships) {
-          statusBreakdown[d.status] = (statusBreakdown[d.status] || 0) + 1;
-        }
-        const live = (statusBreakdown[DealershipStatus.LIVE] || 0) + (statusBreakdown[DealershipStatus.LEGACY] || 0);
-        const onboarding = statusBreakdown[DealershipStatus.ONBOARDING] || 0;
-        const hold = statusBreakdown[DealershipStatus.HOLD] || 0;
-        const pending = (statusBreakdown[DealershipStatus.DMT_PENDING] || 0) + (statusBreakdown[DealershipStatus.DMT_APPROVED] || 0);
-        const cancelled = statusBreakdown[DealershipStatus.CANCELLED] || 0;
-        return { name: member.name, role: member.role, total: mDealerships.length, live, onboarding, hold, pending, cancelled };
-      })
-      .filter(m => m.total > 0)
-      .sort((a, b) => b.total - a.total);
-
-    return {
-      totalDealershipsCount: activeDealerships.length,
-      totalRevenue,
-      avgDaysToGoLive,
-      netLiveChange,
-      lifecycle,
-      prevLifecycle,
-      statusCounts,
-      revenueByStatus,
-      revenueByProduct,
-      revenueTrend,
-      revenueByGroupData,
-      pipelineChartData,
-      pipelineTableData,
-      maxReceived,
-      groupStats,
-      teamStats,
-    };
-  }, [dealerships, orders, groups, members, excludedStatuses, activePreset, dateRange]);
-
-  const toggleStatus = (statuses: DealershipStatus[]) => {
-    setExcludedStatuses(prev => {
+  // ─── Section 1 Toggle Helpers ──────────────────────────────────────────────
+  const toggleS1Group = (statuses: readonly DealershipStatus[]) => {
+    setS1ExcludedStatuses(prev => {
       const allExcluded = statuses.every(s => prev.includes(s));
       if (allExcluded) return prev.filter(s => !statuses.includes(s));
       const next = [...prev];
-      statuses.forEach(s => {
-        if (!next.includes(s)) next.push(s);
-      });
+      statuses.forEach(s => { if (!next.includes(s)) next.push(s); });
       return next;
     });
   };
 
-  const isExcluded = (statuses: DealershipStatus[]) => statuses.every(s => excludedStatuses.includes(s));
-
-  const presets: Array<{ key: TimePreset; label: string }> = [
-    { key: 'all', label: 'All' },
-    { key: 'this_month', label: 'This Month' },
-    { key: 'last_month', label: 'Last Month' },
-    { key: 'ytd', label: 'YTD' },
-    { key: 'last_12', label: 'Last 12 Mo' },
-  ];
-
-  const statusGroupDefs = [
-    { label: 'Live', statuses: [DealershipStatus.LIVE, DealershipStatus.LEGACY], color: 'text-emerald-600 dark:text-emerald-400', dotColor: '#10b981' },
-    { label: 'Onboarding', statuses: [DealershipStatus.ONBOARDING], color: 'text-blue-600 dark:text-blue-400', dotColor: '#3b82f6' },
-    { label: 'Pending', statuses: [DealershipStatus.DMT_PENDING, DealershipStatus.DMT_APPROVED], color: 'text-slate-500 dark:text-slate-400', dotColor: '#94a3b8' },
-    { label: 'Hold', statuses: [DealershipStatus.HOLD], color: 'text-orange-600 dark:text-orange-400', dotColor: '#f97316' },
-    { label: 'Cancelled', statuses: [DealershipStatus.CANCELLED], color: 'text-red-600 dark:text-red-400', dotColor: '#ef4444' },
-  ];
-
-  const periodLabel = useMemo(() => {
-    const now = new Date();
-    const y = now.getFullYear();
-    const m = now.getMonth();
-    switch (activePreset) {
-      case 'all': return 'All Time';
-      case 'this_month': return new Date(y, m, 1).toLocaleString('default', { month: 'long', year: 'numeric' });
-      case 'last_month': {
-        const pm = m === 0 ? 11 : m - 1;
-        const py = m === 0 ? y - 1 : y;
-        return new Date(py, pm, 1).toLocaleString('default', { month: 'long', year: 'numeric' });
-      }
-      case 'ytd': return `YTD ${y}`;
-      case 'last_12': return 'Last 12 Months';
-      case 'custom': return customRange.start && customRange.end ? `${customRange.start} – ${customRange.end}` : 'Custom Range';
-    }
-  }, [activePreset, customRange]);
+  const isS1GroupExcluded = (statuses: readonly DealershipStatus[]) =>
+    statuses.every(s => s1ExcludedStatuses.includes(s));
 
   return (
     <div className="animate-in fade-in duration-700 relative">
-      {/* ── Time Filter Bar ──────────────────────────────────────────────────── */}
-      <div className="flex flex-wrap items-center gap-2 mb-6">
-        {/* Preset buttons */}
-        <div className="flex items-center gap-1 p-1 rounded-xl bg-white/80 dark:bg-[#2C2C2E] backdrop-blur-sm border border-slate-200/60 dark:border-[#38383A]">
-          {presets.map(p => (
-            <button
-              key={p.key}
-              onClick={() => handlePresetClick(p.key)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                activePreset === p.key ? 'bg-blue-500 text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5'
-              }`}
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
 
-        {/* Custom date range */}
-        <div className="flex items-center gap-2 bg-white/80 dark:bg-[#2C2C2E] backdrop-blur-sm p-1.5 rounded-xl border border-slate-200/60 dark:border-[#38383A]">
-          <Calendar size={14} className="text-slate-400 ml-1" />
-          <input
-            type="date"
-            value={customRange.start}
-            onChange={e => {
-              setCustomRange(r => ({ ...r, start: e.target.value }));
-              setActivePreset('custom');
-            }}
-            className="text-xs bg-transparent border-none outline-none text-slate-600 dark:text-slate-300"
-          />
-          <span className="text-slate-300 dark:text-slate-600 text-xs">–</span>
-          <input
-            type="date"
-            value={customRange.end}
-            onChange={e => {
-              setCustomRange(r => ({ ...r, end: e.target.value }));
-              setActivePreset('custom');
-            }}
-            className="text-xs bg-transparent border-none outline-none text-slate-600 dark:text-slate-300"
-          />
-          {(customRange.start || customRange.end) && (
-            <button
-              onClick={() => {
-                setCustomRange({ start: '', end: '' });
-                handlePresetClick('this_month');
-              }}
-              className="ml-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5"
-            >
-              <X size={12} />
-            </button>
-          )}
-        </div>
-
-      </div>
-
-      {/* ── Section 1: Portfolio Health ─────────────────────────────────────── */}
-      <Section title="Portfolio Health" icon={<Building2 size={15} />} accent="bg-blue-500/5 dark:bg-blue-500/10 border-blue-200/40 dark:border-blue-500/20">
-        {/* Top KPI cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
-          <KpiCard icon={<Building2 size={15} className="text-slate-500" />} label="Total Dealerships" value={metrics.totalDealershipsCount} iconBg="bg-slate-100 dark:bg-slate-700" clickable onClick={() => onNavigateToDealerships?.({})} />
-          <KpiCard icon={<DollarSign size={15} className="text-emerald-500" />} label="Revenue Booked" value={formatCurrency(metrics.totalRevenue, true)} iconBg="bg-emerald-50 dark:bg-emerald-900/30" clickable onClick={() => onNavigateToDealerships?.({})} />
-          <KpiCard icon={<Clock size={15} className="text-violet-500" />} label="Avg Days to Go-Live" value={metrics.avgDaysToGoLive !== null ? `${metrics.avgDaysToGoLive}d` : '—'} iconBg="bg-violet-50 dark:bg-violet-900/30" />
-          <KpiCard icon={<TrendingUp size={15} className="text-blue-500" />} label={`Net Live (${periodLabel})`} value={metrics.netLiveChange >= 0 ? `+${metrics.netLiveChange}` : `${metrics.netLiveChange}`} iconBg="bg-blue-50 dark:bg-blue-900/30" />
-          <KpiCard icon={<CheckCircle size={15} className="text-emerald-500" />} label="Live / Legacy" value={(metrics.statusCounts[DealershipStatus.LIVE] || 0) + (metrics.statusCounts[DealershipStatus.LEGACY] || 0)} iconBg="bg-emerald-50 dark:bg-emerald-900/30" clickable onClick={() => onNavigateToDealerships?.({ status: DealershipStatus.LIVE })} />
-        </div>
-
-        {/* Lifecycle flow cards */}
+      {/* ── Section 1: Overall KPIs ─────────────────────────────────────────── */}
+      <Section
+        title="Overall KPIs"
+        icon={<Building2 size={15} />}
+        accent="bg-blue-500/5 dark:bg-blue-500/10 border-blue-200/40 dark:border-blue-500/20"
+      >
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-          {(() => {
-            // For single-month presets, pass the month key filter so click-through works
-            const mk = (activePreset === 'this_month' || activePreset === 'last_month') ? dateRange.primaryMonthKey : '';
-            return [
-              { label: 'Received', value: metrics.lifecycle.received, prev: metrics.prevLifecycle.received, color: 'text-cyan-600 dark:text-cyan-400', iconBg: 'bg-cyan-50 dark:bg-cyan-900/30', icon: <Calendar size={15} className="text-cyan-500" />, filter: mk ? { received_month: mk } : {} },
-              { label: 'Onboarding', value: metrics.lifecycle.onboarding, prev: metrics.prevLifecycle.onboarding, color: 'text-blue-600 dark:text-blue-400', iconBg: 'bg-blue-50 dark:bg-blue-900/30', icon: <UserPlus size={15} className="text-blue-500" />, filter: mk ? { onboarding_month: mk } : {} },
-              { label: 'Go-Live', value: metrics.lifecycle.goLive, prev: metrics.prevLifecycle.goLive, color: 'text-emerald-600 dark:text-emerald-400', iconBg: 'bg-emerald-50 dark:bg-emerald-900/30', icon: <Rocket size={15} className="text-emerald-500" />, filter: mk ? { go_live_month: mk } : {} },
-              { label: 'Termed', value: metrics.lifecycle.termed, prev: metrics.prevLifecycle.termed, color: 'text-red-600 dark:text-red-400', iconBg: 'bg-red-50 dark:bg-red-900/30', icon: <X size={15} className="text-red-500" />, filter: mk ? { term_month: mk } : {} },
-            ].map(item => (
-              <div
-                key={item.label}
-                className="p-3 rounded-2xl bg-white/80 dark:bg-[#2C2C2E] backdrop-blur-sm border border-slate-200/60 dark:border-[#38383A] cursor-pointer hover:ring-1 hover:ring-blue-500/30 transition-all"
-                onClick={() => onNavigateToDealerships?.({ status: '', received_month: '', onboarding_month: '', go_live_month: '', term_month: '', ...item.filter })}
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <div className={`p-1.5 rounded-lg ${item.iconBg}`}>{item.icon}</div>
-                  <span className="text-xs font-semibold text-slate-400 dark:text-slate-500">{item.label}</span>
-                </div>
-                <div className={`text-2xl font-bold ${item.color}`}>
-                  {item.value}
-                  <DeltaBadge current={item.value} prev={item.prev} />
-                </div>
-                <div className="text-xs text-slate-400 dark:text-slate-600 mt-0.5">{periodLabel}</div>
-              </div>
-            ));
-          })()}
+          <KpiCard
+            icon={<Building2 size={15} className="text-slate-500" />}
+            label="Total Dealerships"
+            value={s1Metrics.totalDealerships}
+            iconBg="bg-slate-100 dark:bg-slate-700"
+            clickable
+            onClick={() => onNavigateToDealerships?.({})}
+          />
+          <KpiCard
+            icon={<BarChart3 size={15} className="text-indigo-500" />}
+            label="Total Line Items"
+            value={s1Metrics.totalLineItems.toLocaleString()}
+            iconBg="bg-indigo-50 dark:bg-indigo-900/30"
+          />
+          <KpiCard
+            icon={<DollarSign size={15} className="text-emerald-500" />}
+            label="Total Revenue"
+            value={formatCurrency(s1Metrics.totalRevenue, true)}
+            iconBg="bg-emerald-50 dark:bg-emerald-900/30"
+          />
+          <KpiCard
+            icon={<TrendingUp size={15} className="text-blue-500" />}
+            label="Reallocated Revenue"
+            value={formatCurrency(s1Metrics.reallocatedRevenue, true)}
+            iconBg="bg-blue-50 dark:bg-blue-900/30"
+          />
         </div>
 
-        {/* Status exclusion toggles */}
         <div className="flex flex-wrap gap-2">
-          {statusGroupDefs.map(sg => {
-            const excluded = isExcluded(sg.statuses);
-            const count = sg.statuses.reduce((s, st) => s + (metrics.statusCounts[st] || 0), 0);
+          {STATUS_TOGGLE_GROUPS.map(sg => {
+            const excluded = isS1GroupExcluded(sg.statuses);
+            const count = sg.statuses.reduce((s, st) => s + (s1Metrics.statusCounts[st] || 0), 0);
             return (
               <button
                 key={sg.label}
-                onClick={() => toggleStatus(sg.statuses)}
+                onClick={() => toggleS1Group(sg.statuses)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
-                  excluded ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 border-slate-200 dark:border-slate-700 opacity-50' : `bg-white/80 dark:bg-[#2C2C2E] border-slate-200/60 dark:border-[#38383A] ${sg.color}`
+                  excluded
+                    ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 border-slate-200 dark:border-slate-700 opacity-50'
+                    : `bg-white/80 dark:bg-[#2C2C2E] border-slate-200/60 dark:border-[#38383A] ${sg.color}`
                 }`}
               >
-                <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: excluded ? undefined : sg.dotColor }} />
+                <span
+                  className="w-2 h-2 rounded-full flex-shrink-0"
+                  style={{ backgroundColor: excluded ? undefined : sg.dotColor }}
+                />
                 {sg.label} ({count})
-                {excluded && <span className="text-xs text-red-400 ml-1">off</span>}
               </button>
             );
           })}
         </div>
       </Section>
 
-      {/* ── Section 2: Pipeline Flow ─────────────────────────────────────────── */}
-      <Section title="Pipeline Flow — Last 18 Months" icon={<BarChart3 size={15} />} accent="bg-cyan-500/5 dark:bg-cyan-500/10 border-cyan-200/40 dark:border-cyan-500/20">
-        <div className={`grid gap-4 ${selectedChartMonth ? 'grid-cols-1 lg:grid-cols-3' : 'grid-cols-1'}`}>
-          {/* Chart */}
-          <div className={selectedChartMonth ? 'lg:col-span-2' : ''}>
-            <ResponsiveContainer width="100%" height={220}>
-              <AreaChart data={metrics.pipelineChartData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }} onClick={(data: any) => {
-                if (data?.activePayload?.[0]?.payload?.month) setSelectedChartMonth(data.activePayload[0].payload.month);
-              }}>
-                <defs>
-                  {[
-                    { key: 'received', color: PIPELINE_COLORS.received },
-                    { key: 'onboarding', color: PIPELINE_COLORS.onboarding },
-                    { key: 'goLive', color: PIPELINE_COLORS.goLive },
-                    { key: 'termed', color: PIPELINE_COLORS.termed },
-                  ].map(({ key, color }) => (
-                    <linearGradient key={key} id={`grad-${key}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={color} stopOpacity={0.5} />
-                      <stop offset="95%" stopColor={color} stopOpacity={0.05} />
-                    </linearGradient>
-                  ))}
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.1)" />
-                <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '10px', fontSize: '12px' }} labelStyle={{ color: '#e2e8f0', fontWeight: 600 }} itemStyle={{ color: '#cbd5e1' }} cursor={{ fill: 'rgba(148,163,184,0.05)' }} />
-                <Area type="monotone" dataKey="received" stroke={PIPELINE_COLORS.received} fill={`url(#grad-received)`} strokeWidth={1.5} name="Received" />
-                <Area type="monotone" dataKey="onboarding" stroke={PIPELINE_COLORS.onboarding} fill={`url(#grad-onboarding)`} strokeWidth={1.5} name="Onboarding" />
-                <Area type="monotone" dataKey="goLive" stroke={PIPELINE_COLORS.goLive} fill={`url(#grad-goLive)`} strokeWidth={1.5} name="Go-Live" />
-                <Area type="monotone" dataKey="termed" stroke={PIPELINE_COLORS.termed} fill={`url(#grad-termed)`} strokeWidth={1.5} name="Termed" />
-                <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: '11px', color: '#94a3b8' }} />
-              </AreaChart>
-            </ResponsiveContainer>
+      {/* ── Section 2: Date-Range KPIs ──────────────────────────────────────── */}
+      <Section
+        title="Date-Range KPIs"
+        icon={<Calendar size={15} />}
+        accent="bg-cyan-500/5 dark:bg-cyan-500/10 border-cyan-200/40 dark:border-cyan-500/20"
+      >
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          <div className="flex items-center gap-1 p-1 rounded-xl bg-white/80 dark:bg-[#2C2C2E] backdrop-blur-sm border border-slate-200/60 dark:border-[#38383A]">
+            {S2_PRESETS.map(p => (
+              <button
+                key={p.key}
+                onClick={() => setS2Preset(p.key)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  s2Preset === p.key
+                    ? 'bg-blue-500 text-white'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5'
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
           </div>
 
-          {/* Drill-down panel */}
-          {selectedChartMonth && (() => {
-            const row = metrics.pipelineChartData.find(r => r.month === selectedChartMonth);
-            if (!row) return null;
-            return (
-              <div className="bg-white/80 dark:bg-[#2C2C2E] rounded-2xl border border-slate-200/60 dark:border-[#38383A] overflow-hidden">
-                <div className="flex items-center justify-between px-3 py-2 border-b border-slate-200/60 dark:border-[#38383A]">
-                  <div className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">{row.label}</div>
-                  <button onClick={() => setSelectedChartMonth(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 flex-shrink-0 ml-2">
-                    <X size={14} />
-                  </button>
-                </div>
-                <div className="p-3 space-y-2">
-                  {[
-                    { stage: 'received', count: row.received, filter: { received_month: selectedChartMonth } },
-                    { stage: 'onboarding', count: row.onboarding, filter: { onboarding_month: selectedChartMonth } },
-                    { stage: 'goLive', count: row.goLive, filter: { go_live_month: selectedChartMonth } },
-                    { stage: 'termed', count: row.termed, filter: { term_month: selectedChartMonth } },
-                  ].map(item => (
-                    <button
-                      key={item.stage}
-                      onClick={() => {
-                        onNavigateToDealerships?.(item.filter as any);
-                        setSelectedChartMonth(null);
-                      }}
-                      className="w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-xs bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-left"
-                    >
-                      <span className="font-semibold capitalize text-slate-600 dark:text-slate-300">{item.stage.replace('goLive', 'Go-Live').replace('termed', 'Termed')}</span>
-                      <span className="font-bold text-slate-700 dark:text-slate-200">{item.count}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            );
-          })()}
-        </div>
-      </Section>
-
-      {/* ── Section 3: Revenue ──────────────────────────────────────────────── */}
-      <Section title="Revenue" icon={<DollarSign size={15} />} accent="bg-emerald-500/5 dark:bg-emerald-500/10 border-emerald-200/40 dark:border-emerald-500/20">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Revenue by Status */}
-          <div>
-            <div className="text-xs font-semibold text-slate-400 dark:text-slate-500 mb-2">By Status</div>
-            {metrics.revenueByStatus.filter(s => s.revenue > 0).length === 0 ? (
-              <div className="text-xs text-slate-400 py-4 text-center">No revenue data</div>
-            ) : (
-              <ResponsiveContainer width="100%" height={160}>
-                <BarChart data={metrics.revenueByStatus.filter(s => s.revenue > 0)} layout="vertical" margin={{ top: 0, right: 10, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.1)" horizontal={false} />
-                  <XAxis type="number" tickFormatter={v => formatCurrency(v, true)} tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                  <YAxis type="category" dataKey="label" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} width={70} />
-                  <Tooltip formatter={(v: number) => formatCurrency(v)} contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '10px', fontSize: '12px' }} labelStyle={{ color: '#e2e8f0', fontWeight: 600 }} itemStyle={{ color: '#cbd5e1' }} />
-                  <Bar dataKey="revenue" radius={[0, 4, 4, 0]}>
-                    {metrics.revenueByStatus.map((entry, idx) => (
-                      <Cell key={idx} fill={entry.color} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </div>
-
-          {/* Revenue by Product */}
-          <div>
-            <div className="text-xs font-semibold text-slate-400 dark:text-slate-500 mb-2">By Product (Order Date Range)</div>
-            {metrics.revenueByProduct.length === 0 ? (
-              <div className="text-xs text-slate-400 py-4 text-center">No orders in range</div>
-            ) : (
-              <ResponsiveContainer width="100%" height={160}>
-                <BarChart data={metrics.revenueByProduct.filter(p => p.revenue > 0)} layout="vertical" margin={{ top: 0, right: 10, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.1)" horizontal={false} />
-                  <XAxis type="number" tickFormatter={v => formatCurrency(v, true)} tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                  <YAxis type="category" dataKey="label" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} width={80} />
-                  <Tooltip formatter={(v: number) => formatCurrency(v)} contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '10px', fontSize: '12px' }} labelStyle={{ color: '#e2e8f0', fontWeight: 600 }} itemStyle={{ color: '#cbd5e1' }} />
-                  <Bar dataKey="revenue" fill="#10b981" radius={[0, 4, 4, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </div>
-
-          {/* Revenue trend */}
-          <div className="md:col-span-2">
-            <div className="text-xs font-semibold text-slate-400 dark:text-slate-500 mb-2">Cumulative Revenue by Go-Live Date — Last 18 Months</div>
-            <ResponsiveContainer width="100%" height={160}>
-              <AreaChart data={metrics.revenueTrend} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="grad-rev" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0.02} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.1)" />
-                <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                <YAxis tickFormatter={v => formatCurrency(v, true)} tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                <Tooltip formatter={(v: number) => formatCurrency(v)} contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '10px', fontSize: '12px' }} labelStyle={{ color: '#e2e8f0', fontWeight: 600 }} itemStyle={{ color: '#cbd5e1' }} />
-                <Area type="monotone" dataKey="revenue" stroke="#10b981" fill="url(#grad-rev)" strokeWidth={1.5} name="Revenue" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-
-          {/* Revenue by Enterprise Group */}
-          {metrics.revenueByGroupData.length > 0 && (
-            <div className="md:col-span-2">
-              <div className="text-xs font-semibold text-slate-400 dark:text-slate-500 mb-2">By Enterprise Group (Top 8)</div>
-              <ResponsiveContainer width="100%" height={Math.min(160, metrics.revenueByGroupData.length * 25 + 20)}>
-                <BarChart data={metrics.revenueByGroupData} layout="vertical" margin={{ top: 0, right: 10, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.1)" horizontal={false} />
-                  <XAxis type="number" tickFormatter={v => formatCurrency(v, true)} tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                  <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} width={120} />
-                  <Tooltip formatter={(v: number) => formatCurrency(v)} contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '10px', fontSize: '12px' }} labelStyle={{ color: '#e2e8f0', fontWeight: 600 }} itemStyle={{ color: '#cbd5e1' }} />
-                  <Bar dataKey="revenue" fill="#8b5cf6" radius={[0, 4, 4, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+          {s2Preset === 'custom' && (
+            <div className="flex items-center gap-2 bg-white/80 dark:bg-[#2C2C2E] backdrop-blur-sm p-1.5 rounded-xl border border-slate-200/60 dark:border-[#38383A]">
+              <Calendar size={14} className="text-slate-400 ml-1" />
+              <input
+                type="date"
+                value={s2CustomRange.start}
+                onChange={e => setS2CustomRange(r => ({ ...r, start: e.target.value }))}
+                className="text-xs bg-transparent border-none outline-none text-slate-600 dark:text-slate-300"
+              />
+              <span className="text-slate-300 dark:text-slate-600 text-xs">–</span>
+              <input
+                type="date"
+                value={s2CustomRange.end}
+                onChange={e => setS2CustomRange(r => ({ ...r, end: e.target.value }))}
+                className="text-xs bg-transparent border-none outline-none text-slate-600 dark:text-slate-300"
+              />
+              {(s2CustomRange.start || s2CustomRange.end) && (
+                <button
+                  onClick={() => setS2CustomRange({ start: '', end: '' })}
+                  className="ml-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5"
+                >
+                  <X size={12} />
+                </button>
+              )}
             </div>
           )}
         </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          <KpiCard
+            icon={<Calendar size={15} className="text-cyan-500" />}
+            label="Received"
+            value={s2Metrics.received}
+            iconBg="bg-cyan-50 dark:bg-cyan-900/30"
+          />
+          <KpiCard
+            icon={<UserPlus size={15} className="text-indigo-500" />}
+            label="Onboarding"
+            value={s2Metrics.onboarding}
+            iconBg="bg-indigo-50 dark:bg-indigo-900/30"
+          />
+          <KpiCard
+            icon={<Rocket size={15} className="text-emerald-500" />}
+            label="Live"
+            value={s2Metrics.live}
+            iconBg="bg-emerald-50 dark:bg-emerald-900/30"
+          />
+          <KpiCard
+            icon={<X size={15} className="text-red-500" />}
+            label="Termed"
+            value={s2Metrics.termed}
+            iconBg="bg-red-50 dark:bg-red-900/30"
+          />
+          <KpiCard
+            icon={<Clock size={15} className="text-violet-500" />}
+            label="Avg Days to Go-Live"
+            value={s2Metrics.avgDaysToGoLive !== null ? `${s2Metrics.avgDaysToGoLive}d` : '—'}
+            iconBg="bg-violet-50 dark:bg-violet-900/30"
+          />
+        </div>
       </Section>
 
-      {/* ── Section 4: Enterprise Groups ─────────────────────────────────────── */}
-      {metrics.groupStats.length > 0 && (
-        <Section title="Enterprise Groups" icon={<Users size={15} />} accent="bg-violet-500/5 dark:bg-violet-500/10 border-violet-200/40 dark:border-violet-500/20">
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="text-slate-400 dark:text-slate-500 border-b border-slate-200/60 dark:border-[#38383A]">
-                  <th className="text-left pb-2 font-semibold">Group</th>
-                  <th className="text-center pb-2 font-semibold">Total</th>
-                  <th className="text-center pb-2 font-semibold text-emerald-500">Live</th>
-                  <th className="text-center pb-2 font-semibold text-blue-500">Onboarding</th>
-                  <th className="text-center pb-2 font-semibold text-orange-500">Hold</th>
-                  <th className="text-center pb-2 font-semibold text-red-500">Cancelled</th>
-                  <th className="text-right pb-2 font-semibold">Revenue</th>
-                </tr>
-              </thead>
-              <tbody>
-                {metrics.groupStats.map(g => {
-                  const live = (g.statusBreakdown[DealershipStatus.LIVE] || 0) + (g.statusBreakdown[DealershipStatus.LEGACY] || 0);
-                  const onboarding = g.statusBreakdown[DealershipStatus.ONBOARDING] || 0;
-                  const hold = g.statusBreakdown[DealershipStatus.HOLD] || 0;
-                  const cancelled = g.statusBreakdown[DealershipStatus.CANCELLED] || 0;
-                  return (
-                    <tr key={g.id} className="border-b border-slate-100/60 dark:border-slate-800/50 last:border-0 hover:bg-white/60 dark:hover:bg-white/5 cursor-pointer transition-colors" onClick={() => onNavigateToDealerships?.({ group: g.id })}>
-                      <td className="py-2 font-medium text-slate-700 dark:text-slate-200 max-w-[200px] truncate">{g.name}</td>
-                      <td className="py-2 text-center font-bold text-slate-700 dark:text-slate-200">{g.count}</td>
-                      <td className="py-2 text-center font-semibold text-emerald-600 dark:text-emerald-400">{live || '—'}</td>
-                      <td className="py-2 text-center font-semibold text-blue-600 dark:text-blue-400">{onboarding || '—'}</td>
-                      <td className="py-2 text-center font-semibold text-orange-600 dark:text-orange-400">{hold || '—'}</td>
-                      <td className="py-2 text-center font-semibold text-red-600 dark:text-red-400">{cancelled || '—'}</td>
-                      <td className="py-2 text-right font-semibold text-slate-600 dark:text-slate-300">{formatCurrency(g.revenue, true)}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </Section>
-      )}
-
-      {/* ── Section 5: Team Performance ─────────────────────────────────────── */}
-      {metrics.teamStats.length > 0 && (
-        <Section title="Team Performance" icon={<Briefcase size={15} />} accent="bg-orange-500/5 dark:bg-orange-500/10 border-orange-200/40 dark:border-orange-500/20">
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="text-slate-400 dark:text-slate-500 border-b border-slate-200/60 dark:border-[#38383A]">
-                  <th className="text-left pb-2 font-semibold">Name</th>
-                  <th className="text-center pb-2 font-semibold">Total</th>
-                  <th className="text-center pb-2 font-semibold text-emerald-500">Live</th>
-                  <th className="text-center pb-2 font-semibold text-blue-500">Onboarding</th>
-                  <th className="text-center pb-2 font-semibold text-orange-500">Hold</th>
-                  <th className="text-center pb-2 font-semibold text-slate-500">Pending</th>
-                  <th className="text-center pb-2 font-semibold text-red-500">Cancelled</th>
-                </tr>
-              </thead>
-              <tbody>
-                {metrics.teamStats.map(m => (
-                  <tr key={m.name} className="border-b border-slate-100/60 dark:border-slate-800/50 last:border-0 hover:bg-white/60 dark:hover:bg-white/5">
-                    <td className="py-2 font-medium text-slate-700 dark:text-slate-200">
-                      {m.name}
-                      <span className="ml-1.5 text-xs text-slate-400">{m.role}</span>
-                    </td>
-                    <td className="py-2 text-center font-bold text-slate-700 dark:text-slate-200">{m.total}</td>
-                    <td className="py-2 text-center font-semibold text-emerald-600 dark:text-emerald-400">{m.live || '—'}</td>
-                    <td className="py-2 text-center font-semibold text-blue-600 dark:text-blue-400">{m.onboarding || '—'}</td>
-                    <td className="py-2 text-center font-semibold text-orange-600 dark:text-orange-400">{m.hold || '—'}</td>
-                    <td className="py-2 text-center font-semibold text-slate-500">{m.pending || '—'}</td>
-                    <td className="py-2 text-center font-semibold text-red-600 dark:text-red-400">{m.cancelled || '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Section>
-      )}
-
-      {/* ── Section 6: Pipeline Detail Table ────────────────────────────────── */}
+      {/* ── Section 3: 18-Month Go-Live Chart ──────────────────────────────── */}
       <Section
-        title="Pipeline Detail — Last 18 Months"
+        title="Go-Live by Month — Last 18 Months"
         icon={<BarChart3 size={15} />}
-        accent="bg-slate-500/5 dark:bg-slate-500/10 border-slate-200/40 dark:border-slate-500/20"
-        headerRight={
-          <button onClick={() => setPipelineTableOpen(v => !v)} className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
-            {pipelineTableOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-            {pipelineTableOpen ? 'Collapse' : 'Expand'}
-          </button>
-        }
+        accent="bg-emerald-500/5 dark:bg-emerald-500/10 border-emerald-200/40 dark:border-emerald-500/20"
       >
-        {pipelineTableOpen ? (
-          <div className="overflow-x-auto">
-            <div className="min-w-[700px]">
-              <div className="grid grid-cols-7 px-3 py-1.5 text-xs font-bold uppercase text-slate-400 border-b border-slate-200/60 dark:border-[#38383A]">
-                {['Month', 'Received', 'Onboarding', 'Go-Live', 'Termed', 'R→O %', 'O→L %'].map(h => (
-                  <div key={h} className={h === 'Month' ? '' : 'text-center'}>
-                    {h}
-                  </div>
-                ))}
-              </div>
-              {metrics.pipelineTableData.map(row => {
-                return (
-                  <div
-                    key={row.month}
-                    className="grid grid-cols-7 text-xs border-b border-slate-200/60 dark:border-[#38383A] last:border-0 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
-                  >
-                    <div className="px-3 py-2 font-semibold text-slate-700 dark:text-slate-200">
-                      {row.label}
-                    </div>
-                    <div
-                      className="text-center py-2 font-bold text-cyan-700 dark:text-cyan-300 hover:underline"
-                      onClick={e => {
-                        e.stopPropagation();
-                        onNavigateToDealerships?.({ received_month: row.month, status: '', onboarding_month: '', go_live_month: '', term_month: '' });
-                      }}
-                    >
-                      {row.received || '—'}
-                    </div>
-                    <div
-                      className="text-center py-2 font-bold text-blue-600 dark:text-blue-400 hover:underline"
-                      onClick={e => {
-                        e.stopPropagation();
-                        onNavigateToDealerships?.({ onboarding_month: row.month, status: '', received_month: '', go_live_month: '', term_month: '' });
-                      }}
-                    >
-                      {row.onboarding || '—'}
-                    </div>
-                    <div
-                      className="text-center py-2 font-bold text-emerald-600 dark:text-emerald-400 hover:underline"
-                      onClick={e => {
-                        e.stopPropagation();
-                        onNavigateToDealerships?.({ go_live_month: row.month, status: '', received_month: '', onboarding_month: '', term_month: '' });
-                      }}
-                    >
-                      {row.goLive || '—'}
-                    </div>
-                    <div
-                      className="text-center py-2 font-bold text-red-600 dark:text-red-400 hover:underline"
-                      onClick={e => {
-                        e.stopPropagation();
-                        onNavigateToDealerships?.({ term_month: row.month, status: '', received_month: '', onboarding_month: '', go_live_month: '' });
-                      }}
-                    >
-                      {row.termed || '—'}
-                    </div>
-                    <div className="text-center py-2 text-slate-500 dark:text-slate-400">{row.recvToOnbPct !== null ? `${row.recvToOnbPct}%` : '—'}</div>
-                    <div className="text-center py-2 text-slate-500 dark:text-slate-400">{row.onbToLivePct !== null ? `${row.onbToLivePct}%` : '—'}</div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        ) : (
-          <div className="text-xs text-slate-400 text-center py-2">
-            Click <span className="font-semibold">Expand</span> to view the 18-month pipeline detail table
-          </div>
-        )}
+        <ResponsiveContainer width="100%" height={220}>
+          <AreaChart data={s3ChartData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+            <defs>
+              <linearGradient id="grad-s3-golive" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor={GOLIVE_COLOR} stopOpacity={0.5} />
+                <stop offset="95%" stopColor={GOLIVE_COLOR} stopOpacity={0.05} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.1)" />
+            <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+            <Tooltip
+              contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '10px', fontSize: '12px' }}
+              labelStyle={{ color: '#e2e8f0', fontWeight: 600 }}
+              itemStyle={{ color: '#cbd5e1' }}
+              cursor={{ fill: 'rgba(148,163,184,0.05)' }}
+            />
+            <Area
+              type="monotone"
+              dataKey="goLive"
+              stroke={GOLIVE_COLOR}
+              fill="url(#grad-s3-golive)"
+              strokeWidth={1.5}
+              name="Go-Live"
+            />
+          </AreaChart>
+        </ResponsiveContainer>
       </Section>
+
     </div>
   );
 };
