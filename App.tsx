@@ -101,9 +101,12 @@ const App: React.FC = () => {
 
         {/* Brand / Logo */}
         <div className="flex items-center h-[56px] px-3.5 mb-1 justify-start">
-           <div className="w-8 h-8 bg-blue-500 rounded-[10px] flex items-center justify-center font-bold text-lg text-white flex-shrink-0">
-             C
-           </div>
+           <img
+             src={new URL('./assets/curator-mark.png', import.meta.url).href}
+             alt=""
+             aria-hidden="true"
+             className="w-8 h-8 rounded-[10px] object-cover flex-shrink-0"
+           />
            <div className="ml-3 font-semibold text-slate-800 dark:text-slate-200 tracking-wide whitespace-nowrap">
              CURATOR
            </div>

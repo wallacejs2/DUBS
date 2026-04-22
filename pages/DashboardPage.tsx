@@ -94,18 +94,20 @@ interface KpiCardProps {
 
 const KpiCard: React.FC<KpiCardProps> = ({ icon, label, value, sub, iconBg = 'bg-slate-100 dark:bg-slate-800', onClick, clickable }) => (
   <div
-    className={`p-4 rounded-2xl bg-white/80 dark:bg-[#2C2C2E] backdrop-blur-sm border border-slate-200/60 dark:border-[#38383A] flex items-center gap-3 transition-all ${clickable ? 'cursor-pointer hover:ring-1 hover:ring-blue-500/40 hover:bg-white dark:hover:bg-[#3A3A3C]' : ''}`}
+    className={`min-w-0 overflow-hidden p-3 rounded-2xl bg-white/80 dark:bg-[#2C2C2E] backdrop-blur-sm border border-slate-200/60 dark:border-[#38383A] transition-all ${clickable ? 'cursor-pointer hover:ring-1 hover:ring-blue-500/40 hover:bg-white dark:hover:bg-[#3A3A3C]' : ''}`}
     onClick={onClick}
   >
-    <div className={`p-2 rounded-xl flex-shrink-0 ${iconBg}`}>{icon}</div>
-    <div className="min-w-0 flex-1">
-      <div className="text-xs font-semibold text-slate-400 dark:text-slate-500 truncate">{label}</div>
-      <div className="text-xl font-bold text-slate-800 dark:text-slate-100 leading-tight">
-        {value}
-        {sub}
-      </div>
+    <div className="flex items-center gap-2 mb-2 min-w-0">
+      <span className={`p-1.5 rounded-lg flex-shrink-0 inline-flex items-center justify-center ${iconBg}`}>{icon}</span>
+      <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500 truncate min-w-0 flex-1">{label}</span>
+      {clickable && <ArrowRight size={12} className="text-slate-300 dark:text-slate-600 flex-shrink-0" />}
     </div>
-    {clickable && <ArrowRight size={14} className="text-slate-300 dark:text-slate-600 flex-shrink-0" />}
+    <div className="flex items-baseline gap-1.5 min-w-0">
+      <span className="text-lg font-bold text-slate-800 dark:text-slate-100 leading-none tracking-tight truncate">
+        {value}
+      </span>
+      {sub && <span className="flex-shrink-0">{sub}</span>}
+    </div>
   </div>
 );
 
