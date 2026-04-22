@@ -363,6 +363,49 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
     return { chartData, activeCodes };
   }, [orders]);
 
+  // ─── Section 5 Chart Data: Cumulative Revenue by Go-Live Month ─────────────
+  const goLiveRevenueTrend = useMemo(() => {
+    const now = new Date();
+    const months: Array<{ month: string; label: string }> = [];
+    for (let i = 17; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const mk = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const label = d.toLocaleString('default', { month: 'short', year: '2-digit' });
+      months.push({ month: mk, label });
+    }
+    const firstMk = months[0].month;
+
+    // Per-dealer revenue = sum of every OrderProduct.amount across that dealer's orders
+    const dealerRevenue = new Map<string, number>();
+    for (const o of orders) {
+      if (!o.products) continue;
+      const rev = o.products.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+      dealerRevenue.set(o.dealership_id, (dealerRevenue.get(o.dealership_id) ?? 0) + rev);
+    }
+
+    // Assign each qualifying dealership's revenue to its go-live month bucket
+    const revenueByMonth = new Map<string, number>();
+    let priorRevenue = 0;
+    for (const d of dealerships) {
+      if (!d.go_live_date) continue;
+      const mk = getMonthKey(d.go_live_date);
+      if (!mk) continue;
+      const rev = dealerRevenue.get(d.id) ?? 0;
+      if (mk < firstMk) {
+        priorRevenue += rev;
+      } else {
+        revenueByMonth.set(mk, (revenueByMonth.get(mk) ?? 0) + rev);
+      }
+    }
+
+    // Running cumulative across the visible window — priors seed the start
+    let running = priorRevenue;
+    return months.map(({ month, label }) => {
+      running += revenueByMonth.get(month) ?? 0;
+      return { month, label, revenue: running };
+    });
+  }, [dealerships, orders]);
+
   // ─── Section 1 Toggle Helpers ──────────────────────────────────────────────
   const toggleS1Group = (statuses: readonly DealershipStatus[]) => {
     setS1ExcludedStatuses(prev => {
@@ -594,6 +637,47 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
               />
             ))}
           </BarChart>
+        </ResponsiveContainer>
+      </Section>
+
+      {/* ── Section 5: Cumulative Revenue by Go-Live Date ──────────────────── */}
+      <Section
+        title="Cumulative Revenue by Go-Live Date — Last 18 Months"
+        icon={<TrendingUp size={15} />}
+        accent="bg-emerald-500/5 dark:bg-emerald-500/10 border-emerald-200/40 dark:border-emerald-500/20"
+      >
+        <ResponsiveContainer width="100%" height={220}>
+          <AreaChart data={goLiveRevenueTrend} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+            <defs>
+              <linearGradient id="grad-s5-rev" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
+                <stop offset="95%" stopColor="#10b981" stopOpacity={0.02} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.1)" />
+            <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+            <YAxis
+              tickFormatter={v => formatCurrency(v, true)}
+              tick={{ fontSize: 10, fill: '#94a3b8' }}
+              axisLine={false}
+              tickLine={false}
+            />
+            <Tooltip
+              formatter={(v: number) => formatCurrency(v)}
+              contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '10px', fontSize: '12px' }}
+              labelStyle={{ color: '#e2e8f0', fontWeight: 600 }}
+              itemStyle={{ color: '#cbd5e1' }}
+              cursor={{ fill: 'rgba(148,163,184,0.05)' }}
+            />
+            <Area
+              type="monotone"
+              dataKey="revenue"
+              stroke="#10b981"
+              fill="url(#grad-s5-rev)"
+              strokeWidth={1.5}
+              name="Revenue"
+            />
+          </AreaChart>
         </ResponsiveContainer>
       </Section>
 
