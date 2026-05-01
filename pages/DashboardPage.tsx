@@ -130,6 +130,38 @@ const Section: React.FC<SectionProps> = ({ title, icon, accent, children, header
   </div>
 );
 
+interface ProductSalesTableProps {
+  sales: Map<ProductCode, { count: number; revenue: number }>;
+}
+
+const ProductSalesTable: React.FC<ProductSalesTableProps> = ({ sales }) => {
+  const active = Object.values(ProductCode).filter(code => (sales.get(code)?.count ?? 0) > 0);
+  if (active.length === 0) {
+    return <p className="text-xs text-slate-400 dark:text-slate-600 italic">No product sales data for this period.</p>;
+  }
+  return (
+    <div className="flex flex-wrap gap-2">
+      {active.map(code => {
+        const { count, revenue } = sales.get(code)!;
+        return (
+          <div
+            key={code}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/80 dark:bg-[#2C2C2E] border border-slate-200/60 dark:border-[#38383A]"
+          >
+            <span
+              className="w-2 h-2 rounded-full flex-shrink-0"
+              style={{ backgroundColor: PRODUCT_COLORS[code] }}
+            />
+            <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">{code}</span>
+            <span className="text-xs font-bold text-slate-800 dark:text-slate-100">{count.toLocaleString()}</span>
+            <span className="text-xs text-slate-400 dark:text-slate-500">{formatCurrency(revenue, true)}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
 // ─── Constants ─────────────────────────────────────────────────────────────────
 
 const GOLIVE_COLOR = '#10b981';
@@ -235,7 +267,18 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
       return acc;
     }, {} as Record<string, number>);
 
-    return { totalDealerships, totalLineItems, totalRevenue, reallocatedRevenue, statusCounts };
+    const productSales = new Map<ProductCode, { count: number; revenue: number }>();
+    for (const o of filteredOrders) {
+      for (const p of o.products ?? []) {
+        const cur = productSales.get(p.product_code) ?? { count: 0, revenue: 0 };
+        productSales.set(p.product_code, {
+          count: cur.count + 1,
+          revenue: cur.revenue + (Number(p.amount) || 0),
+        });
+      }
+    }
+
+    return { totalDealerships, totalLineItems, totalRevenue, reallocatedRevenue, statusCounts, productSales };
   }, [dealerships, orders, s1ExcludedStatuses]);
 
   // ─── Section 2 Metrics ─────────────────────────────────────────────────────
@@ -281,7 +324,19 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
     );
     const avgDaysToGoLive = daysAcc.count > 0 ? Math.round(daysAcc.total / daysAcc.count) : null;
 
-    return { received, onboarding, live, termed, avgDaysToGoLive };
+    const s2ProductSales = new Map<ProductCode, { count: number; revenue: number }>();
+    for (const o of orders) {
+      if (!inRange(o.received_date)) continue;
+      for (const p of o.products ?? []) {
+        const cur = s2ProductSales.get(p.product_code) ?? { count: 0, revenue: 0 };
+        s2ProductSales.set(p.product_code, {
+          count: cur.count + 1,
+          revenue: cur.revenue + (Number(p.amount) || 0),
+        });
+      }
+    }
+
+    return { received, onboarding, live, termed, avgDaysToGoLive, productSales: s2ProductSales };
   }, [dealerships, orders, s2Range]);
 
   // ─── Section 3 Chart Data ──────────────────────────────────────────────────
@@ -481,6 +536,13 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
             );
           })}
         </div>
+
+        <div className="mt-4 border-t border-slate-200/40 dark:border-slate-700/40 pt-4">
+          <div className="text-xs font-semibold text-slate-400 dark:text-slate-500 mb-2 uppercase tracking-wide">
+            Product Sales — All Time
+          </div>
+          <ProductSalesTable sales={s1Metrics.productSales} />
+        </div>
       </Section>
 
       {/* ── Section 2: Date-Range KPIs ──────────────────────────────────────── */}
@@ -565,6 +627,13 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
             value={s2Metrics.avgDaysToGoLive !== null ? `${s2Metrics.avgDaysToGoLive}d` : '—'}
             iconBg="bg-violet-50 dark:bg-violet-900/30"
           />
+        </div>
+
+        <div className="mt-4 border-t border-slate-200/40 dark:border-slate-700/40 pt-4">
+          <div className="text-xs font-semibold text-slate-400 dark:text-slate-500 mb-2 uppercase tracking-wide">
+            Product Sales — Selected Range
+          </div>
+          <ProductSalesTable sales={s2Metrics.productSales} />
         </div>
       </Section>
 
