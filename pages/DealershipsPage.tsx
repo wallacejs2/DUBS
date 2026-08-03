@@ -29,6 +29,7 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
   const { members: teamMembers, upsert: upsertTM, remove: removeTM } = useTeamMembers();
 
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
   const [selectedDealerId, setSelectedDealerId] = useState<string | null>(null);
   const [editingDealer, setEditingDealer] = useState<DealershipWithRelations | null>(null);
   const [panelStack, setPanelStack] = useState<SubPanel[]>([]);
@@ -69,7 +70,7 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
     );
   };
 
-  const handleExportCSV = () => {
+  const buildExportData = () => {
     const allDealerships = db.getDealerships();
     const allGroups = db.getEnterpriseGroups();
     const flatData: any[] = [];
@@ -154,21 +155,14 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
       return dateA.localeCompare(dateB);
     });
 
-    const columns = [
-      'Status', 'Hold_Reason', 'Cancellation_Reason', 'CIF', 'Name', 'Group', 'Store', 'Branch',
-      'PP_ID', 'ERA_ID', 'BU_ID', 'MMS_ID', 'Address', 'Address_Line2', 'City', 'State', 'Zip_Code', 'CRM',
-      'Sales_Contact', 'Enrollment_Contact', 'CSM', 'POC_Name', 'POC_Email', 'POC_Phone',
-      'Received_Date', 'Order_Number', 'Onboarding_Date',
-      'Go_Live_Date', 'Term_Date',
-      ...productCodes,
-      'clientID1', 'websiteLink1', 'clientID2', 'websiteLink2',
-      'clientID3', 'websiteLink3', 'clientID4', 'websiteLink4'
-    ];
+    return { flatData, productCodes };
+  };
 
+  const downloadCsv = (headers: string[], keys: string[], flatData: any[], filenamePrefix: string) => {
     const csvContent = [
-      columns.join(','),
-      ...flatData.map(row => columns.map(col => {
-          const val = row[col];
+      headers.join(','),
+      ...flatData.map(row => keys.map(key => {
+          const val = row[key];
           const stringVal = String(val === undefined || val === null ? '' : val);
           if (stringVal.includes(',') || stringVal.includes('"') || stringVal.includes('\n')) {
               return `"${stringVal.replace(/"/g, '""')}"`;
@@ -182,12 +176,75 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
     if (link.download !== undefined) {
       const url = URL.createObjectURL(blob);
       link.setAttribute('href', url);
-      link.setAttribute('download', `dealerships_export_${new Date().toISOString().split('T')[0]}.csv`);
+      link.setAttribute('download', `${filenamePrefix}_${new Date().toISOString().split('T')[0]}.csv`);
       link.style.visibility = 'hidden';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
     }
+  };
+
+  const handleExportCSV = () => {
+    const { flatData, productCodes } = buildExportData();
+
+    const columns = [
+      'Status', 'Hold_Reason', 'Cancellation_Reason', 'CIF', 'Name', 'Group', 'Store', 'Branch',
+      'PP_ID', 'ERA_ID', 'BU_ID', 'MMS_ID', 'Address', 'Address_Line2', 'City', 'State', 'Zip_Code', 'CRM',
+      'Sales_Contact', 'Enrollment_Contact', 'CSM', 'POC_Name', 'POC_Email', 'POC_Phone',
+      'Received_Date', 'Order_Number', 'Onboarding_Date',
+      'Go_Live_Date', 'Term_Date',
+      ...productCodes,
+      'clientID1', 'websiteLink1', 'clientID2', 'websiteLink2',
+      'clientID3', 'websiteLink3', 'clientID4', 'websiteLink4'
+    ];
+
+    downloadCsv(columns, columns, flatData, 'dealerships_export');
+  };
+
+  const handleExportMKT = () => {
+    const { flatData } = buildExportData();
+
+    const mktColumns: [string, string][] = [
+      ['status', 'Status'],
+      ['holdReason', 'Hold_Reason'],
+      ['cancelledReason', 'Cancellation_Reason'],
+      ['cif', 'CIF'],
+      ['name', 'Name'],
+      ['group', 'Group'],
+      ['store', 'Store'],
+      ['branch', 'Branch'],
+      ['address', 'Address'],
+      ['city', 'City'],
+      ['state', 'State'],
+      ['zip', 'Zip_Code'],
+      ['crmProvider', 'CRM'],
+      ['salesPOC', 'Sales_Contact'],
+      ['enrollmentPOC', 'Enrollment_Contact'],
+      ['csmPOC', 'CSM'],
+      ['pocName', 'POC_Name'],
+      ['pocEmail', 'POC_Email'],
+      ['pocPhone', 'POC_Phone'],
+      ['dmtRecieved', 'Received_Date'],
+      ['dmtOrder', 'Order_Number'],
+      ['onabording', 'Onboarding_Date'],
+      ['goLive', 'Go_Live_Date'],
+      ['term', 'Term_Date'],
+      ['clientID', 'clientID1'],
+      ['websiteLink', 'websiteLink1'],
+      ['clientID2', 'clientID2'],
+      ['websiteLink2', 'websiteLink2'],
+      ['clientID3', 'clientID3'],
+      ['websiteLink3', 'websiteLink3'],
+      ['clientID4', 'clientID4'],
+      ['websiteLink4', 'websiteLink4'],
+    ];
+
+    downloadCsv(
+      mktColumns.map(([header]) => header),
+      mktColumns.map(([, key]) => key),
+      flatData,
+      'dealerships_mkt_export'
+    );
   };
 
   const pushToPanelStack = (panel: SubPanel) => setPanelStack(prev => [...prev, panel]);
@@ -204,12 +261,33 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
   return (
     <div className="animate-in fade-in duration-700 h-full flex flex-col">
       <div className="flex items-center gap-2 mb-4 flex-shrink-0">
-        <button
-          onClick={handleExportCSV}
-          className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl text-sm font-semibold hover:bg-blue-500/20 transition-colors focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"
-        >
-          <FileSpreadsheet size={14} /> Export CSV
-        </button>
+        <div className="hidden lg:block relative">
+          <button
+            onClick={() => setIsExportMenuOpen(prev => !prev)}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl text-sm font-semibold hover:bg-blue-500/20 transition-colors focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"
+          >
+            <FileSpreadsheet size={14} /> Export CSV <ChevronDown size={12} />
+          </button>
+          {isExportMenuOpen && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setIsExportMenuOpen(false)} />
+              <div className="absolute left-0 top-full mt-1 z-50 w-44 bg-white dark:bg-[#2C2C2E] border border-slate-200/60 dark:border-[#38383A] rounded-xl shadow-lg overflow-hidden">
+                <button
+                  onClick={() => { setIsExportMenuOpen(false); handleExportCSV(); }}
+                  className="w-full px-3 py-2 text-left text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-blue-500/10 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                >
+                  Standard CSV
+                </button>
+                <button
+                  onClick={() => { setIsExportMenuOpen(false); handleExportMKT(); }}
+                  className="w-full px-3 py-2 text-left text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-blue-500/10 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                >
+                  MKT
+                </button>
+              </div>
+            </>
+          )}
+        </div>
         <button
           onClick={() => { setEditingDealer(null); setIsFormOpen(true); }}
           className="flex items-center gap-1.5 px-4 py-2 bg-blue-500 text-white rounded-xl text-sm font-semibold hover:bg-blue-600 transition-colors focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"
