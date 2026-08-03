@@ -1,8 +1,9 @@
 
 import React, { useState, useMemo } from 'react';
-import { Plus, User, Mail, Phone, Hash, Building2, Trash2, Edit3 } from 'lucide-react';
+import { Plus, User, Mail, Phone, Hash, Building2, Trash2, Edit3, FileSpreadsheet } from 'lucide-react';
 import { useTeamMembers, useDealerships } from '../hooks';
 import { TeamMember, TeamRole, DealershipStatus } from '../types';
+import { db } from '../db';
 import FilterBar from '../components/FilterBar';
 import TeamMemberDetailPanel from '../components/TeamMemberDetailPanel';
 
@@ -58,9 +59,51 @@ const TeamMembersPage: React.FC = () => {
     setIsCreating(false);
   };
 
+  const handleExportCSV = () => {
+    const allMembers = db.getTeamMembers();
+    allMembers.sort((a, b) => a.name.localeCompare(b.name));
+
+    const columns: [string, (m: TeamMember) => string][] = [
+      ['role', m => m.role || ''],
+      ['userID', m => m.user_id || ''],
+      ['Name', m => m.name || ''],
+      ['email', m => m.email || ''],
+      ['support phone', m => m.phone || ''],
+    ];
+
+    const csvContent = [
+      columns.map(([header]) => header).join(','),
+      ...allMembers.map(m => columns.map(([, getValue]) => {
+        const stringVal = getValue(m);
+        if (stringVal.includes(',') || stringVal.includes('"') || stringVal.includes('\n')) {
+          return `"${stringVal.replace(/"/g, '""')}"`;
+        }
+        return stringVal;
+      }).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `team_members_export_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
   return (
     <div className="animate-in fade-in duration-700">
-      <div className="flex justify-end items-center mb-6">
+      <div className="flex justify-end items-center gap-2 mb-6">
+        <button
+          onClick={handleExportCSV}
+          className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl text-sm font-semibold hover:bg-blue-500/20 transition-colors focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"
+        >
+          <FileSpreadsheet size={14} /> Export CSV
+        </button>
         <button
           onClick={() => { setSelectedMemberId(null); setIsCreating(true); }}
           className="flex items-center gap-1.5 px-4 py-2 bg-blue-500 text-white rounded-xl text-sm font-semibold hover:bg-blue-600 transition-colors focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"
