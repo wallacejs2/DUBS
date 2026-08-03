@@ -184,21 +184,45 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
     }
   };
 
+  const standardBaseColumns = (productCodes: string[]) => [
+    'Status', 'Hold_Reason', 'Cancellation_Reason', 'CIF', 'Name', 'Group', 'Store', 'Branch',
+    'PP_ID', 'ERA_ID', 'BU_ID', 'MMS_ID', 'Address', 'Address_Line2', 'City', 'State', 'Zip_Code', 'CRM',
+    'Sales_Contact', 'Enrollment_Contact', 'CSM', 'POC_Name', 'POC_Email', 'POC_Phone',
+    'Received_Date', 'Order_Number', 'Onboarding_Date',
+    'Go_Live_Date', 'Term_Date',
+    ...productCodes,
+  ];
+
   const handleExportCSV = () => {
     const { flatData, productCodes } = buildExportData();
 
     const columns = [
-      'Status', 'Hold_Reason', 'Cancellation_Reason', 'CIF', 'Name', 'Group', 'Store', 'Branch',
-      'PP_ID', 'ERA_ID', 'BU_ID', 'MMS_ID', 'Address', 'Address_Line2', 'City', 'State', 'Zip_Code', 'CRM',
-      'Sales_Contact', 'Enrollment_Contact', 'CSM', 'POC_Name', 'POC_Email', 'POC_Phone',
-      'Received_Date', 'Order_Number', 'Onboarding_Date',
-      'Go_Live_Date', 'Term_Date',
-      ...productCodes,
+      ...standardBaseColumns(productCodes),
       'clientID1', 'websiteLink1', 'clientID2', 'websiteLink2',
       'clientID3', 'websiteLink3', 'clientID4', 'websiteLink4'
     ];
 
     downloadCsv(columns, columns, flatData, 'dealerships_export');
+  };
+
+  const handleExportPerWebsite = () => {
+    const { flatData, productCodes } = buildExportData();
+
+    const expanded: any[] = [];
+    flatData.forEach(row => {
+      const pairs = [1, 2, 3, 4]
+        .map(i => ({ clientID: row[`clientID${i}`] || '', websiteLink: row[`websiteLink${i}`] || '' }))
+        .filter(p => p.clientID || p.websiteLink);
+      if (pairs.length === 0) {
+        expanded.push({ ...row, clientID: '', websiteLink: '' });
+      } else {
+        pairs.forEach(p => expanded.push({ ...row, clientID: p.clientID, websiteLink: p.websiteLink }));
+      }
+    });
+
+    const columns = [...standardBaseColumns(productCodes), 'clientID', 'websiteLink'];
+
+    downloadCsv(columns, columns, expanded, 'dealerships_export_by_website');
   };
 
   const handleExportMKT = () => {
@@ -277,6 +301,12 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
                   className="w-full px-3 py-2 text-left text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-blue-500/10 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                 >
                   Standard CSV
+                </button>
+                <button
+                  onClick={() => { setIsExportMenuOpen(false); handleExportPerWebsite(); }}
+                  className="w-full px-3 py-2 text-left text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-blue-500/10 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                >
+                  Row per Website
                 </button>
                 <button
                   onClick={() => { setIsExportMenuOpen(false); handleExportMKT(); }}
