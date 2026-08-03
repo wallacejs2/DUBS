@@ -696,13 +696,14 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
               cursor={{ fill: 'rgba(148,163,184,0.05)' }}
             />
             <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: '11px', color: '#94a3b8' }} />
-            {productRevenue.activeCodes.map(code => (
+            {productRevenue.activeCodes.map((code, i) => (
               <Bar
                 key={code}
                 dataKey={code}
                 name={code}
+                stackId="revenue"
                 fill={PRODUCT_COLORS[code]}
-                radius={[4, 4, 0, 0]}
+                radius={i === productRevenue.activeCodes.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
               />
             ))}
           </BarChart>
