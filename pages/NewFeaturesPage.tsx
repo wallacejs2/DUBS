@@ -14,6 +14,24 @@ const formatCardDate = (dateStr: string): string => {
   return `${mm}-${dd}-${yyyy.slice(-2)}`;
 };
 
+const escapeCSV = (val: string) => {
+  if (val.includes(',') || val.includes('"') || val.includes('\n')) {
+    return `"${val.replace(/"/g, '""')}"`;
+  }
+  return val;
+};
+
+const downloadCSV = (headers: string[], rows: string[][], filenamePrefix: string) => {
+  const csv = [headers.join(','), ...rows.map(r => r.map(escapeCSV).join(','))].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${filenamePrefix}_${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
 const platformColors: Record<string, string> = {
   'UCP': 'bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800',
   'Curator': 'bg-purple-50 text-purple-700 border-purple-100 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800',
@@ -36,6 +54,7 @@ const NewFeaturesPage: React.FC<NewFeaturesPageProps> = ({ filters, setFilters }
   const [groupByQuarter, setGroupByQuarter] = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [quarterYear, setQuarterYear] = useState('2026');
+  const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
 
   const activeFeature = useMemo(() => {
     if (isCreating) {
@@ -189,12 +208,6 @@ const NewFeaturesPage: React.FC<NewFeaturesPageProps> = ({ filters, setFilters }
   };
 
   const handleExportCSV = () => {
-    const escapeCSV = (val: string) => {
-      if (val.includes(',') || val.includes('"') || val.includes('\n')) {
-        return `"${val.replace(/"/g, '""')}"`;
-      }
-      return val;
-    };
     const headers = ['Title', 'Source', 'Type', 'Status', 'Quarterly Release', 'Platform', 'Product Area', 'Location', 'Notified Date', 'Announced Date', 'Launch Date', 'Categories', 'Navigation', 'PMR Numbers', 'Support Material Link', 'Summary'];
     const rows = sortedFeatures.map(f => [
       f.title || '',
@@ -213,15 +226,39 @@ const NewFeaturesPage: React.FC<NewFeaturesPageProps> = ({ filters, setFilters }
       (f.pmrs || []).map(p => p.number).join('; '),
       f.support_material_link || '',
       f.summary || ''
-    ].map(v => escapeCSV(v)).join(','));
-    const csv = [headers.join(','), ...rows].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `new_features_export_${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    ]);
+    downloadCSV(headers, rows, 'new_features_export');
+  };
+
+  const handleExportAllDetailsCSV = () => {
+    const headers = ['Title', 'Source', 'Type', 'Status', 'Quarterly Release', 'Platform', 'Product Area', 'Location', 'Navigation', 'Categories', 'Notified Date', 'Announced Date', 'Launch Date', 'PMR Numbers', 'PMR Links', 'Support Material Link', 'Summary', 'Description', 'Created At'];
+    const rows = sortedFeatures.map(f => {
+      const displayPMRs = f.pmrs && f.pmrs.length > 0
+        ? f.pmrs
+        : (f.pmr_number ? [{ id: 'legacy', number: f.pmr_number, link: f.pmr_link || '' }] : []);
+      return [
+        f.title || '',
+        f.source || '',
+        f.type || '',
+        f.status || '',
+        f.quarterly_release || '',
+        f.platform || '',
+        f.product_area || '',
+        f.location || '',
+        f.navigation || '',
+        f.categories || '',
+        f.notified_date || '',
+        f.announced_date || '',
+        f.launch_date || '',
+        displayPMRs.map(p => p.number).join('; '),
+        displayPMRs.filter(p => p.link).map(p => `${p.number}: ${p.link}`).join('; '),
+        f.support_material_link || '',
+        f.summary || '',
+        f.description ? f.description.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '',
+        f.created_at || ''
+      ];
+    });
+    downloadCSV(headers, rows, 'new_features_all_details');
   };
 
   const metrics = useMemo(() => {
@@ -422,12 +459,33 @@ const NewFeaturesPage: React.FC<NewFeaturesPageProps> = ({ filters, setFilters }
   return (
     <div className="animate-in fade-in duration-700">
       <div className="flex items-center gap-2 mb-4">
-        <button
-          onClick={handleExportCSV}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl text-sm font-semibold hover:bg-blue-500/20 transition-colors focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"
-        >
-          <FileSpreadsheet size={14} /> Export CSV
-        </button>
+        <div className="relative">
+          <button
+            onClick={() => setIsExportMenuOpen(prev => !prev)}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl text-sm font-semibold hover:bg-blue-500/20 transition-colors focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"
+          >
+            <FileSpreadsheet size={14} /> Export CSV <ChevronDown size={12} />
+          </button>
+          {isExportMenuOpen && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setIsExportMenuOpen(false)} />
+              <div className="absolute left-0 top-full mt-1 z-50 w-44 bg-white dark:bg-[#2C2C2E] border border-slate-200/60 dark:border-[#38383A] rounded-xl shadow-lg overflow-hidden">
+                <button
+                  onClick={() => { setIsExportMenuOpen(false); handleExportCSV(); }}
+                  className="w-full px-3 py-2 text-left text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-blue-500/10 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                >
+                  Standard CSV
+                </button>
+                <button
+                  onClick={() => { setIsExportMenuOpen(false); handleExportAllDetailsCSV(); }}
+                  className="w-full px-3 py-2 text-left text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-blue-500/10 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                >
+                  All Details CSV
+                </button>
+              </div>
+            </>
+          )}
+        </div>
         <button
           onClick={() => { setSelectedFeatureId(null); setIsCreating(true); }}
           className="flex items-center gap-1.5 px-4 py-2 bg-blue-500 text-white rounded-xl font-semibold text-sm hover:bg-blue-600 transition-colors focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"
