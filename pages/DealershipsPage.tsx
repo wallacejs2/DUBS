@@ -80,6 +80,9 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
       const fullD = db.getDealershipWithRelations(d.id);
       if (!fullD) return;
       const groupName = allGroups.find(g => g.id === fullD.enterprise_group_id)?.name || 'Independent';
+      const isManaged = (fullD.orders || []).some(o =>
+        o.products?.some(p => p.product_code === ProductCode.P15392_MANAGED)
+      );
 
       const baseInfo: any = {
          Status: fullD.status,
@@ -109,6 +112,7 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
          Onboarding_Date: fullD.onboarding_date || '',
          Go_Live_Date: fullD.go_live_date || '',
          Term_Date: fullD.term_date || '',
+         Managed_Package: isManaged ? 'YES' : 'NO',
       };
 
       const links = fullD.website_links || [];
@@ -189,7 +193,7 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
     'PP_ID', 'ERA_ID', 'BU_ID', 'MMS_ID', 'Address', 'Address_Line2', 'City', 'State', 'Zip_Code', 'CRM',
     'Sales_Contact', 'Enrollment_Contact', 'CSM', 'POC_Name', 'POC_Email', 'POC_Phone',
     'Received_Date', 'Order_Number', 'Onboarding_Date',
-    'Go_Live_Date', 'Term_Date',
+    'Go_Live_Date', 'Term_Date', 'Managed_Package',
     ...productCodes,
   ];
 
