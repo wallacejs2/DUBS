@@ -360,8 +360,7 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
     const flatData: any[] = [];
     const baseInfo: any = {
          Status: d.status,
-         Hold_Reason: d.hold_reason || '',
-         Cancellation_Reason: d.cancellation_reason || '',
+         Notes: [d.hold_reason, d.cancellation_reason].filter(Boolean).join(' | '),
          CIF: d.cif_number || '',
          Name: d.name,
          Group: groupName,
@@ -417,7 +416,7 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
         flatData.push(row);
     }
     const columns = [
-      'Status', 'Hold_Reason', 'Cancellation_Reason', 'CIF', 'Name', 'Group', 'Store', 'Branch', 
+      'Status', 'Notes', 'CIF', 'Name', 'Group', 'Store', 'Branch',
       'PP_ID', 'ERA_ID', 'BU_ID', 'Address', 'State', 'CRM', 
       'Sales_Contact', 'Enrollment_Contact', 'CSM', 'POC_Name', 'POC_Email', 'POC_Phone', 
       'Received_Date', 'Order_Number', 'Onboarding_Date', 'Go_Live_Date', 'Term_Date',

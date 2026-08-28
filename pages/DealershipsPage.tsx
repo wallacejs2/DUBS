@@ -85,9 +85,9 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
       );
 
       const baseInfo: any = {
+         _dealerId: d.id,
          Status: fullD.status,
-         Hold_Reason: fullD.hold_reason || '',
-         Cancellation_Reason: fullD.cancellation_reason || '',
+         Notes: [fullD.hold_reason, fullD.cancellation_reason].filter(Boolean).join(' | '),
          CIF: fullD.cif_number || '',
          Name: fullD.name,
          Group: groupName,
@@ -98,7 +98,6 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
          BU_ID: fullD.bu_id || '',
          MMS_ID: fullD.mms_id || '',
          Address: fullD.address_line1 || '',
-         Address_Line2: fullD.address_line2 || '',
          City: fullD.city || '',
          State: fullD.state || '',
          Zip_Code: fullD.zip_code ? `="${fullD.zip_code}"` : '',
@@ -189,8 +188,8 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
   };
 
   const standardBaseColumns = (productCodes: string[]) => [
-    'Status', 'Hold_Reason', 'Cancellation_Reason', 'CIF', 'Name', 'Group', 'Store', 'Branch',
-    'PP_ID', 'ERA_ID', 'BU_ID', 'MMS_ID', 'Address', 'Address_Line2', 'City', 'State', 'Zip_Code', 'CRM',
+    'Status', 'Notes', 'CIF', 'Name', 'Group', 'Store', 'Branch',
+    'PP_ID', 'ERA_ID', 'BU_ID', 'MMS_ID', 'Address', 'City', 'State', 'Zip_Code', 'CRM',
     'Sales_Contact', 'Enrollment_Contact', 'CSM', 'POC_Name', 'POC_Email', 'POC_Phone',
     'Received_Date', 'Order_Number', 'Onboarding_Date',
     'Go_Live_Date', 'Term_Date', 'Managed_Package',
@@ -210,10 +209,18 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
   };
 
   const handleExportPerWebsite = () => {
-    const { flatData, productCodes } = buildExportData();
+    const { flatData } = buildExportData();
+
+    // One row per dealership — this export excludes DMT order line items
+    const seenDealers = new Set<string>();
+    const dealerRows = flatData.filter(row => {
+      if (seenDealers.has(row._dealerId)) return false;
+      seenDealers.add(row._dealerId);
+      return true;
+    });
 
     const expanded: any[] = [];
-    flatData.forEach(row => {
+    dealerRows.forEach(row => {
       const pairs = [1, 2, 3, 4]
         .map(i => ({ clientID: row[`clientID${i}`] || '', websiteLink: row[`websiteLink${i}`] || '' }))
         .filter(p => p.clientID || p.websiteLink);
@@ -224,7 +231,10 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
       }
     });
 
-    const columns = [...standardBaseColumns(productCodes), 'clientID', 'websiteLink'];
+    const columns = [
+      ...standardBaseColumns([]).filter(c => c !== 'Received_Date' && c !== 'Order_Number'),
+      'clientID', 'websiteLink'
+    ];
 
     downloadCsv(columns, columns, expanded, 'dealerships_export_by_website');
   };
@@ -234,8 +244,7 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
 
     const mktColumns: [string, string][] = [
       ['status', 'Status'],
-      ['holdReason', 'Hold_Reason'],
-      ['cancelledReason', 'Cancellation_Reason'],
+      ['notes', 'Notes'],
       ['cif', 'CIF'],
       ['name', 'Name'],
       ['group', 'Group'],
