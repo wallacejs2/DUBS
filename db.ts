@@ -7,6 +7,7 @@ import {
   ProviderProduct, ProviderProductCategory, ProviderType,
   Meeting, Note, Task, FeeType, ProductPricing, DEFAULT_PRODUCT_CODES
 } from './types';
+import { normalizeOems } from './lib/oem';
 
 // Pure LocalStorage implementation for a seamless offline-first experience
 class CuratorLocalDB extends EventTarget {
@@ -209,6 +210,7 @@ class CuratorLocalDB extends EventTarget {
       is_favorite: true,
       sms_activated: true,
       products: ['15392 - Managed'],
+      oems: [{ oem_group: 'Toyota', make: 'Toyota' }],
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     }];
@@ -421,6 +423,8 @@ class CuratorLocalDB extends EventTarget {
       contract_value: dealershipData.contract_value ?? existing.contract_value ?? 0,
       purchase_date: dealershipData.purchase_date ?? existing.purchase_date ?? now,
       products: dealershipData.products ?? existing.products ?? [],
+      // OEMs are validated against the hierarchy and de-duplicated by Make on every save
+      oems: normalizeOems(dealershipData.oems ?? existing.oems ?? []),
       
       created_at: existing.created_at || now,
       updated_at: now
