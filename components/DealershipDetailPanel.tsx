@@ -10,7 +10,7 @@ import {
 } from '../types';
 import { db } from '../db';
 import { useTeamMembers, useProvidersProducts, useProductPricing } from '../hooks';
-import { FEE_TYPE_OPTIONS, resolveLineAmount, formatLineAmount, summarizeProducts, summarizeOrders, isOneTime, partitionOrders, sortOrdersByRecency } from '../lib/orderPricing';
+import { FEE_TYPE_OPTIONS, resolveLineAmount, formatLineAmount, summarizeProducts, summarizeOrders, isOneTime, partitionOrders, sortOrdersByRecency, productCodeOptions, allProductCodes } from '../lib/orderPricing';
 
 interface DealershipDetailPanelProps {
   dealership: DealershipWithRelations;
@@ -174,7 +174,7 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
 
   const { members: teamMembers } = useTeamMembers();
   const { items: providerProducts } = useProvidersProducts();
-  const { pricing } = useProductPricing();
+  const { pricing, productCodes: availableProductCodes } = useProductPricing();
 
   // Find IDs helpers
   const findProviderId = (name?: string) => providerProducts.find(p => p.name === name)?.id;
@@ -316,7 +316,7 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
      const orders = [...(formData.orders || [])];
      orders[orderIdx].products.push({
         id: crypto.randomUUID(),
-        product_code: ProductCode.P15391_SE,
+        product_code: availableProductCodes[0] ?? ProductCode.P15391_SE,
         amount: null,
         fee_type: FeeType.MONTHLY
      });
@@ -386,7 +386,8 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
     // ... same logic ...
     const d = formData;
     const groupName = groups.find(g => g.id === d.enterprise_group_id)?.name || 'Independent';
-    const productCodes = Object.values(ProductCode);
+    // Product columns: the editable product list plus any code still on this dealer's orders
+    const productCodes = allProductCodes(availableProductCodes, d.orders);
     const flatData: any[] = [];
     const baseInfo: any = {
          Status: d.status,
@@ -1247,7 +1248,7 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                                   <Select 
                                     value={product.product_code} 
                                     onChange={(v) => updateProductInOrder(orderIdx, prodIdx, 'product_code', v)} 
-                                    options={Object.values(ProductCode).map(p => ({ label: p, value: p }))}
+                                    options={productCodeOptions(availableProductCodes, product.product_code)}
                                   />
                                   <Input
                                     type="number"

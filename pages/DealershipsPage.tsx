@@ -4,7 +4,7 @@ import { Plus, FileSpreadsheet, Search, Hash, X, ChevronDown } from 'lucide-reac
 import { useDealerships, useEnterpriseGroups, useOrders, useProvidersProducts, useTeamMembers, useProductPricing } from '../hooks';
 import { DealershipWithRelations, ProductCode, DealershipFilterState, DealershipStatus } from '../types';
 import { db } from '../db';
-import { hasOneTimeLine, hasUnpricedLine, summarizeOrders, summarizeProducts, activeOrderList, partitionOrders } from '../lib/orderPricing';
+import { hasOneTimeLine, hasUnpricedLine, summarizeOrders, summarizeProducts, activeOrderList, partitionOrders, allProductCodes } from '../lib/orderPricing';
 import DealershipCard from '../components/DealershipCard';
 import DealershipForm from '../components/DealershipForm';
 import DealershipDetailPanel from '../components/DealershipDetailPanel';
@@ -26,7 +26,7 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
   const { dealerships, loading, upsert, remove, getDetails, toggleFavorite } = useDealerships(filters);
   const { groups } = useEnterpriseGroups();
   const { orders } = useOrders();
-  const { pricing } = useProductPricing();
+  const { pricing, productCodes: availableProductCodes } = useProductPricing();
   const { items: providerProducts, upsert: upsertPP, remove: removePP } = useProvidersProducts();
   const { members: teamMembers, upsert: upsertTM, remove: removeTM } = useTeamMembers();
 
@@ -79,7 +79,8 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
     const allDealerships = db.getDealerships();
     const allGroups = db.getEnterpriseGroups();
     const flatData: any[] = [];
-    const productCodes = Object.values(ProductCode);
+    // Product columns: the editable product list plus any code still referenced by an order
+    const productCodes = allProductCodes(availableProductCodes, db.getOrders());
 
     allDealerships.forEach(d => {
       const fullD = db.getDealershipWithRelations(d.id);

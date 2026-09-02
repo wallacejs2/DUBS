@@ -37,8 +37,15 @@ export enum FeeType {
   ONE_TIME = 'one_time'
 }
 
+/**
+ * The product codes the app ships with. The live list is user-editable (products can be
+ * added or removed from the Default Product Pricing panel) and is stored in the local DB;
+ * this constant only seeds that list and provides well-known codes for feature checks.
+ */
+export const DEFAULT_PRODUCT_CODES: string[] = Object.values(ProductCode);
+
 /** Default (fallback) price per product code, used when an order line item has no amount. */
-export type ProductPricing = Partial<Record<ProductCode, number | null>>;
+export type ProductPricing = Partial<Record<string, number | null>>;
 
 export enum ProviderProductCategory {
   PROVIDER = 'Provider',
@@ -125,7 +132,8 @@ export interface ReynoldsSolution {
 
 export interface OrderProduct {
   id: string;
-  product_code: ProductCode;
+  /** A product code from the editable product list (see DEFAULT_PRODUCT_CODES / ProductCode). */
+  product_code: string;
   amount: number | null;
   fee_type: FeeType;
 }

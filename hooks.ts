@@ -210,10 +210,12 @@ export function useOrders(dealerId?: string) {
 
 export function useProductPricing() {
   const [pricing, setPricing] = useState<ProductPricing>({});
+  const [productCodes, setProductCodes] = useState<string[]>(() => db.getProductCodes());
   const [loading, setLoading] = useState(true);
 
   const fetch = useCallback(() => {
     setPricing(db.getProductPricing());
+    setProductCodes(db.getProductCodes());
     setLoading(false);
   }, []);
 
@@ -225,8 +227,12 @@ export function useProductPricing() {
 
   return {
     pricing,
+    /** Editable list of product codes (add/remove from the Default Product Pricing panel). */
+    productCodes,
     loading,
-    setPrice: (code: ProductCode, amount: number | null) => db.setProductPrice(code, amount)
+    setPrice: (code: string, amount: number | null) => db.setProductPrice(code, amount),
+    addProductCode: (code: string, defaultPrice?: number | null) => db.addProductCode(code, defaultPrice),
+    removeProductCode: (code: string) => db.removeProductCode(code)
   };
 }
 
