@@ -437,7 +437,10 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
             if (o.products && o.products.length > 0) {
                 o.products.forEach(p => {
                     if (productCodes.includes(p.product_code)) {
-                        row[p.product_code] = p.amount;
+                        // No price on the order line: export the product's default (estimated)
+                        // price as a plain number; blank only when there is no default either.
+                        const line = resolveLineAmount(p, pricing);
+                        row[p.product_code] = line.isUnpriced ? '' : line.amount;
                     }
                 });
             }

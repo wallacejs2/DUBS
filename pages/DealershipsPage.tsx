@@ -4,7 +4,7 @@ import { Plus, FileSpreadsheet, Search, Hash, X, ChevronDown, ClipboardList } fr
 import { useDealerships, useEnterpriseGroups, useOrders, useProvidersProducts, useTeamMembers, useProductPricing } from '../hooks';
 import { DealershipWithRelations, ProductCode, DealershipFilterState, DealershipStatus } from '../types';
 import { db } from '../db';
-import { hasOneTimeLine, hasUnpricedLine, summarizeOrders, summarizeProducts, activeOrderList, partitionOrders, allProductCodes } from '../lib/orderPricing';
+import { hasOneTimeLine, hasUnpricedLine, summarizeOrders, summarizeProducts, activeOrderList, partitionOrders, allProductCodes, resolveLineAmount } from '../lib/orderPricing';
 import DealershipCard from '../components/DealershipCard';
 import DealershipForm from '../components/DealershipForm';
 import DealershipDetailPanel from '../components/DealershipDetailPanel';
@@ -151,7 +151,10 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
               if (o.products && o.products.length > 0) {
                   o.products.forEach(p => {
                       if (productCodes.includes(p.product_code)) {
-                          row[p.product_code] = p.amount;
+                          // No price on the order line: export the product's default (estimated)
+                          // price as a plain number; blank only when there is no default either.
+                          const line = resolveLineAmount(p, pricing);
+                          row[p.product_code] = line.isUnpriced ? '' : line.amount;
                       }
                   });
               }
