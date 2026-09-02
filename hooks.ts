@@ -41,7 +41,7 @@ export function useEnterpriseGroups() {
   };
 }
 
-export function useDealerships(filters?: { search?: string; status?: string; group?: string; issue?: string; managed?: string; addl_web?: string; cif?: string; client_id?: string; sms?: string; one_time?: string; received_month?: string; onboarding_month?: string; go_live_month?: string; term_month?: string }) {
+export function useDealerships(filters?: { search?: string; status?: string; group?: string; issue?: string; managed?: string; addl_web?: string; cif?: string; client_id?: string; order_id?: string; sms?: string; one_time?: string; received_month?: string; onboarding_month?: string; go_live_month?: string; term_month?: string }) {
   const [dealerships, setDealerships] = useState<Dealership[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -70,6 +70,17 @@ export function useDealerships(filters?: { search?: string; status?: string; gro
         const details = db.getDealershipWithRelations(d.id);
         return details?.website_links?.some(link => link.client_id?.toLowerCase().includes(clientId));
       });
+    }
+    if (filters?.order_id) {
+      // Match against every DMT order on the dealership (active or previous),
+      // so an older order number still finds the account it belongs to.
+      const orderId = filters.order_id.toLowerCase().trim();
+      const dealerIdsWithOrder = new Set(
+        db.getOrders()
+          .filter(o => o.order_number?.toLowerCase().includes(orderId))
+          .map(o => o.dealership_id)
+      );
+      data = data.filter(d => dealerIdsWithOrder.has(d.id));
     }
     if (filters?.status) {
       data = data.filter(d => d.status === filters.status);
