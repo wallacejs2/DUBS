@@ -16,6 +16,7 @@ interface DealershipCardProps {
   missingPOC?: boolean;
   missingWebProvider?: boolean;
   missingInvProvider?: boolean;
+  missingOem?: boolean;
   onClick: () => void;
   onToggleFavorite?: (e: React.MouseEvent) => void;
 }
@@ -32,7 +33,7 @@ const statusColors: Record<DealershipStatus, string> = {
 
 const DealershipCard: React.FC<DealershipCardProps> = ({
   dealership, groupName, isManaged, hasClientId = true, hasAddlWeb, hasOneTime, hasZeroPrice, missingCSM,
-  missingEnrollment, missingPOC, missingWebProvider, missingInvProvider,
+  missingEnrollment, missingPOC, missingWebProvider, missingInvProvider, missingOem,
   onClick, onToggleFavorite
 }) => {
   const [copiedField, setCopiedField] = useState<string | null>(null);
@@ -85,6 +86,7 @@ const DealershipCard: React.FC<DealershipCardProps> = ({
     missingPOC,
     missingWebProvider,
     missingInvProvider,
+    missingOem,
   ].filter(Boolean).length;
 
   return (
@@ -157,6 +159,7 @@ const DealershipCard: React.FC<DealershipCardProps> = ({
                   missingPOC && 'POC',
                   missingWebProvider && 'WEB',
                   missingInvProvider && 'INV',
+                  missingOem && 'OEM',
                 ].filter(Boolean).join(', ')}
               >
                 {warningCount}

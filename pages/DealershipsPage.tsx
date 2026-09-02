@@ -5,7 +5,7 @@ import { useDealerships, useEnterpriseGroups, useOrders, useProvidersProducts, u
 import { DealershipWithRelations, ProductCode, DealershipFilterState, DealershipStatus } from '../types';
 import { db } from '../db';
 import { hasOneTimeLine, hasUnpricedLine, summarizeOrders, summarizeProducts, activeOrderList, partitionOrders, allProductCodes, resolveLineAmount } from '../lib/orderPricing';
-import { formatOemsForExport } from '../lib/oem';
+import { formatOemsForExport, hasNoOems, OEM_GROUPS, OEM_MAKES_ALPHABETICAL, encodeOemFilter } from '../lib/oem';
 import DealershipCard from '../components/DealershipCard';
 import DealershipForm from '../components/DealershipForm';
 import DealershipDetailPanel from '../components/DealershipDetailPanel';
@@ -344,10 +344,10 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
 
   const activeSubPanel = panelStack[panelStack.length - 1];
 
-  const hasActiveFilters = !!(filters.search || filters.cif || filters.client_id || filters.order_id || filters.status || filters.group || filters.issue || filters.managed || filters.addl_web || filters.sms || filters.one_time || filters.received_month || filters.onboarding_month || filters.go_live_month || filters.term_month);
+  const hasActiveFilters = !!(filters.search || filters.cif || filters.client_id || filters.order_id || filters.status || filters.group || filters.issue || filters.oem || filters.managed || filters.addl_web || filters.sms || filters.one_time || filters.received_month || filters.onboarding_month || filters.go_live_month || filters.term_month);
 
   const handleResetFilters = () => {
-    setFilters({ search: '', status: '', group: '', issue: '', managed: '', addl_web: '', cif: '', client_id: '', order_id: '', sms: '', one_time: '', received_month: '', onboarding_month: '', go_live_month: '', term_month: '' });
+    setFilters({ search: '', status: '', group: '', issue: '', oem: '', managed: '', addl_web: '', cif: '', client_id: '', order_id: '', sms: '', one_time: '', received_month: '', onboarding_month: '', go_live_month: '', term_month: '' });
   };
 
   return (
@@ -523,6 +523,25 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
                 <option value="no_poc">Missing POC Email</option>
                 <option value="no_web_provider">Missing Web Provider</option>
                 <option value="no_inv_provider">Missing Inv. Provider</option>
+                <option value="no_oem">Missing OEM</option>
+              </select>
+              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={12} />
+            </div>
+
+            <div className="relative min-w-[140px]">
+              <select
+                value={filters.oem}
+                onChange={(e) => setFilters({...filters, oem: e.target.value})}
+                title="Filter by OEM Group (any Make in the group) or by an exact Make"
+                className="w-full pl-2.5 pr-7 py-1.5 bg-slate-100/50 dark:bg-[#1C1C1E] border border-slate-200/60 dark:border-[#38383A] rounded-xl text-sm text-slate-700 dark:text-slate-300 appearance-none focus:ring-1 focus:ring-blue-500 outline-none cursor-pointer"
+              >
+                <option value="">All OEMs</option>
+                <optgroup label="OEM Groups">
+                  {OEM_GROUPS.map(g => <option key={encodeOemFilter('group', g)} value={encodeOemFilter('group', g)}>{g}</option>)}
+                </optgroup>
+                <optgroup label="Makes">
+                  {OEM_MAKES_ALPHABETICAL.map(m => <option key={encodeOemFilter('make', m)} value={encodeOemFilter('make', m)}>{m}</option>)}
+                </optgroup>
               </select>
               <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={12} />
             </div>
@@ -592,6 +611,7 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
                     const missingPOC = !details?.contacts?.poc_email || details.contacts.poc_email.trim().length === 0;
                     const missingWebProvider = !dealer.website_provider || dealer.website_provider.trim().length === 0;
                     const missingInvProvider = !dealer.inventory_provider || dealer.inventory_provider.trim().length === 0;
+                    const missingOem = hasNoOems(dealer.oems);
                     return (
                     <DealershipCard
                         key={dealer.id}
@@ -607,6 +627,7 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
                         missingPOC={missingPOC}
                         missingWebProvider={missingWebProvider}
                         missingInvProvider={missingInvProvider}
+                        missingOem={missingOem}
                         onClick={() => setSelectedDealerId(dealer.id)}
                         onToggleFavorite={() => toggleFavorite(dealer.id)}
                     />

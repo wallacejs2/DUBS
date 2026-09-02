@@ -102,3 +102,66 @@ export const normalizeOems = (oems: unknown): DealershipOEM[] => {
   });
   return result;
 };
+
+/** Every Make across all OEM Groups, sorted alphabetically (for flat "all Makes" lists). */
+export const OEM_MAKES_ALPHABETICAL: readonly string[] = [...OEM_MAKES].sort((a, b) => a.localeCompare(b));
+
+/** Whether a dealership has no OEMs recorded (list missing or empty). */
+export const hasNoOems = (oems: readonly DealershipOEM[] | undefined | null): boolean =>
+  !Array.isArray(oems) || oems.length === 0;
+
+/**
+ * OEM filter selection. A single encoded string field covers both levels of the
+ * hierarchy so it fits alongside the other string-valued dealership filters:
+ *   "group:<OEM Group>"  -> match any dealership with at least one Make in that group
+ *   "make:<Make>"        -> match only dealerships with that exact Make
+ */
+export type OemFilterKind = 'group' | 'make';
+
+export interface OemFilterSelection {
+  kind: OemFilterKind;
+  value: string;
+}
+
+const OEM_FILTER_SEPARATOR = ':';
+
+/** Encode an OEM filter selection into its stored string form, e.g. "group:GM" or "make:Lexus". */
+export const encodeOemFilter = (kind: OemFilterKind, value: string): string =>
+  `${kind}${OEM_FILTER_SEPARATOR}${value}`;
+
+/**
+ * Parse a stored OEM filter value. Returns null for an empty value or one that does not
+ * name a known OEM Group / Make, so a stale selection never silently matches everything.
+ */
+export const parseOemFilter = (encoded: string | undefined | null): OemFilterSelection | null => {
+  if (!encoded) return null;
+  const idx = encoded.indexOf(OEM_FILTER_SEPARATOR);
+  if (idx <= 0) return null;
+  const kind = encoded.slice(0, idx);
+  const value = encoded.slice(idx + 1).trim();
+  if (!value) return null;
+  if (kind === 'group') return OEM_GROUPS.includes(value) ? { kind, value } : null;
+  if (kind === 'make') return MAKE_TO_GROUP.has(value) ? { kind, value } : null;
+  return null;
+};
+
+/**
+ * Whether a dealership's OEM list satisfies an OEM filter.
+ *  - A group selection matches when any of the dealership's Makes belongs to that OEM Group
+ *    (e.g. "group:GM" matches a dealership with "GM - GMC").
+ *  - A make selection matches only the exact Make (e.g. "make:Lexus" does NOT match a
+ *    dealership that only has "Toyota - Toyota").
+ * An empty or unparseable filter matches everything (i.e. the filter is inactive).
+ */
+export const matchesOemFilter = (
+  oems: readonly DealershipOEM[] | undefined | null,
+  filter: string | OemFilterSelection | undefined | null
+): boolean => {
+  const selection = typeof filter === 'string' ? parseOemFilter(filter) : filter ?? null;
+  if (!selection) return true;
+  const list = Array.isArray(oems) ? oems : [];
+  if (selection.kind === 'group') {
+    return list.some(oem => findOemGroupForMake(oem.make) === selection.value);
+  }
+  return list.some(oem => oem.make === selection.value);
+};
