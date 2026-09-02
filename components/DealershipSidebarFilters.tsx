@@ -3,6 +3,7 @@ import React from 'react';
 import { Filter, Search, Hash, X, ChevronDown } from 'lucide-react';
 import { DealershipFilterState, DealershipStatus } from '../types';
 import { useEnterpriseGroups } from '../hooks';
+import { OEM_GROUPS, OEM_MAKES_ALPHABETICAL, encodeOemFilter } from '../lib/oem';
 
 interface DealershipSidebarFiltersProps {
   filters: DealershipFilterState;
@@ -13,10 +14,10 @@ const DealershipSidebarFilters: React.FC<DealershipSidebarFiltersProps> = ({ fil
   const { groups } = useEnterpriseGroups();
 
   const handleResetFilters = () => {
-    setFilters({ search: '', status: '', group: '', issue: '', managed: '', addl_web: '', cif: '', client_id: '', order_id: '', sms: '', one_time: '', received_month: '', onboarding_month: '', go_live_month: '', term_month: '' });
+    setFilters({ search: '', status: '', group: '', issue: '', oem: '', managed: '', addl_web: '', cif: '', client_id: '', order_id: '', sms: '', one_time: '', received_month: '', onboarding_month: '', go_live_month: '', term_month: '' });
   };
 
-  const hasActiveFilters = !!(filters.search || filters.cif || filters.client_id || filters.order_id || filters.status || filters.group || filters.issue || filters.managed || filters.addl_web || filters.sms || filters.one_time || filters.received_month || filters.onboarding_month || filters.go_live_month || filters.term_month);
+  const hasActiveFilters = !!(filters.search || filters.cif || filters.client_id || filters.order_id || filters.status || filters.group || filters.issue || filters.oem || filters.managed || filters.addl_web || filters.sms || filters.one_time || filters.received_month || filters.onboarding_month || filters.go_live_month || filters.term_month);
 
   return (
     <div className="px-3 py-4 mt-2 border-t border-white/10 animate-in fade-in duration-300">
@@ -157,6 +158,25 @@ const DealershipSidebarFilters: React.FC<DealershipSidebarFiltersProps> = ({ fil
                       <option value="no_poc">Missing POC Email</option>
                       <option value="no_web_provider">Missing Web Provider</option>
                       <option value="no_inv_provider">Missing Inv. Provider</option>
+                      <option value="no_oem">Missing OEM</option>
+                  </select>
+                  <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={10} />
+              </div>
+
+              <div className="relative">
+                  <select 
+                      value={filters.oem} 
+                      onChange={(e) => setFilters({...filters, oem: e.target.value})}
+                      title="Filter by OEM Group (any Make in the group) or by an exact Make"
+                      className="w-full pl-2 pr-6 py-1.5 bg-[#1e293b] border border-slate-700 rounded-lg text-[11px] text-slate-300 appearance-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 outline-none cursor-pointer"
+                  >
+                      <option value="">All OEMs</option>
+                      <optgroup label="OEM Groups">
+                          {OEM_GROUPS.map(g => <option key={encodeOemFilter('group', g)} value={encodeOemFilter('group', g)}>{g}</option>)}
+                      </optgroup>
+                      <optgroup label="Makes">
+                          {OEM_MAKES_ALPHABETICAL.map(m => <option key={encodeOemFilter('make', m)} value={encodeOemFilter('make', m)}>{m}</option>)}
+                      </optgroup>
                   </select>
                   <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={10} />
               </div>

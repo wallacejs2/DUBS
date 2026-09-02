@@ -338,6 +338,8 @@ export interface DealershipFilterState {
   status: string;
   group: string;
   issue: string;
+  // OEM Group / Make filter, encoded as "group:<OEM Group>" or "make:<Make>" (see lib/oem.ts)
+  oem: string;
   managed: string;
   addl_web: string;
   cif: string;

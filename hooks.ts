@@ -7,6 +7,7 @@ import {
   ProviderProduct, Meeting, Note, Task, ProductPricing
 } from './types.ts';
 import { hasOneTimeLine, hasUnpricedLine, activeOrderList } from './lib/orderPricing.ts';
+import { hasNoOems, matchesOemFilter } from './lib/oem.ts';
 
 export function useEnterpriseGroups() {
   const [groups, setGroups] = useState<EnterpriseGroup[]>([]);
@@ -41,7 +42,7 @@ export function useEnterpriseGroups() {
   };
 }
 
-export function useDealerships(filters?: { search?: string; status?: string; group?: string; issue?: string; managed?: string; addl_web?: string; cif?: string; client_id?: string; order_id?: string; sms?: string; one_time?: string; received_month?: string; onboarding_month?: string; go_live_month?: string; term_month?: string }) {
+export function useDealerships(filters?: { search?: string; status?: string; group?: string; issue?: string; oem?: string; managed?: string; addl_web?: string; cif?: string; client_id?: string; order_id?: string; sms?: string; one_time?: string; received_month?: string; onboarding_month?: string; go_live_month?: string; term_month?: string }) {
   const [dealerships, setDealerships] = useState<Dealership[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -145,8 +146,18 @@ export function useDealerships(filters?: { search?: string; status?: string; gro
            return !d.inventory_provider || d.inventory_provider.trim().length === 0;
         }
 
+        if (filters.issue === 'no_oem') {
+           return hasNoOems(d.oems);
+        }
+
         return true;
       });
+    }
+
+    // OEM Group / Make filter: a group matches any dealership with a Make in that group,
+    // a make matches only that exact Make (see matchesOemFilter in lib/oem.ts).
+    if (filters?.oem) {
+      data = data.filter(d => matchesOemFilter(d.oems, filters.oem));
     }
 
     if (filters?.received_month) {
