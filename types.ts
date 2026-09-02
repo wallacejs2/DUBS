@@ -330,6 +330,8 @@ export interface DealershipFilterState {
   addl_web: string;
   cif: string;
   client_id: string;
+  // DMT order number (matches any order on the dealership, active or previous)
+  order_id: string;
   sms: string;
   one_time: string;
   // Lifecycle month filters (set by Dashboard click-through)

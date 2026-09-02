@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Plus, FileSpreadsheet, Search, Hash, X, ChevronDown } from 'lucide-react';
+import { Plus, FileSpreadsheet, Search, Hash, X, ChevronDown, ClipboardList } from 'lucide-react';
 import { useDealerships, useEnterpriseGroups, useOrders, useProvidersProducts, useTeamMembers, useProductPricing } from '../hooks';
 import { DealershipWithRelations, ProductCode, DealershipFilterState, DealershipStatus } from '../types';
 import { db } from '../db';
@@ -323,10 +323,10 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
 
   const activeSubPanel = panelStack[panelStack.length - 1];
 
-  const hasActiveFilters = !!(filters.search || filters.cif || filters.client_id || filters.status || filters.group || filters.issue || filters.managed || filters.addl_web || filters.sms || filters.one_time || filters.received_month || filters.onboarding_month || filters.go_live_month || filters.term_month);
+  const hasActiveFilters = !!(filters.search || filters.cif || filters.client_id || filters.order_id || filters.status || filters.group || filters.issue || filters.managed || filters.addl_web || filters.sms || filters.one_time || filters.received_month || filters.onboarding_month || filters.go_live_month || filters.term_month);
 
   const handleResetFilters = () => {
-    setFilters({ search: '', status: '', group: '', issue: '', managed: '', addl_web: '', cif: '', client_id: '', sms: '', one_time: '', received_month: '', onboarding_month: '', go_live_month: '', term_month: '' });
+    setFilters({ search: '', status: '', group: '', issue: '', managed: '', addl_web: '', cif: '', client_id: '', order_id: '', sms: '', one_time: '', received_month: '', onboarding_month: '', go_live_month: '', term_month: '' });
   };
 
   return (
@@ -441,6 +441,21 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
               />
               {filters.client_id && (
                 <button onClick={() => setFilters({...filters, client_id: ''})} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                  <X size={12} />
+                </button>
+              )}
+            </div>
+            <div className="relative min-w-[140px]">
+              <ClipboardList className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+              <input
+                value={filters.order_id}
+                onChange={(e) => setFilters({...filters, order_id: e.target.value})}
+                placeholder="DMT Order ID"
+                title="Search by DMT order number (matches active and previous orders)"
+                className="w-full pl-8 pr-7 py-1.5 bg-slate-100/50 dark:bg-[#1C1C1E] border border-slate-200/60 dark:border-[#38383A] rounded-xl text-sm text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all"
+              />
+              {filters.order_id && (
+                <button onClick={() => setFilters({...filters, order_id: ''})} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
                   <X size={12} />
                 </button>
               )}
