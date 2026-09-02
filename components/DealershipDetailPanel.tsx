@@ -11,6 +11,8 @@ import {
 import { db } from '../db';
 import { useTeamMembers, useProvidersProducts, useProductPricing } from '../hooks';
 import { FEE_TYPE_OPTIONS, resolveLineAmount, formatLineAmount, summarizeProducts, summarizeOrders, isOneTime, partitionOrders, sortOrdersByRecency, productCodeOptions, allProductCodes } from '../lib/orderPricing';
+import { formatOemsForExport } from '../lib/oem';
+import OemSelector from './OemSelector';
 
 interface DealershipDetailPanelProps {
   dealership: DealershipWithRelations;
@@ -403,6 +405,7 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
          Address: d.address_line1 || '',
          State: d.state || '',
          CRM: d.crm_provider,
+         OEMs: formatOemsForExport(d.oems),
          Sales_Contact: d.contacts?.sales_contact_name || '',
          Enrollment_Contact: d.contacts?.enrollment_contact_name || '',
          CSM: d.contacts?.assigned_specialist_name || '',
@@ -461,7 +464,7 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
     }
     const columns = [
       'Status', 'Notes', 'CIF', 'Name', 'Group', 'Store', 'Branch',
-      'PP_ID', 'ERA_ID', 'BU_ID', 'Address', 'State', 'CRM', 
+      'PP_ID', 'ERA_ID', 'BU_ID', 'Address', 'State', 'CRM', 'OEMs',
       'Sales_Contact', 'Enrollment_Contact', 'CSM', 'POC_Name', 'POC_Email', 'POC_Phone', 
       'Received_Date', 'Order_Number', 'Onboarding_Date', 'Go_Live_Date', 'Term_Date',
       ...productCodes,
@@ -1051,6 +1054,21 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                         </div>
                     </div>
                 ))}
+            </div>
+
+            <hr className="border-slate-100/60 dark:border-[#38383A]" />
+
+            {/* OEMs */}
+            <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">OEMs</h3>
+                {isEditing ? (
+                    <OemSelector
+                        value={formData.oems}
+                        onChange={(oems) => updateField('oems', oems)}
+                    />
+                ) : (
+                    <OemSelector value={dealership.oems} readOnly />
+                )}
             </div>
 
             <hr className="border-slate-100/60 dark:border-[#38383A]" />

@@ -5,6 +5,7 @@ import { useDealerships, useEnterpriseGroups, useOrders, useProvidersProducts, u
 import { DealershipWithRelations, ProductCode, DealershipFilterState, DealershipStatus } from '../types';
 import { db } from '../db';
 import { hasOneTimeLine, hasUnpricedLine, summarizeOrders, summarizeProducts, activeOrderList, partitionOrders, allProductCodes, resolveLineAmount } from '../lib/orderPricing';
+import { formatOemsForExport } from '../lib/oem';
 import DealershipCard from '../components/DealershipCard';
 import DealershipForm from '../components/DealershipForm';
 import DealershipDetailPanel from '../components/DealershipDetailPanel';
@@ -114,6 +115,8 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
          State: fullD.state || '',
          Zip_Code: fullD.zip_code ? `="${fullD.zip_code}"` : '',
          CRM: fullD.crm_provider,
+         // All selected OEMs in one cell: "OEM Group - Make", comma separated, in saved order
+         OEMs: formatOemsForExport(fullD.oems),
          Sales_Contact: fullD.contacts?.sales_contact_name || '',
          Enrollment_Contact: fullD.contacts?.enrollment_contact_name || '',
          CSM: fullD.contacts?.assigned_specialist_name || '',
@@ -225,7 +228,7 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
 
   const standardBaseColumns = (productCodes: string[]) => [
     'Status', 'Notes', 'CIF', 'Name', 'Group', 'Store', 'Branch',
-    'PP_ID', 'ERA_ID', 'BU_ID', 'MMS_ID', 'Address', 'City', 'State', 'Zip_Code', 'CRM',
+    'PP_ID', 'ERA_ID', 'BU_ID', 'MMS_ID', 'Address', 'City', 'State', 'Zip_Code', 'CRM', 'OEMs',
     'Sales_Contact', 'Enrollment_Contact', 'CSM', 'POC_Name', 'POC_Email', 'POC_Phone',
     'Received_Date', 'Order_Number', 'Onboarding_Date',
     'Go_Live_Date', 'Term_Date', 'Managed_Package',
@@ -303,6 +306,7 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
       ['state', 'State'],
       ['zip', 'Zip_Code'],
       ['crmProvider', 'CRM'],
+      ['OEMs', 'OEMs'],
       ['salesPOC', 'Sales_Contact'],
       ['enrollmentPOC', 'Enrollment_Contact'],
       ['csmPOC', 'CSM'],

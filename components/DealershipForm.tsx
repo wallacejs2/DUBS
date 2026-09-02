@@ -9,6 +9,7 @@ import {
 import { db } from '../db';
 import { useTeamMembers, useProvidersProducts, useProductPricing } from '../hooks';
 import { FEE_TYPE_OPTIONS, productCodeOptions } from '../lib/orderPricing';
+import OemSelector from './OemSelector';
 
 interface DealershipFormProps {
   initialData?: Partial<DealershipWithRelations>;
@@ -139,6 +140,7 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
     crm_provider: 'FOCUS',
     enterprise_group_id: '',
     products: [],
+    oems: [],
     fullpath_products: [],
     fp_solutions_visible: false,
     website_links: [{ id: crypto.randomUUID(), dealership_id: '', primary_url: '', client_id: '' }],
@@ -674,6 +676,17 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
                         </div>
                     </div>
                 ))}
+            </div>
+
+            <hr className="border-slate-100 dark:border-slate-800" />
+
+            {/* OEMs */}
+            <div className="space-y-3">
+                <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">OEMs</h3>
+                <OemSelector
+                    value={formData.oems}
+                    onChange={(oems) => updateField('oems', oems)}
+                />
             </div>
 
             <hr className="border-slate-100 dark:border-slate-800" />
