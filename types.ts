@@ -32,6 +32,14 @@ export enum ProductCode {
   P15390_SMS = '15390 - SMS'
 }
 
+export enum FeeType {
+  MONTHLY = 'monthly',
+  ONE_TIME = 'one_time'
+}
+
+/** Default (fallback) price per product code, used when an order line item has no amount. */
+export type ProductPricing = Partial<Record<ProductCode, number | null>>;
+
 export enum ProviderProductCategory {
   PROVIDER = 'Provider',
   PRODUCT = 'Product'
@@ -119,6 +127,7 @@ export interface OrderProduct {
   id: string;
   product_code: ProductCode;
   amount: number | null;
+  fee_type: FeeType;
 }
 
 export interface Order {
@@ -314,6 +323,7 @@ export interface DealershipFilterState {
   cif: string;
   client_id: string;
   sms: string;
+  one_time: string;
   // Lifecycle month filters (set by Dashboard click-through)
   received_month: string;
   onboarding_month: string;

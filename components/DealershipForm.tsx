@@ -4,10 +4,11 @@ import { X, Save, Plus, Trash2, Check, Minus, ChevronDown } from 'lucide-react';
 import { 
   DealershipWithRelations, DealershipStatus, 
   EnterpriseGroup, ProductCode, OrderStatus, Order, TeamRole,
-  ProviderProductCategory, ProviderType
+  ProviderProductCategory, ProviderType, FeeType
 } from '../types';
 import { db } from '../db';
-import { useTeamMembers, useProvidersProducts } from '../hooks';
+import { useTeamMembers, useProvidersProducts, useProductPricing } from '../hooks';
+import { FEE_TYPE_OPTIONS } from '../lib/orderPricing';
 
 interface DealershipFormProps {
   initialData?: Partial<DealershipWithRelations>;
@@ -126,6 +127,7 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
 
   const { members: teamMembers } = useTeamMembers();
   const { items: providerProducts } = useProvidersProducts();
+  const { pricing } = useProductPricing();
 
   const crmProviders = useMemo(() => providerProducts.filter(i => i.category === ProviderProductCategory.PROVIDER && i.provider_type === ProviderType.CRM), [providerProducts]);
   const websiteProviders = useMemo(() => providerProducts.filter(i => i.category === ProviderProductCategory.PROVIDER && i.provider_type === ProviderType.WEBSITE), [providerProducts]);
@@ -223,12 +225,32 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
     updateField('orders', orders);
   };
 
+  const addOrder = () => {
+    const orders = [...(formData.orders || [])];
+    orders.push({
+      id: crypto.randomUUID(),
+      dealership_id: formData.id || '',
+      received_date: new Date().toISOString().split('T')[0],
+      order_number: '',
+      status: OrderStatus.PENDING,
+      products: []
+    });
+    updateField('orders', orders);
+  };
+
+  const removeOrder = (idx: number) => {
+    const orders = [...(formData.orders || [])];
+    orders.splice(idx, 1);
+    updateField('orders', orders);
+  };
+
   const addProductToOrder = (orderIdx: number) => {
      const orders = [...(formData.orders || [])];
      orders[orderIdx].products.push({
         id: crypto.randomUUID(),
         product_code: ProductCode.P15391_SE,
-        amount: null
+        amount: null,
+        fee_type: FeeType.MONTHLY
      });
      updateField('orders', orders);
   };
@@ -716,11 +738,24 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
 
             {/* DMT Orders */}
             <div className="space-y-6">
-               <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">DMT Orders</h3>
+               <div className="flex justify-between items-center">
+                  <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">DMT Orders</h3>
+                  <button type="button" onClick={addOrder} className="text-xs font-bold text-blue-500 dark:text-blue-400 hover:underline flex items-center gap-1">
+                    <Plus size={10} /> Add Order
+                  </button>
+               </div>
                
                {formData.orders?.map((order, orderIdx) => (
-                  <div key={orderIdx} className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm relative space-y-4">
-                     <div className="grid grid-cols-2 gap-4">
+                  <div key={order.id || orderIdx} className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm relative space-y-4">
+                     <button
+                        type="button"
+                        onClick={() => removeOrder(orderIdx)}
+                        className="absolute top-3 right-3 p-1 text-slate-300 hover:text-red-500 dark:text-slate-600 dark:hover:text-red-400 transition-colors"
+                        title="Remove Order"
+                     >
+                        <Trash2 size={14} />
+                     </button>
+                     <div className="grid grid-cols-2 gap-4 pr-6">
                         <div>
                             <Label>Received Date</Label>
                             <Input 
@@ -747,13 +782,16 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
                            </button>
                         </div>
                         
-                        <div className="grid grid-cols-[1fr_120px_auto] gap-3 mb-1 px-1">
+                        <div className="grid grid-cols-[1fr_120px_110px_auto] gap-3 mb-1 px-1">
                             <Label>Product</Label>
                             <Label>Price ($)</Label>
+                            <Label>Fee Type</Label>
                         </div>
 
-                        {order.products?.map((product, prodIdx) => (
-                           <div key={prodIdx} className="grid grid-cols-[1fr_120px_auto] gap-3 items-center animate-in fade-in slide-in-from-left-2">
+                        {order.products?.map((product, prodIdx) => {
+                           const defaultPrice = pricing[product.product_code];
+                           return (
+                           <div key={product.id || prodIdx} className="grid grid-cols-[1fr_120px_110px_auto] gap-3 items-center animate-in fade-in slide-in-from-left-2">
                               <Select 
                                 value={product.product_code} 
                                 onChange={(v) => updateProductInOrder(orderIdx, prodIdx, 'product_code', v)} 
@@ -763,17 +801,28 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
                                 type="number"
                                 value={product.amount !== null && product.amount !== undefined ? String(product.amount) : ''}
                                 onChange={(v) => updateProductInOrder(orderIdx, prodIdx, 'amount', v === '' ? null : parseFloat(v))}
-                                placeholder="0.00"
+                                placeholder={defaultPrice !== null && defaultPrice !== undefined ? `${defaultPrice} est.` : '0.00'}
+                              />
+                              <Select
+                                value={product.fee_type || FeeType.MONTHLY}
+                                onChange={(v) => updateProductInOrder(orderIdx, prodIdx, 'fee_type', v)}
+                                options={FEE_TYPE_OPTIONS}
                               />
                               <button type="button" onClick={() => removeProductFromOrder(orderIdx, prodIdx)} className="text-slate-300 hover:text-red-500 p-1"><Minus size={14} /></button>
                            </div>
-                        ))}
+                           );
+                        })}
                         {(!order.products || order.products.length === 0) && (
                             <div className="text-center py-4 text-slate-400 text-xs italic bg-slate-50 dark:bg-slate-900 rounded-lg border border-dashed border-slate-200 dark:border-slate-800">No products added to this order.</div>
                         )}
                      </div>
                   </div>
                ))}
+               {(!formData.orders || formData.orders.length === 0) && (
+                  <div className="text-center py-6 text-slate-400 text-xs italic bg-slate-50 dark:bg-slate-900 rounded-xl border border-dashed border-slate-200 dark:border-slate-800">
+                     No DMT orders. Click "Add Order" to create one.
+                  </div>
+               )}
             </div>
 
           </form>

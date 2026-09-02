@@ -9,6 +9,7 @@ interface DealershipCardProps {
   isManaged?: boolean;
   hasClientId?: boolean;
   hasAddlWeb?: boolean;
+  hasOneTime?: boolean;
   hasZeroPrice?: boolean;
   missingCSM?: boolean;
   missingEnrollment?: boolean;
@@ -30,7 +31,7 @@ const statusColors: Record<DealershipStatus, string> = {
 };
 
 const DealershipCard: React.FC<DealershipCardProps> = ({
-  dealership, groupName, isManaged, hasClientId = true, hasAddlWeb, hasZeroPrice, missingCSM,
+  dealership, groupName, isManaged, hasClientId = true, hasAddlWeb, hasOneTime, hasZeroPrice, missingCSM,
   missingEnrollment, missingPOC, missingWebProvider, missingInvProvider,
   onClick, onToggleFavorite
 }) => {
@@ -150,7 +151,7 @@ const DealershipCard: React.FC<DealershipCardProps> = ({
                 className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-orange-500 rounded-full leading-none"
                 title={[
                   !hasClientId && '40NM',
-                  hasZeroPrice && '$0',
+                  hasZeroPrice && 'EST',
                   missingCSM && 'CSM',
                   missingEnrollment && 'ENR',
                   missingPOC && 'POC',
@@ -174,6 +175,7 @@ const DealershipCard: React.FC<DealershipCardProps> = ({
           {dealership.crm_provider}
           {isManaged && ' · Managed'}
           {hasAddlWeb && ' · Addl. Web'}
+          {hasOneTime && ' · One-Time'}
           {dealership.sms_activated && ' · SMS'}
         </p>
 

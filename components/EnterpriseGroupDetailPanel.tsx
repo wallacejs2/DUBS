@@ -2,7 +2,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { X, ArrowRight, Edit3, Trash2, Save, RefreshCw, ArrowLeft } from 'lucide-react';
 import { EnterpriseGroup, Dealership, DealershipStatus } from '../types';
-import { useOrders } from '../hooks';
+import { useOrders, useProductPricing } from '../hooks';
+import { summarizeOrders, resolveLineAmount, formatLineAmount, isOneTime, getActiveOrders, partitionOrders } from '../lib/orderPricing';
 
 interface EnterpriseGroupDetailPanelProps {
   group: EnterpriseGroup;
@@ -44,6 +45,7 @@ const EnterpriseGroupDetailPanel: React.FC<EnterpriseGroupDetailPanelProps> = ({
   
   // Fetch orders for revenue calculation and product count
   const { orders } = useOrders();
+  const { pricing } = useProductPricing();
 
   useEffect(() => {
     setFormData(group);
@@ -64,27 +66,28 @@ const EnterpriseGroupDetailPanel: React.FC<EnterpriseGroupDetailPanelProps> = ({
     return dealerships.filter(d => d.status !== DealershipStatus.CANCELLED);
   }, [dealerships]);
 
-  const monthlyRevenue = useMemo(() => {
+  // Only each dealership's ACTIVE DMT order (most recent on or before today)
+  // counts; previous orders are excluded so products are never double counted.
+  const activeOrders = useMemo(() => getActiveOrders(orders), [orders]);
+
+  // Revenue from Live/Legacy dealerships only, split into monthly recurring vs one-time fees.
+  // Unpriced line items fall back to the product default price and are flagged as estimated.
+  const revenue = useMemo(() => {
     const revenueDealerIds = new Set(
       dealerships
         .filter(d => d.status === DealershipStatus.LIVE || d.status === DealershipStatus.LEGACY)
         .map(d => d.id)
     );
-    return orders
-      .filter(o => revenueDealerIds.has(o.dealership_id))
-      .reduce((sum, order) => {
-        const orderTotal = order.products?.reduce((pSum, p) => pSum + (Number(p.amount) || 0), 0) || 0;
-        return sum + orderTotal;
-      }, 0);
-  }, [dealerships, orders]);
+    return summarizeOrders(activeOrders.filter(o => revenueDealerIds.has(o.dealership_id)), pricing);
+  }, [dealerships, activeOrders, pricing]);
 
   const totalProductsCount = useMemo(() => {
-    // Only count products from non-cancelled dealerships
+    // Only count products from non-cancelled dealerships (active order only)
     const groupDealerIds = new Set(activeDealerships.map(d => d.id));
-    return orders
+    return activeOrders
       .filter(o => groupDealerIds.has(o.dealership_id))
       .reduce((total, order) => total + (order.products?.length || 0), 0);
-  }, [activeDealerships, orders]);
+  }, [activeDealerships, activeOrders]);
 
   const formatCurrency = (val: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
 
@@ -201,7 +204,7 @@ const EnterpriseGroupDetailPanel: React.FC<EnterpriseGroupDetailPanelProps> = ({
             </div>
 
             {/* Stats Compact */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-slate-50/50 dark:bg-white/[0.02] rounded-2xl border border-slate-100/60 dark:border-[#38383A]">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 p-4 bg-slate-50/50 dark:bg-white/[0.02] rounded-2xl border border-slate-100/60 dark:border-[#38383A]">
               <div>
                 <Label>Dealerships</Label>
                 <div className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">{activeDealerships.length}</div>
@@ -220,7 +223,16 @@ const EnterpriseGroupDetailPanel: React.FC<EnterpriseGroupDetailPanelProps> = ({
               </div>
               <div>
                 <Label>Monthly Revenue</Label>
-                <div className="text-xl font-bold text-emerald-600 dark:text-emerald-400 tracking-tight">{formatCurrency(monthlyRevenue)}</div>
+                <div className="text-xl font-bold text-emerald-600 dark:text-emerald-400 tracking-tight flex items-center gap-2">
+                  {formatCurrency(revenue.monthly)}
+                  {revenue.hasEstimated && (
+                    <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800" title="Includes estimated default pricing for unpriced line items">est.</span>
+                  )}
+                </div>
+              </div>
+              <div>
+                <Label>One-Time Fees</Label>
+                <div className="text-xl font-bold text-violet-600 dark:text-violet-400 tracking-tight">{formatCurrency(revenue.oneTime)}</div>
               </div>
             </div>
 
@@ -235,8 +247,10 @@ const EnterpriseGroupDetailPanel: React.FC<EnterpriseGroupDetailPanelProps> = ({
                 ) : (
                   <div className="flex flex-col gap-2">
                     {dealerships.map((dealer) => {
-                      const dealerOrders = orders.filter(o => o.dealership_id === dealer.id);
+                      const { active: activeOrder, previous: previousOrders } = partitionOrders(orders.filter(o => o.dealership_id === dealer.id));
+                      const dealerOrders = activeOrder ? [activeOrder] : [];
                       const hasProducts = dealerOrders.some(o => o.products && o.products.length > 0);
+                      const previousCount = previousOrders.length;
 
                       return (
                       <div 
@@ -265,19 +279,36 @@ const EnterpriseGroupDetailPanel: React.FC<EnterpriseGroupDetailPanelProps> = ({
                             </div>
                         </div>
 
-                        {hasProducts && (
+                        {(hasProducts || previousCount > 0) && (
                             <div className="mt-3 pt-3 border-t border-slate-100/60 dark:border-[#38383A]">
+                                {previousCount > 0 && (
+                                    <div className="flex items-center justify-between mb-1.5 text-[10px] text-slate-400 dark:text-slate-500">
+                                        <span className="font-bold uppercase tracking-wide">Active DMT Order{activeOrder?.order_number ? ` · ${activeOrder.order_number}` : ''}</span>
+                                        <span>{previousCount} previous order{previousCount === 1 ? '' : 's'} not counted</span>
+                                    </div>
+                                )}
                                 <div className="space-y-1.5">
                                     {dealerOrders.map(order => (
-                                        order.products?.map(p => (
+                                        order.products?.map(p => {
+                                            const line = resolveLineAmount(p, pricing);
+                                            return (
                                             <div key={p.id} className="flex justify-between items-center text-xs">
                                                 <span className="text-slate-600 dark:text-slate-400 font-medium flex items-center gap-1.5">
-                                                    <span className="w-1 h-1 rounded-full bg-blue-300 dark:bg-blue-600"></span>
+                                                    <span className={`w-1 h-1 rounded-full ${isOneTime(p) ? 'bg-violet-300 dark:bg-violet-600' : 'bg-blue-300 dark:bg-blue-600'}`}></span>
                                                     {p.product_code}
+                                                    {isOneTime(p) && (
+                                                        <span className="px-1 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide bg-violet-50 text-violet-700 border border-violet-200 dark:bg-violet-900/30 dark:text-violet-300 dark:border-violet-800">One-Time</span>
+                                                    )}
                                                 </span>
-                                                <span className="font-mono text-slate-400 dark:text-slate-500">${Number(p.amount).toLocaleString()}</span>
+                                                <span
+                                                    className={`font-mono ${line.isEstimated ? 'text-amber-600 dark:text-amber-400 italic' : 'text-slate-400 dark:text-slate-500'}`}
+                                                    title={line.isEstimated ? 'Estimated from the product default price' : undefined}
+                                                >
+                                                    {formatLineAmount(line)}
+                                                </span>
                                             </div>
-                                        ))
+                                            );
+                                        })
                                     ))}
                                 </div>
                             </div>

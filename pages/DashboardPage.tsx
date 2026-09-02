@@ -6,8 +6,9 @@ import {
   BarChart3, Building2, Calendar, Clock, DollarSign,
   Rocket, TrendingUp, UserPlus, X, ArrowRight
 } from 'lucide-react';
-import { useDealerships, useOrders } from '../hooks';
-import { DealershipFilterState, DealershipStatus, Order, ProductCode } from '../types';
+import { useDealerships, useOrders, useProductPricing } from '../hooks';
+import { DealershipFilterState, DealershipStatus, FeeType, Order, ProductCode } from '../types';
+import { ProductSalesEntry, resolveLineAmount, summarizeByProduct, summarizeOrders, summarizeProducts, getActiveOrders } from '../lib/orderPricing';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -130,8 +131,17 @@ const Section: React.FC<SectionProps> = ({ title, icon, accent, children, header
   </div>
 );
 
+const EstPill: React.FC<{ title?: string }> = ({ title }) => (
+  <span
+    className="px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800 leading-none"
+    title={title ?? 'Includes estimated default pricing for unpriced line items'}
+  >
+    est.
+  </span>
+);
+
 interface ProductSalesTableProps {
-  sales: Map<ProductCode, { count: number; revenue: number }>;
+  sales: Map<ProductCode, ProductSalesEntry>;
 }
 
 const ProductSalesTable: React.FC<ProductSalesTableProps> = ({ sales }) => {
@@ -142,7 +152,7 @@ const ProductSalesTable: React.FC<ProductSalesTableProps> = ({ sales }) => {
   return (
     <div className="flex flex-wrap gap-2">
       {active.map(code => {
-        const { count, revenue } = sales.get(code)!;
+        const { count, monthly, oneTime, estimatedCount } = sales.get(code)!;
         return (
           <div
             key={code}
@@ -154,7 +164,11 @@ const ProductSalesTable: React.FC<ProductSalesTableProps> = ({ sales }) => {
             />
             <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">{code}</span>
             <span className="text-xs font-bold text-slate-800 dark:text-slate-100">{count.toLocaleString()}</span>
-            <span className="text-xs text-slate-400 dark:text-slate-500">{formatCurrency(revenue, true)}</span>
+            <span className="text-xs text-slate-400 dark:text-slate-500">{formatCurrency(monthly, true)}/mo</span>
+            {oneTime > 0 && (
+              <span className="text-xs text-violet-500 dark:text-violet-400">+{formatCurrency(oneTime, true)} one-time</span>
+            )}
+            {estimatedCount > 0 && <EstPill title={`${estimatedCount} line item${estimatedCount === 1 ? '' : 's'} using estimated default pricing`} />}
           </div>
         );
       })}
@@ -231,19 +245,27 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
 
   const { dealerships } = useDealerships();
   const { orders } = useOrders();
+  const { pricing } = useProductPricing();
+
+  // Only each dealership's ACTIVE DMT order (most recent on or before today)
+  // feeds revenue and product metrics. Previous orders are excluded so a
+  // re-order never double counts the same products.
+  const activeOrders = useMemo(() => getActiveOrders(orders), [orders]);
 
   // ─── Section 1 Metrics ─────────────────────────────────────────────────────
   const s1Metrics = useMemo(() => {
     const filteredDealerships = dealerships.filter(d => !s1ExcludedStatuses.includes(d.status));
     const filteredIds = new Set(filteredDealerships.map(d => d.id));
-    const filteredOrders = orders.filter(o => filteredIds.has(o.dealership_id));
+    const filteredOrders = activeOrders.filter(o => filteredIds.has(o.dealership_id));
 
     const totalDealerships = filteredDealerships.length;
-    const totalLineItems = filteredOrders.reduce((sum, o) => sum + (o.products?.length || 0), 0);
-    const totalRevenue = filteredOrders.reduce(
-      (sum, o) => sum + (o.products?.reduce((ps, p) => ps + (Number(p.amount) || 0), 0) || 0),
-      0
-    );
+    // Revenue split: monthly recurring vs one-time fees. Unpriced line items
+    // use the product default price and are flagged as estimated.
+    const revenue = summarizeOrders(filteredOrders, pricing);
+    const totalLineItems = revenue.lineCount;
+    const monthlyRevenue = revenue.monthly;
+    const oneTimeRevenue = revenue.oneTime;
+    const hasEstimated = revenue.hasEstimated;
 
     // Build per-dealer order index for reallocated revenue
     const ordersByDealer = new Map<string, Order[]>();
@@ -252,13 +274,10 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
       list.push(o);
       ordersByDealer.set(o.dealership_id, list);
     }
+    // Reallocated = monthly recurring only (one-time fees excluded) minus the per-dealer allocation
     const reallocatedRevenue = filteredDealerships.reduce((total, d) => {
-      const dealerOrders = ordersByDealer.get(d.id) ?? [];
-      const dealerRevenue = dealerOrders.reduce(
-        (sum, o) => sum + (o.products?.reduce((ps, p) => ps + (Number(p.amount) || 0), 0) || 0),
-        0
-      );
-      return total + (dealerRevenue - 2500);
+      const dealerMonthly = summarizeOrders(ordersByDealer.get(d.id) ?? [], pricing).monthly;
+      return total + (dealerMonthly - 2500);
     }, 0);
 
     // Status counts from unfiltered dataset (for toggle button labels)
@@ -267,19 +286,10 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
       return acc;
     }, {} as Record<string, number>);
 
-    const productSales = new Map<ProductCode, { count: number; revenue: number }>();
-    for (const o of filteredOrders) {
-      for (const p of o.products ?? []) {
-        const cur = productSales.get(p.product_code) ?? { count: 0, revenue: 0 };
-        productSales.set(p.product_code, {
-          count: cur.count + 1,
-          revenue: cur.revenue + (Number(p.amount) || 0),
-        });
-      }
-    }
+    const productSales = summarizeByProduct(filteredOrders, pricing);
 
-    return { totalDealerships, totalLineItems, totalRevenue, reallocatedRevenue, statusCounts, productSales };
-  }, [dealerships, orders, s1ExcludedStatuses]);
+    return { totalDealerships, totalLineItems, monthlyRevenue, oneTimeRevenue, hasEstimated, reallocatedRevenue, statusCounts, productSales };
+  }, [dealerships, activeOrders, pricing, s1ExcludedStatuses]);
 
   // ─── Section 2 Metrics ─────────────────────────────────────────────────────
   const s2Range = useMemo(() => getS2DateRange(s2Preset, s2CustomRange), [s2Preset, s2CustomRange]);
@@ -324,20 +334,11 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
     );
     const avgDaysToGoLive = daysAcc.count > 0 ? Math.round(daysAcc.total / daysAcc.count) : null;
 
-    const s2ProductSales = new Map<ProductCode, { count: number; revenue: number }>();
-    for (const o of orders) {
-      if (!inRange(o.received_date)) continue;
-      for (const p of o.products ?? []) {
-        const cur = s2ProductSales.get(p.product_code) ?? { count: 0, revenue: 0 };
-        s2ProductSales.set(p.product_code, {
-          count: cur.count + 1,
-          revenue: cur.revenue + (Number(p.amount) || 0),
-        });
-      }
-    }
+    // Active orders received within the range (previous orders excluded)
+    const s2ProductSales = summarizeByProduct(activeOrders.filter(o => inRange(o.received_date)), pricing);
 
     return { received, onboarding, live, termed, avgDaysToGoLive, productSales: s2ProductSales };
-  }, [dealerships, orders, s2Range]);
+  }, [dealerships, orders, activeOrders, pricing, s2Range]);
 
   // ─── Section 3 Chart Data ──────────────────────────────────────────────────
   const s3ChartData = useMemo(() => {
@@ -353,7 +354,9 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
     return data;
   }, [dealerships]);
 
-  // ─── Section 4 Chart Data: Cumulative Product Revenue ──────────────────────
+  // ─── Section 4 Chart Data: Cumulative Product Monthly Recurring Revenue ───
+  // Monthly recurring only: one-time fees are excluded so the running total
+  // reflects run-rate. Unpriced lines use the product default (estimated).
   const productRevenue = useMemo(() => {
     const now = new Date();
     const months: Array<{ month: string; label: string }> = [];
@@ -366,14 +369,15 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
 
     // Group per-month revenue per product (non-cumulative)
     const perMonth = new Map<string, Map<ProductCode, number>>();
-    for (const o of orders) {
+    for (const o of activeOrders) {
       const mk = getMonthKey(o.received_date);
       if (!mk) continue;
       if (!o.products) continue;
       const bucket = perMonth.get(mk) ?? new Map<ProductCode, number>();
       for (const p of o.products) {
-        const amount = Number(p.amount) || 0;
-        bucket.set(p.product_code, (bucket.get(p.product_code) ?? 0) + amount);
+        const line = resolveLineAmount(p, pricing);
+        if (line.feeType !== FeeType.MONTHLY) continue;
+        bucket.set(p.product_code, (bucket.get(p.product_code) ?? 0) + line.amount);
       }
       perMonth.set(mk, bucket);
     }
@@ -416,7 +420,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
     );
 
     return { chartData, activeCodes };
-  }, [orders]);
+  }, [activeOrders, pricing]);
 
   // ─── Section 5 Chart Data: Cumulative Revenue by Go-Live Month ─────────────
   const goLiveRevenueTrend = useMemo(() => {
@@ -430,11 +434,11 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
     }
     const firstMk = months[0].month;
 
-    // Per-dealer revenue = sum of every OrderProduct.amount across that dealer's orders
+    // Per-dealer monthly recurring revenue across that dealer's orders (one-time fees excluded)
     const dealerRevenue = new Map<string, number>();
-    for (const o of orders) {
+    for (const o of activeOrders) {
       if (!o.products) continue;
-      const rev = o.products.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+      const rev = summarizeProducts(o.products, pricing).monthly;
       dealerRevenue.set(o.dealership_id, (dealerRevenue.get(o.dealership_id) ?? 0) + rev);
     }
 
@@ -459,7 +463,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
       running += revenueByMonth.get(month) ?? 0;
       return { month, label, revenue: running };
     });
-  }, [dealerships, orders]);
+  }, [dealerships, activeOrders, pricing]);
 
   // ─── Section 1 Toggle Helpers ──────────────────────────────────────────────
   const toggleS1Group = (statuses: readonly DealershipStatus[]) => {
@@ -484,7 +488,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
         icon={<Building2 size={15} />}
         accent="bg-blue-500/5 dark:bg-blue-500/10 border-blue-200/40 dark:border-blue-500/20"
       >
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
           <KpiCard
             icon={<Building2 size={15} className="text-slate-500" />}
             label="Total Dealerships"
@@ -501,14 +505,23 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
           />
           <KpiCard
             icon={<DollarSign size={15} className="text-emerald-500" />}
-            label="Total Revenue"
-            value={formatCurrency(s1Metrics.totalRevenue, true)}
+            label="Monthly Recurring"
+            value={formatCurrency(s1Metrics.monthlyRevenue, true)}
+            sub={s1Metrics.hasEstimated ? <span className="ml-1.5 align-middle"><EstPill /></span> : undefined}
             iconBg="bg-emerald-50 dark:bg-emerald-900/30"
+          />
+          <KpiCard
+            icon={<DollarSign size={15} className="text-violet-500" />}
+            label="One-Time Fees"
+            value={formatCurrency(s1Metrics.oneTimeRevenue, true)}
+            sub={s1Metrics.hasEstimated ? <span className="ml-1.5 align-middle"><EstPill /></span> : undefined}
+            iconBg="bg-violet-50 dark:bg-violet-900/30"
           />
           <KpiCard
             icon={<TrendingUp size={15} className="text-blue-500" />}
             label="Reallocated Revenue"
             value={formatCurrency(s1Metrics.reallocatedRevenue, true)}
+            sub={s1Metrics.hasEstimated ? <span className="ml-1.5 align-middle"><EstPill /></span> : undefined}
             iconBg="bg-blue-50 dark:bg-blue-900/30"
           />
         </div>
@@ -674,10 +687,13 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
 
       {/* ── Section 4: Product Revenue — Last 18 Months ────────────────────── */}
       <Section
-        title="Product Revenue — Last 18 Months"
+        title="Product Monthly Recurring Revenue — Last 18 Months"
         icon={<DollarSign size={15} />}
         accent="bg-violet-500/5 dark:bg-violet-500/10 border-violet-200/40 dark:border-violet-500/20"
       >
+        <p className="text-xs text-slate-400 dark:text-slate-500 mb-2">
+          Cumulative monthly recurring revenue by order received month, using each dealership's active DMT order only. Excludes one-time fees and previous orders; includes estimated default pricing for unpriced line items.
+        </p>
         <ResponsiveContainer width="100%" height={260}>
           <BarChart data={productRevenue.chartData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.1)" />
@@ -712,10 +728,13 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
 
       {/* ── Section 5: Cumulative Revenue by Go-Live Date ──────────────────── */}
       <Section
-        title="Cumulative Revenue by Go-Live Date — Last 18 Months"
+        title="Cumulative Monthly Recurring by Go-Live Date — Last 18 Months"
         icon={<TrendingUp size={15} />}
         accent="bg-emerald-500/5 dark:bg-emerald-500/10 border-emerald-200/40 dark:border-emerald-500/20"
       >
+        <p className="text-xs text-slate-400 dark:text-slate-500 mb-2">
+          Each dealership's active DMT order monthly recurring revenue is attributed to its go-live month. Excludes one-time fees and previous orders; includes estimated default pricing for unpriced line items.
+        </p>
         <ResponsiveContainer width="100%" height={220}>
           <AreaChart data={goLiveRevenueTrend} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
             <defs>
