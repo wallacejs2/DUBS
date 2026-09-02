@@ -7,6 +7,7 @@ import {
   ProviderProduct, Meeting, Note, Task, ProductPricing
 } from './types.ts';
 import { hasOneTimeLine, hasUnpricedLine, activeOrderList } from './lib/orderPricing.ts';
+import { dealershipMatchesOemFilter } from './lib/oem.ts';
 
 export function useEnterpriseGroups() {
   const [groups, setGroups] = useState<EnterpriseGroup[]>([]);
@@ -41,7 +42,7 @@ export function useEnterpriseGroups() {
   };
 }
 
-export function useDealerships(filters?: { search?: string; status?: string; group?: string; issue?: string; managed?: string; addl_web?: string; cif?: string; client_id?: string; order_id?: string; sms?: string; one_time?: string; received_month?: string; onboarding_month?: string; go_live_month?: string; term_month?: string }) {
+export function useDealerships(filters?: { search?: string; status?: string; group?: string; issue?: string; oem?: string; managed?: string; addl_web?: string; cif?: string; client_id?: string; order_id?: string; sms?: string; one_time?: string; received_month?: string; onboarding_month?: string; go_live_month?: string; term_month?: string }) {
   const [dealerships, setDealerships] = useState<Dealership[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -87,6 +88,10 @@ export function useDealerships(filters?: { search?: string; status?: string; gro
     }
     if (filters?.group) {
       data = data.filter(d => d.enterprise_group_id === filters.group);
+    }
+    if (filters?.oem) {
+      // "group:GM" matches any dealership with a GM make; "make:Chevrolet" matches that make.
+      data = data.filter(d => dealershipMatchesOemFilter(d.oems, filters.oem));
     }
     // Order-based filters look at the ACTIVE DMT order only (most recent on or
     // before today); previous orders are ignored so products are not double counted.
@@ -143,6 +148,10 @@ export function useDealerships(filters?: { search?: string; status?: string; gro
 
         if (filters.issue === 'no_inv_provider') {
            return !d.inventory_provider || d.inventory_provider.trim().length === 0;
+        }
+
+        if (filters.issue === 'no_oem') {
+           return !d.oems || d.oems.length === 0;
         }
 
         return true;

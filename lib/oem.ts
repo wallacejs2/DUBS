@@ -102,3 +102,29 @@ export const normalizeOems = (oems: unknown): DealershipOEM[] => {
   });
   return result;
 };
+
+/** Encoded value for the dealership OEM filter dropdown. */
+export type OemFilterValue = `group:${string}` | `make:${string}` | '';
+
+export const encodeOemFilter = (kind: 'group' | 'make', name: string): OemFilterValue => `${kind}:${name}`;
+
+/** Parse an OEM filter value back into its kind and name (null when empty/invalid). */
+export const parseOemFilter = (value: string | undefined): { kind: 'group' | 'make'; name: string } | null => {
+  if (!value) return null;
+  const idx = value.indexOf(':');
+  if (idx <= 0) return null;
+  const kind = value.slice(0, idx);
+  const name = value.slice(idx + 1);
+  if ((kind !== 'group' && kind !== 'make') || !name) return null;
+  return { kind, name };
+};
+
+/** Whether a dealership's OEM list matches an encoded OEM filter value. Empty filter matches all. */
+export const dealershipMatchesOemFilter = (oems: readonly DealershipOEM[] | undefined, value: string | undefined): boolean => {
+  const parsed = parseOemFilter(value);
+  if (!parsed) return true;
+  const list = oems || [];
+  return parsed.kind === 'group'
+    ? list.some(o => o.oem_group === parsed.name)
+    : list.some(o => o.make === parsed.name);
+};
