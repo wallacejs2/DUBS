@@ -1,4 +1,4 @@
-import { FeeType, Order, OrderProduct, ProductCode, ProductPricing } from '../types';
+import { FeeType, Order, OrderProduct, ProductPricing } from '../types';
 
 /**
  * Single source of truth for DMT order pricing math.
@@ -49,6 +49,30 @@ export const FEE_TYPE_LABELS: Record<FeeType, string> = {
   [FeeType.MONTHLY]: 'Monthly',
   [FeeType.ONE_TIME]: 'One-Time',
 };
+
+/**
+ * Dropdown options for a line item's product code. The editable product list drives the
+ * options; a line item whose code was since removed from the list keeps showing its own code.
+ */
+export function productCodeOptions(productCodes: string[], current?: string): { label: string; value: string }[] {
+  const codes = current && !productCodes.includes(current) ? [...productCodes, current] : productCodes;
+  return codes.map(c => ({
+    label: current === c && !productCodes.includes(c) ? `${c} (removed)` : c,
+    value: c,
+  }));
+}
+
+/** Product codes in the editable list plus any code still referenced by an order (list order first). */
+export function allProductCodes(productCodes: string[], orders: Order[] | undefined): string[] {
+  const seen = new Set(productCodes);
+  const extra: string[] = [];
+  for (const o of orders ?? []) {
+    for (const p of o.products ?? []) {
+      if (!seen.has(p.product_code)) { seen.add(p.product_code); extra.push(p.product_code); }
+    }
+  }
+  return [...productCodes, ...extra];
+}
 
 export const getFeeType = (p: OrderProduct): FeeType => p.fee_type ?? FeeType.MONTHLY;
 
@@ -102,8 +126,8 @@ export function summarizeOrders(orders: Order[] | undefined, pricing: ProductPri
   return summarizeProducts(products, pricing);
 }
 
-export function summarizeByProduct(orders: Order[] | undefined, pricing: ProductPricing): Map<ProductCode, ProductSalesEntry> {
-  const map = new Map<ProductCode, ProductSalesEntry>();
+export function summarizeByProduct(orders: Order[] | undefined, pricing: ProductPricing): Map<string, ProductSalesEntry> {
+  const map = new Map<string, ProductSalesEntry>();
   for (const o of orders ?? []) {
     for (const p of o.products ?? []) {
       const line = resolveLineAmount(p, pricing);

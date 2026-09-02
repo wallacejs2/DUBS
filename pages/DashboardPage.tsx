@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { useDealerships, useOrders, useProductPricing } from '../hooks';
 import { DealershipFilterState, DealershipStatus, FeeType, Order, ProductCode } from '../types';
-import { ProductSalesEntry, resolveLineAmount, summarizeByProduct, summarizeOrders, summarizeProducts, getActiveOrders } from '../lib/orderPricing';
+import { ProductSalesEntry, resolveLineAmount, summarizeByProduct, summarizeOrders, summarizeProducts, getActiveOrders, allProductCodes } from '../lib/orderPricing';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -141,11 +141,14 @@ const EstPill: React.FC<{ title?: string }> = ({ title }) => (
 );
 
 interface ProductSalesTableProps {
-  sales: Map<ProductCode, ProductSalesEntry>;
+  sales: Map<string, ProductSalesEntry>;
+  productCodes: string[];
 }
 
-const ProductSalesTable: React.FC<ProductSalesTableProps> = ({ sales }) => {
-  const active = Object.values(ProductCode).filter(code => (sales.get(code)?.count ?? 0) > 0);
+const ProductSalesTable: React.FC<ProductSalesTableProps> = ({ sales, productCodes }) => {
+  // Show list products first (in list order), then any code only present on orders
+  const active = [...productCodes, ...[...sales.keys()].filter(c => !productCodes.includes(c))]
+    .filter(code => (sales.get(code)?.count ?? 0) > 0);
   if (active.length === 0) {
     return <p className="text-xs text-slate-400 dark:text-slate-600 italic">No product sales data for this period.</p>;
   }
@@ -160,7 +163,7 @@ const ProductSalesTable: React.FC<ProductSalesTableProps> = ({ sales }) => {
           >
             <span
               className="w-2 h-2 rounded-full flex-shrink-0"
-              style={{ backgroundColor: PRODUCT_COLORS[code] }}
+              style={{ backgroundColor: productColor(code, productCodes) }}
             />
             <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">{code}</span>
             <span className="text-xs font-bold text-slate-800 dark:text-slate-100">{count.toLocaleString()}</span>
@@ -180,7 +183,7 @@ const ProductSalesTable: React.FC<ProductSalesTableProps> = ({ sales }) => {
 
 const GOLIVE_COLOR = '#10b981';
 
-const PRODUCT_COLORS: Record<ProductCode, string> = {
+const PRODUCT_COLORS: Record<string, string> = {
   [ProductCode.P15391_SE]: '#3b82f6',
   [ProductCode.P15392_MANAGED]: '#10b981',
   [ProductCode.P15435_ADDL_WEB]: '#8b5cf6',
@@ -188,6 +191,16 @@ const PRODUCT_COLORS: Record<ProductCode, string> = {
   [ProductCode.P15382_PREV_SE]: '#06b6d4',
   [ProductCode.P15381_PREV_AA]: '#f97316',
   [ProductCode.P15390_SMS]: '#ec4899',
+};
+
+// Palette for user-added products (assigned by position so a product keeps its color)
+const EXTRA_PRODUCT_COLORS = ['#14b8a6', '#a855f7', '#ef4444', '#84cc16', '#0ea5e9', '#d946ef', '#eab308', '#64748b'];
+
+const productColor = (code: string, productCodes: string[]): string => {
+  if (PRODUCT_COLORS[code]) return PRODUCT_COLORS[code];
+  const extras = productCodes.filter(c => !PRODUCT_COLORS[c]);
+  const idx = extras.indexOf(code);
+  return EXTRA_PRODUCT_COLORS[(idx >= 0 ? idx : extras.length) % EXTRA_PRODUCT_COLORS.length];
 };
 
 const STATUS_TOGGLE_GROUPS = [
@@ -245,7 +258,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
 
   const { dealerships } = useDealerships();
   const { orders } = useOrders();
-  const { pricing } = useProductPricing();
+  const { pricing, productCodes: listedProductCodes } = useProductPricing();
 
   // Only each dealership's ACTIVE DMT order (most recent on or before today)
   // feeds revenue and product metrics. Previous orders are excluded so a
@@ -368,12 +381,12 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
     }
 
     // Group per-month revenue per product (non-cumulative)
-    const perMonth = new Map<string, Map<ProductCode, number>>();
+    const perMonth = new Map<string, Map<string, number>>();
     for (const o of activeOrders) {
       const mk = getMonthKey(o.received_date);
       if (!mk) continue;
       if (!o.products) continue;
-      const bucket = perMonth.get(mk) ?? new Map<ProductCode, number>();
+      const bucket = perMonth.get(mk) ?? new Map<string, number>();
       for (const p of o.products) {
         const line = resolveLineAmount(p, pricing);
         if (line.feeType !== FeeType.MONTHLY) continue;
@@ -387,7 +400,8 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
     // revenue on or before the last day of that month).
     const firstMk = months[0].month;
     const priorTotals: Record<string, number> = {};
-    for (const code of Object.values(ProductCode)) priorTotals[code] = 0;
+    const productCodes = allProductCodes(listedProductCodes, activeOrders);
+    for (const code of productCodes) priorTotals[code] = 0;
     for (const [mk, bucket] of perMonth.entries()) {
       if (mk < firstMk) {
         for (const [code, v] of bucket.entries()) {
@@ -405,14 +419,14 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
         }
       }
       const row: Record<string, string | number> = { month, label };
-      for (const code of Object.values(ProductCode)) {
+      for (const code of productCodes) {
         row[code] = running[code] ?? 0;
       }
       return row;
     });
 
     // Omit product codes with zero cumulative revenue across all 18 months
-    const activeCodes = Object.values(ProductCode).filter(code =>
+    const activeCodes = productCodes.filter(code =>
       chartData.some(row => {
         const v = row[code];
         return typeof v === 'number' && v > 0;
@@ -420,7 +434,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
     );
 
     return { chartData, activeCodes };
-  }, [activeOrders, pricing]);
+  }, [activeOrders, pricing, listedProductCodes]);
 
   // ─── Section 5 Chart Data: Cumulative Revenue by Go-Live Month ─────────────
   const goLiveRevenueTrend = useMemo(() => {
@@ -554,7 +568,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
           <div className="text-xs font-semibold text-slate-400 dark:text-slate-500 mb-2 uppercase tracking-wide">
             Product Sales — All Time
           </div>
-          <ProductSalesTable sales={s1Metrics.productSales} />
+          <ProductSalesTable sales={s1Metrics.productSales} productCodes={listedProductCodes} />
         </div>
       </Section>
 
@@ -646,7 +660,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
           <div className="text-xs font-semibold text-slate-400 dark:text-slate-500 mb-2 uppercase tracking-wide">
             Product Sales — Selected Range
           </div>
-          <ProductSalesTable sales={s2Metrics.productSales} />
+          <ProductSalesTable sales={s2Metrics.productSales} productCodes={listedProductCodes} />
         </div>
       </Section>
 
@@ -718,7 +732,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
                 dataKey={code}
                 name={code}
                 stackId="revenue"
-                fill={PRODUCT_COLORS[code]}
+                fill={productColor(code, listedProductCodes)}
                 radius={i === productRevenue.activeCodes.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
               />
             ))}

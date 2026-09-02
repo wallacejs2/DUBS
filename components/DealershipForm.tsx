@@ -8,7 +8,7 @@ import {
 } from '../types';
 import { db } from '../db';
 import { useTeamMembers, useProvidersProducts, useProductPricing } from '../hooks';
-import { FEE_TYPE_OPTIONS } from '../lib/orderPricing';
+import { FEE_TYPE_OPTIONS, productCodeOptions } from '../lib/orderPricing';
 
 interface DealershipFormProps {
   initialData?: Partial<DealershipWithRelations>;
@@ -127,7 +127,7 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
 
   const { members: teamMembers } = useTeamMembers();
   const { items: providerProducts } = useProvidersProducts();
-  const { pricing } = useProductPricing();
+  const { pricing, productCodes: availableProductCodes } = useProductPricing();
 
   const crmProviders = useMemo(() => providerProducts.filter(i => i.category === ProviderProductCategory.PROVIDER && i.provider_type === ProviderType.CRM), [providerProducts]);
   const websiteProviders = useMemo(() => providerProducts.filter(i => i.category === ProviderProductCategory.PROVIDER && i.provider_type === ProviderType.WEBSITE), [providerProducts]);
@@ -248,7 +248,7 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
      const orders = [...(formData.orders || [])];
      orders[orderIdx].products.push({
         id: crypto.randomUUID(),
-        product_code: ProductCode.P15391_SE,
+        product_code: availableProductCodes[0] ?? ProductCode.P15391_SE,
         amount: null,
         fee_type: FeeType.MONTHLY
      });
@@ -795,7 +795,7 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
                               <Select 
                                 value={product.product_code} 
                                 onChange={(v) => updateProductInOrder(orderIdx, prodIdx, 'product_code', v)} 
-                                options={Object.values(ProductCode).map(p => ({ label: p, value: p }))}
+                                options={productCodeOptions(availableProductCodes, product.product_code)}
                               />
                               <Input
                                 type="number"

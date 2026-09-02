@@ -5,7 +5,7 @@ import {
   ReynoldsSolution, DealershipStatus, CRMProvider, ProductCode,
   OrderStatus, ShopperStatus, ShopperPriority, TeamRole,
   ProviderProduct, ProviderProductCategory, ProviderType,
-  Meeting, Note, Task, FeeType, ProductPricing
+  Meeting, Note, Task, FeeType, ProductPricing, DEFAULT_PRODUCT_CODES
 } from './types';
 
 // Pure LocalStorage implementation for a seamless offline-first experience
@@ -28,6 +28,7 @@ class CuratorLocalDB extends EventTarget {
     notes: Note[];
     tasks: Task[];
     productPricing: ProductPricing;
+    productCodes: string[];
   } = {
     dealerships: [],
     enterpriseGroups: [],
@@ -42,7 +43,8 @@ class CuratorLocalDB extends EventTarget {
     meetings: [],
     notes: [],
     tasks: [],
-    productPricing: {}
+    productPricing: {},
+    productCodes: [...DEFAULT_PRODUCT_CODES]
   };
 
   private constructor() {
@@ -84,7 +86,10 @@ class CuratorLocalDB extends EventTarget {
           meetings: parsed.meetings || [],
           notes: parsed.notes || [],
           tasks: parsed.tasks || [],
-          productPricing: parsed.productPricing || {}
+          productPricing: parsed.productPricing || {},
+          productCodes: Array.isArray(parsed.productCodes) && parsed.productCodes.length > 0
+            ? parsed.productCodes.filter((c: unknown) => typeof c === 'string' && c.trim() !== '')
+            : [...DEFAULT_PRODUCT_CODES]
         };
         // Migrate order line items that predate fee types (treat as monthly recurring)
         if (Array.isArray(this.data.orders)) {
@@ -511,13 +516,37 @@ class CuratorLocalDB extends EventTarget {
 
   // Product default pricing (fallback price used when a line item has no amount)
   getProductPricing(): ProductPricing { return { ...this.data.productPricing }; }
-  setProductPrice(code: ProductCode, amount: number | null) {
+  setProductPrice(code: string, amount: number | null) {
     const next: ProductPricing = { ...this.data.productPricing };
     if (amount === null || amount === undefined || Number.isNaN(amount)) {
       delete next[code];
     } else {
       next[code] = amount;
     }
+    this.data.productPricing = next;
+    this.save();
+  }
+
+  // Editable list of product codes available to DMT order line items and default pricing
+  getProductCodes(): string[] { return [...this.data.productCodes]; }
+  /** Adds a product code (trimmed). Returns false when empty or already present (case-insensitive). */
+  addProductCode(code: string, defaultPrice?: number | null): boolean {
+    const trimmed = (code || '').trim();
+    if (!trimmed) return false;
+    const exists = this.data.productCodes.some(c => c.toLowerCase() === trimmed.toLowerCase());
+    if (exists) return false;
+    this.data.productCodes = [...this.data.productCodes, trimmed];
+    if (defaultPrice !== null && defaultPrice !== undefined && !Number.isNaN(defaultPrice)) {
+      this.data.productPricing = { ...this.data.productPricing, [trimmed]: defaultPrice };
+    }
+    this.save();
+    return true;
+  }
+  /** Removes a product code and its default price. Existing order line items keep their code. */
+  removeProductCode(code: string) {
+    this.data.productCodes = this.data.productCodes.filter(c => c !== code);
+    const next: ProductPricing = { ...this.data.productPricing };
+    delete next[code];
     this.data.productPricing = next;
     this.save();
   }
