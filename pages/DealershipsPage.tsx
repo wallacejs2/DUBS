@@ -75,6 +75,9 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
     return hasOneTimeLine(activeOrdersFor(dealerId));
   };
 
+  /** Row key holding the YES/blank "is this product on the order" flag for a product code. */
+  const productFlagKey = (code: string) => `_has_${code}`;
+
   const buildExportData = () => {
     const allDealerships = db.getDealerships();
     const allGroups = db.getEnterpriseGroups();
@@ -147,7 +150,11 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
                   DMT_Order_Type: o === activeOrder ? 'Active' : 'Previous',
                   SortDate: o.received_date || '9999-99-99'
               };
-              productCodes.forEach(code => row[code] = '');
+              productCodes.forEach(code => {
+                  row[code] = '';
+                  // YES/blank flag per product (used by the MKT export, which omits pricing)
+                  row[productFlagKey(code)] = '';
+              });
               if (o.products && o.products.length > 0) {
                   o.products.forEach(p => {
                       if (productCodes.includes(p.product_code)) {
@@ -155,6 +162,7 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
                           // price as a plain number; blank only when there is no default either.
                           const line = resolveLineAmount(p, pricing);
                           row[p.product_code] = line.isUnpriced ? '' : line.amount;
+                          row[productFlagKey(p.product_code)] = 'YES';
                       }
                   });
               }
@@ -171,7 +179,10 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
               DMT_Order_Type: '',
               SortDate: '9999-99-99'
           };
-          productCodes.forEach(code => row[code] = '');
+          productCodes.forEach(code => {
+              row[code] = '';
+              row[productFlagKey(code)] = '';
+          });
           flatData.push(row);
       }
     });
@@ -277,7 +288,7 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
   };
 
   const handleExportMKT = () => {
-    const { flatData } = buildExportData();
+    const { flatData, productCodes } = buildExportData();
 
     const mktColumns: [string, string][] = [
       ['status', 'Status'],
@@ -303,6 +314,9 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
       ['onabording', 'Onboarding_Date'],
       ['goLive', 'Go_Live_Date'],
       ['term', 'Term_Date'],
+      // One column per product: YES when the package is on the row's DMT order, otherwise
+      // blank. MKT does not receive pricing, so the dollar amounts are intentionally omitted.
+      ...productCodes.map((code): [string, string] => [code, productFlagKey(code)]),
       ['clientID', 'clientID1'],
       ['websiteLink', 'websiteLink1'],
       ['clientID2', 'clientID2'],
