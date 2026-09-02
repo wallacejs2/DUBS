@@ -1,11 +1,11 @@
 
 import {
-  Dealership, EnterpriseGroup, Order, Shopper, NewFeature, TeamMember,
+  Dealership, EnterpriseGroup, Order, OrderProduct, Shopper, NewFeature, TeamMember,
   DealershipWithRelations, WebsiteLink, DealershipContacts,
   ReynoldsSolution, DealershipStatus, CRMProvider, ProductCode,
   OrderStatus, ShopperStatus, ShopperPriority, TeamRole,
   ProviderProduct, ProviderProductCategory, ProviderType,
-  Meeting, Note, Task
+  Meeting, Note, Task, FeeType, ProductPricing
 } from './types';
 
 // Pure LocalStorage implementation for a seamless offline-first experience
@@ -27,6 +27,7 @@ class CuratorLocalDB extends EventTarget {
     meetings: Meeting[];
     notes: Note[];
     tasks: Task[];
+    productPricing: ProductPricing;
   } = {
     dealerships: [],
     enterpriseGroups: [],
@@ -40,7 +41,8 @@ class CuratorLocalDB extends EventTarget {
     providersProducts: [],
     meetings: [],
     notes: [],
-    tasks: []
+    tasks: [],
+    productPricing: {}
   };
 
   private constructor() {
@@ -81,8 +83,20 @@ class CuratorLocalDB extends EventTarget {
           providersProducts: parsed.providersProducts || [],
           meetings: parsed.meetings || [],
           notes: parsed.notes || [],
-          tasks: parsed.tasks || []
+          tasks: parsed.tasks || [],
+          productPricing: parsed.productPricing || {}
         };
+        // Migrate order line items that predate fee types (treat as monthly recurring)
+        if (Array.isArray(this.data.orders)) {
+          let ordersMigrated = false;
+          this.data.orders = this.data.orders.map((o: any) => {
+            const products = Array.isArray(o.products) ? o.products : [];
+            if (products.every((p: any) => p && p.fee_type)) return o;
+            ordersMigrated = true;
+            return { ...o, products: products.map((p: any) => ({ ...p, fee_type: p.fee_type || FeeType.MONTHLY })) };
+          });
+          if (ordersMigrated) this.save();
+        }
         // Migrate old shopper format to new multi-dealership structure
         if (this.data.shoppers) {
           let migrated = false;
@@ -222,7 +236,8 @@ class CuratorLocalDB extends EventTarget {
         {
           id: this.generateId(),
           product_code: ProductCode.P15392_MANAGED,
-          amount: 4500
+          amount: 4500,
+          fee_type: FeeType.MONTHLY
         }
       ]
     }];
@@ -442,7 +457,7 @@ class CuratorLocalDB extends EventTarget {
            ...order, 
            id: order.id || this.generateId(), 
            dealership_id: id,
-           products: order.products || [] 
+           products: this.normalizeProducts(order.products)
         });
       });
     }
@@ -480,6 +495,7 @@ class CuratorLocalDB extends EventTarget {
       ...order,
       id,
     } as Order;
+    newOrder.products = this.normalizeProducts(newOrder.products);
     if (existingIndex >= 0) this.data.orders[existingIndex] = newOrder;
     else this.data.orders.push(newOrder);
     this.save();
@@ -487,6 +503,22 @@ class CuratorLocalDB extends EventTarget {
   }
   deleteOrder(id: string) {
     this.data.orders = this.data.orders.filter(o => o.id !== id);
+    this.save();
+  }
+  private normalizeProducts(products?: OrderProduct[]): OrderProduct[] {
+    return (products || []).map(p => ({ ...p, fee_type: p.fee_type || FeeType.MONTHLY }));
+  }
+
+  // Product default pricing (fallback price used when a line item has no amount)
+  getProductPricing(): ProductPricing { return { ...this.data.productPricing }; }
+  setProductPrice(code: ProductCode, amount: number | null) {
+    const next: ProductPricing = { ...this.data.productPricing };
+    if (amount === null || amount === undefined || Number.isNaN(amount)) {
+      delete next[code];
+    } else {
+      next[code] = amount;
+    }
+    this.data.productPricing = next;
     this.save();
   }
 

@@ -22,7 +22,7 @@ const App: React.FC = () => {
   const [activePage, setActivePage] = useState<NavPage>('dashboard');
   // Lifted Dealership Filter State
   const [dealershipFilters, setDealershipFilters] = useState<DealershipFilterState>({
-    search: '', status: '', group: '', issue: '', managed: '', addl_web: '', cif: '', client_id: '', sms: '',
+    search: '', status: '', group: '', issue: '', managed: '', addl_web: '', cif: '', client_id: '', sms: '', one_time: '',
     received_month: '', onboarding_month: '', go_live_month: '', term_month: ''
   });
 

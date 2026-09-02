@@ -6,10 +6,11 @@ import {
 import { 
   DealershipWithRelations, 
   DealershipStatus, EnterpriseGroup, CRMProvider, ProductCode, OrderStatus, Order, TeamRole,
-  ProviderProductCategory, ProviderType
+  ProviderProductCategory, ProviderType, FeeType
 } from '../types';
 import { db } from '../db';
-import { useTeamMembers, useProvidersProducts } from '../hooks';
+import { useTeamMembers, useProvidersProducts, useProductPricing } from '../hooks';
+import { FEE_TYPE_OPTIONS, resolveLineAmount, formatLineAmount, summarizeProducts, summarizeOrders, isOneTime } from '../lib/orderPricing';
 
 interface DealershipDetailPanelProps {
   dealership: DealershipWithRelations;
@@ -173,6 +174,7 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
 
   const { members: teamMembers } = useTeamMembers();
   const { items: providerProducts } = useProvidersProducts();
+  const { pricing } = useProductPricing();
 
   // Find IDs helpers
   const findProviderId = (name?: string) => providerProducts.find(p => p.name === name)?.id;
@@ -291,12 +293,32 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
     updateField('orders', orders);
   };
 
+  const addOrder = () => {
+    const orders = [...(formData.orders || [])];
+    orders.push({
+      id: crypto.randomUUID(),
+      dealership_id: formData.id,
+      received_date: new Date().toISOString().split('T')[0],
+      order_number: '',
+      status: OrderStatus.PENDING,
+      products: []
+    });
+    updateField('orders', orders);
+  };
+
+  const removeOrder = (idx: number) => {
+    const orders = [...(formData.orders || [])];
+    orders.splice(idx, 1);
+    updateField('orders', orders);
+  };
+
   const addProductToOrder = (orderIdx: number) => {
      const orders = [...(formData.orders || [])];
      orders[orderIdx].products.push({
         id: crypto.randomUUID(),
         product_code: ProductCode.P15391_SE,
-        amount: null
+        amount: null,
+        fee_type: FeeType.MONTHLY
      });
      updateField('orders', orders);
   };
@@ -391,10 +413,14 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
     if (d.orders && d.orders.length > 0) {
         const sortedOrders = [...d.orders].sort((a,b) => (a.received_date || '').localeCompare(b.received_date || ''));
         sortedOrders.forEach(o => {
+            const orderSummary = summarizeProducts(o.products, pricing);
             const row: any = {
                 ...baseInfo,
                 Received_Date: o.received_date,
                 Order_Number: o.order_number,
+                Monthly_Total: orderSummary.monthly,
+                One_Time_Total: orderSummary.oneTime,
+                Estimated_Pricing: orderSummary.hasEstimated ? 'YES' : 'NO',
             };
             productCodes.forEach(code => row[code] = '');
             if (o.products && o.products.length > 0) {
@@ -411,6 +437,9 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
             ...baseInfo,
             Received_Date: '',
             Order_Number: '',
+            Monthly_Total: 0,
+            One_Time_Total: 0,
+            Estimated_Pricing: 'NO',
         };
         productCodes.forEach(code => row[code] = '');
         flatData.push(row);
@@ -421,6 +450,7 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
       'Sales_Contact', 'Enrollment_Contact', 'CSM', 'POC_Name', 'POC_Email', 'POC_Phone', 
       'Received_Date', 'Order_Number', 'Onboarding_Date', 'Go_Live_Date', 'Term_Date',
       ...productCodes,
+      'Monthly_Total', 'One_Time_Total', 'Estimated_Pricing',
       'clientID1', 'websiteLink1', 'clientID2', 'websiteLink2', 
       'clientID3', 'websiteLink3', 'clientID4', 'websiteLink4'
     ];
@@ -1104,11 +1134,41 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
 
             {/* DMT Orders */}
             <div className="space-y-6">
-               <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">DMT Orders</h3>
+               <div className="flex justify-between items-center gap-3">
+                  <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">DMT Orders</h3>
+                  {isEditing ? (
+                     <button type="button" onClick={addOrder} className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1">
+                        <Plus size={10} /> Add Order
+                     </button>
+                  ) : (() => {
+                     const dealerSummary = summarizeOrders(dealership.orders, pricing);
+                     if (dealerSummary.lineCount === 0) return null;
+                     return (
+                        <div className="flex items-center gap-2 text-xs font-mono text-slate-500 dark:text-slate-400">
+                           <span>Monthly <span className="font-semibold text-slate-700 dark:text-slate-200">${dealerSummary.monthly.toLocaleString()}</span></span>
+                           <span className="text-slate-300 dark:text-slate-600">·</span>
+                           <span>One-Time <span className="font-semibold text-slate-700 dark:text-slate-200">${dealerSummary.oneTime.toLocaleString()}</span></span>
+                           {dealerSummary.hasEstimated && (
+                              <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800" title="Includes estimated default pricing for unpriced line items">est.</span>
+                           )}
+                        </div>
+                     );
+                  })()}
+               </div>
                
                {(isEditing ? (formData.orders || []) : (dealership.orders || [])).map((order, orderIdx) => (
-                  <div key={orderIdx} className="bg-slate-100/50 dark:bg-[#2C2C2E] p-4 rounded-xl border border-slate-200/60 dark:border-[#38383A] shadow-sm relative space-y-4">
-                     <div className="grid grid-cols-2 gap-4">
+                  <div key={order.id || orderIdx} className="bg-slate-100/50 dark:bg-[#2C2C2E] p-4 rounded-xl border border-slate-200/60 dark:border-[#38383A] shadow-sm relative space-y-4">
+                     {isEditing && (
+                        <button
+                           type="button"
+                           onClick={() => removeOrder(orderIdx)}
+                           className="absolute top-3 right-3 p-1 text-slate-300 hover:text-red-500 dark:text-slate-600 dark:hover:text-red-400 transition-colors"
+                           title="Remove Order"
+                        >
+                           <Trash2 size={14} />
+                        </button>
+                     )}
+                     <div className={`grid grid-cols-2 gap-4 ${isEditing ? 'pr-6' : ''}`}>
                         <div>
                             <Label>Received Date</Label>
                             {isEditing ? (
@@ -1146,14 +1206,18 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                         </div>
                         
                         {isEditing && (
-                            <div className="grid grid-cols-[1fr_120px_auto] gap-3 mb-1 px-1">
+                            <div className="grid grid-cols-[1fr_120px_110px_auto] gap-3 mb-1 px-1">
                                 <Label>Product</Label>
                                 <Label>Price ($)</Label>
+                                <Label>Fee Type</Label>
                             </div>
                         )}
 
-                        {order.products?.map((product, prodIdx) => (
-                           <div key={prodIdx} className={`grid ${isEditing ? 'grid-cols-[1fr_120px_auto]' : 'grid-cols-[1fr_auto]'} gap-3 items-center`}>
+                        {order.products?.map((product, prodIdx) => {
+                           const line = resolveLineAmount(product, pricing);
+                           const defaultPrice = pricing[product.product_code];
+                           return (
+                           <div key={product.id || prodIdx} className={`grid ${isEditing ? 'grid-cols-[1fr_120px_110px_auto]' : 'grid-cols-[1fr_auto]'} gap-3 items-center`}>
                               {isEditing ? (
                                 <>
                                   <Select 
@@ -1165,27 +1229,57 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                                     type="number"
                                     value={product.amount !== null && product.amount !== undefined ? String(product.amount) : ''}
                                     onChange={(v) => updateProductInOrder(orderIdx, prodIdx, 'amount', v === '' ? null : parseFloat(v))}
-                                    placeholder="0.00"
+                                    placeholder={defaultPrice !== null && defaultPrice !== undefined ? `${defaultPrice} est.` : '0.00'}
+                                  />
+                                  <Select
+                                    value={product.fee_type || FeeType.MONTHLY}
+                                    onChange={(v) => updateProductInOrder(orderIdx, prodIdx, 'fee_type', v)}
+                                    options={FEE_TYPE_OPTIONS}
                                   />
                                   <button type="button" onClick={() => removeProductFromOrder(orderIdx, prodIdx)} className="text-slate-300 hover:text-red-500 p-1"><Minus size={14} /></button>
                                 </>
                               ) : (
                                 <div className="flex justify-between items-center bg-slate-50/50 dark:bg-white/[0.02] p-2 rounded-lg border border-slate-100/60 dark:border-[#38383A] w-full col-span-2">
                                     <div className="flex items-center gap-2">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                                        <span className={`w-1.5 h-1.5 rounded-full ${isOneTime(product) ? 'bg-violet-500' : 'bg-blue-500'}`}></span>
                                         <span className="text-xs text-slate-700 dark:text-slate-300 font-medium">{product.product_code}</span>
+                                        {isOneTime(product) && (
+                                            <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide bg-violet-50 text-violet-700 border border-violet-200 dark:bg-violet-900/30 dark:text-violet-300 dark:border-violet-800">One-Time</span>
+                                        )}
                                     </div>
-                                    <span className="text-xs font-mono text-slate-500 dark:text-slate-400">${Number(product.amount).toLocaleString()}</span>
+                                    <span
+                                        className={`text-xs font-mono ${line.isEstimated ? 'text-amber-600 dark:text-amber-400 italic' : 'text-slate-500 dark:text-slate-400'}`}
+                                        title={line.isUnpriced ? 'No price entered and no default set for this product' : line.isEstimated ? 'Estimated from the product default price' : undefined}
+                                    >
+                                        {formatLineAmount(line)}
+                                    </span>
                                 </div>
                               )}
                            </div>
-                        ))}
+                           );
+                        })}
                         {(!order.products || order.products.length === 0) && (
                             <div className="text-center py-4 text-slate-400 text-xs italic bg-slate-50/50 dark:bg-white/[0.02] rounded-lg border border-dashed border-slate-200/60 dark:border-[#38383A]">No products added to this order.</div>
                         )}
+                        {!isEditing && order.products && order.products.length > 0 && (() => {
+                            const orderSummary = summarizeProducts(order.products, pricing);
+                            return (
+                                <div className="flex justify-end items-center gap-3 pt-1 px-1 text-[11px] font-mono text-slate-500 dark:text-slate-400">
+                                    <span>Monthly <span className="font-semibold text-slate-700 dark:text-slate-200">${orderSummary.monthly.toLocaleString()}</span></span>
+                                    <span className="text-slate-300 dark:text-slate-600">·</span>
+                                    <span>One-Time <span className="font-semibold text-slate-700 dark:text-slate-200">${orderSummary.oneTime.toLocaleString()}</span></span>
+                                    {orderSummary.hasEstimated && <span className="text-amber-600 dark:text-amber-400 italic">incl. est.</span>}
+                                </div>
+                            );
+                        })()}
                      </div>
                   </div>
                ))}
+               {isEditing && (!formData.orders || formData.orders.length === 0) && (
+                  <div className="text-center py-6 text-slate-400 text-xs italic bg-slate-50/50 dark:bg-white/[0.02] rounded-xl border border-dashed border-slate-200/60 dark:border-[#38383A]">
+                     No DMT orders. Click "Add Order" to create one.
+                  </div>
+               )}
             </div>
 
           </div>

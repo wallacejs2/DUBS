@@ -1,9 +1,10 @@
 
 import React, { useState } from 'react';
 import { Plus, FileSpreadsheet, Search, Hash, X, ChevronDown } from 'lucide-react';
-import { useDealerships, useEnterpriseGroups, useOrders, useProvidersProducts, useTeamMembers } from '../hooks';
+import { useDealerships, useEnterpriseGroups, useOrders, useProvidersProducts, useTeamMembers, useProductPricing } from '../hooks';
 import { DealershipWithRelations, ProductCode, DealershipFilterState, DealershipStatus } from '../types';
 import { db } from '../db';
+import { hasOneTimeLine, hasUnpricedLine, summarizeOrders, summarizeProducts } from '../lib/orderPricing';
 import DealershipCard from '../components/DealershipCard';
 import DealershipForm from '../components/DealershipForm';
 import DealershipDetailPanel from '../components/DealershipDetailPanel';
@@ -25,6 +26,7 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
   const { dealerships, loading, upsert, remove, getDetails, toggleFavorite } = useDealerships(filters);
   const { groups } = useEnterpriseGroups();
   const { orders } = useOrders();
+  const { pricing } = useProductPricing();
   const { items: providerProducts, upsert: upsertPP, remove: removePP } = useProvidersProducts();
   const { members: teamMembers, upsert: upsertTM, remove: removeTM } = useTeamMembers();
 
@@ -64,10 +66,11 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
   };
 
   const checkHasZeroPrice = (dealerId: string) => {
-    return orders.some(o =>
-      o.dealership_id === dealerId &&
-      o.products.some(p => p.amount == null)
-    );
+    return hasUnpricedLine(orders.filter(o => o.dealership_id === dealerId));
+  };
+
+  const checkHasOneTime = (dealerId: string) => {
+    return hasOneTimeLine(orders.filter(o => o.dealership_id === dealerId));
   };
 
   const buildExportData = () => {
@@ -83,6 +86,7 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
       const isManaged = (fullD.orders || []).some(o =>
         o.products?.some(p => p.product_code === ProductCode.P15392_MANAGED)
       );
+      const dealerSummary = summarizeOrders(fullD.orders || [], pricing);
 
       const baseInfo: any = {
          _dealerId: d.id,
@@ -112,6 +116,10 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
          Go_Live_Date: fullD.go_live_date || '',
          Term_Date: fullD.term_date || '',
          Managed_Package: isManaged ? 'YES' : 'NO',
+         // Dealership-level totals (used by the one-row-per-dealership exports)
+         _dealerMonthly: dealerSummary.monthly,
+         _dealerOneTime: dealerSummary.oneTime,
+         _dealerEstimated: dealerSummary.hasEstimated,
       };
 
       const links = fullD.website_links || [];
@@ -123,10 +131,14 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
 
       if (fullD.orders && fullD.orders.length > 0) {
           fullD.orders.forEach(o => {
+              const orderSummary = summarizeProducts(o.products, pricing);
               const row = {
                   ...baseInfo,
                   Received_Date: o.received_date,
                   Order_Number: o.order_number,
+                  Monthly_Total: orderSummary.monthly,
+                  One_Time_Total: orderSummary.oneTime,
+                  Estimated_Pricing: orderSummary.hasEstimated ? 'YES' : 'NO',
                   SortDate: o.received_date || '9999-99-99'
               };
               productCodes.forEach(code => row[code] = '');
@@ -144,6 +156,9 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
               ...baseInfo,
               Received_Date: '',
               Order_Number: '',
+              Monthly_Total: 0,
+              One_Time_Total: 0,
+              Estimated_Pricing: 'NO',
               SortDate: '9999-99-99'
           };
           productCodes.forEach(code => row[code] = '');
@@ -194,6 +209,7 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
     'Received_Date', 'Order_Number', 'Onboarding_Date',
     'Go_Live_Date', 'Term_Date', 'Managed_Package',
     ...productCodes,
+    'Monthly_Total', 'One_Time_Total', 'Estimated_Pricing',
   ];
 
   const handleExportCSV = () => {
@@ -221,13 +237,20 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
 
     const expanded: any[] = [];
     dealerRows.forEach(row => {
+      // One row per dealership: use dealership-level totals across all of its orders
+      const dealerRow = {
+        ...row,
+        Monthly_Total: row._dealerMonthly,
+        One_Time_Total: row._dealerOneTime,
+        Estimated_Pricing: row._dealerEstimated ? 'YES' : 'NO',
+      };
       const pairs = [1, 2, 3, 4]
         .map(i => ({ clientID: row[`clientID${i}`] || '', websiteLink: row[`websiteLink${i}`] || '' }))
         .filter(p => p.clientID || p.websiteLink);
       if (pairs.length === 0) {
-        expanded.push({ ...row, clientID: '', websiteLink: '' });
+        expanded.push({ ...dealerRow, clientID: '', websiteLink: '' });
       } else {
-        pairs.forEach(p => expanded.push({ ...row, clientID: p.clientID, websiteLink: p.websiteLink }));
+        pairs.forEach(p => expanded.push({ ...dealerRow, clientID: p.clientID, websiteLink: p.websiteLink }));
       }
     });
 
@@ -289,10 +312,10 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
 
   const activeSubPanel = panelStack[panelStack.length - 1];
 
-  const hasActiveFilters = !!(filters.search || filters.cif || filters.client_id || filters.status || filters.group || filters.issue || filters.managed || filters.addl_web || filters.sms || filters.received_month || filters.onboarding_month || filters.go_live_month || filters.term_month);
+  const hasActiveFilters = !!(filters.search || filters.cif || filters.client_id || filters.status || filters.group || filters.issue || filters.managed || filters.addl_web || filters.sms || filters.one_time || filters.received_month || filters.onboarding_month || filters.go_live_month || filters.term_month);
 
   const handleResetFilters = () => {
-    setFilters({ search: '', status: '', group: '', issue: '', managed: '', addl_web: '', cif: '', client_id: '', sms: '', received_month: '', onboarding_month: '', go_live_month: '', term_month: '' });
+    setFilters({ search: '', status: '', group: '', issue: '', managed: '', addl_web: '', cif: '', client_id: '', sms: '', one_time: '', received_month: '', onboarding_month: '', go_live_month: '', term_month: '' });
   };
 
   return (
@@ -485,6 +508,15 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
                 />
                 <span className="text-xs font-medium text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-300">SMS</span>
               </label>
+              <label className="flex items-center gap-1.5 cursor-pointer group" title="Dealerships with at least one one-time fee line item">
+                <input
+                  type="checkbox"
+                  checked={filters.one_time === 'yes'}
+                  onChange={(e) => setFilters({...filters, one_time: e.target.checked ? 'yes' : ''})}
+                  className="w-3.5 h-3.5 rounded border-slate-300 dark:border-slate-600 text-blue-500 focus:ring-blue-500 focus:ring-offset-0 cursor-pointer"
+                />
+                <span className="text-xs font-medium text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-300">One-Time</span>
+              </label>
             </div>
           </div>
         </div>
@@ -521,6 +553,7 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
                         isManaged={checkIsManaged(dealer.id)}
                         hasClientId={hasClientId}
                         hasAddlWeb={checkHasAddlWeb(dealer.id)}
+                        hasOneTime={checkHasOneTime(dealer.id)}
                         hasZeroPrice={checkHasZeroPrice(dealer.id)}
                         missingCSM={!hasCSM}
                         missingEnrollment={missingEnrollment}

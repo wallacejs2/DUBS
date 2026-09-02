@@ -13,10 +13,10 @@ const DealershipSidebarFilters: React.FC<DealershipSidebarFiltersProps> = ({ fil
   const { groups } = useEnterpriseGroups();
 
   const handleResetFilters = () => {
-    setFilters({ search: '', status: '', group: '', issue: '', managed: '', addl_web: '', cif: '', client_id: '', sms: '', received_month: '', onboarding_month: '', go_live_month: '', term_month: '' });
+    setFilters({ search: '', status: '', group: '', issue: '', managed: '', addl_web: '', cif: '', client_id: '', sms: '', one_time: '', received_month: '', onboarding_month: '', go_live_month: '', term_month: '' });
   };
 
-  const hasActiveFilters = !!(filters.search || filters.cif || filters.client_id || filters.status || filters.group || filters.issue || filters.managed || filters.addl_web || filters.sms || filters.received_month || filters.onboarding_month || filters.go_live_month || filters.term_month);
+  const hasActiveFilters = !!(filters.search || filters.cif || filters.client_id || filters.status || filters.group || filters.issue || filters.managed || filters.addl_web || filters.sms || filters.one_time || filters.received_month || filters.onboarding_month || filters.go_live_month || filters.term_month);
 
   return (
     <div className="px-3 py-4 mt-2 border-t border-white/10 animate-in fade-in duration-300">
@@ -186,6 +186,19 @@ const DealershipSidebarFilters: React.FC<DealershipSidebarFiltersProps> = ({ fil
                       className="hidden"
                   />
                   <span className="text-[10px] font-medium text-slate-400 group-hover:text-slate-200 transition-colors">SMS Activated</span>
+                </label>
+
+                <label className="flex items-center gap-2 cursor-pointer p-1.5 hover:bg-white/5 rounded-lg transition-colors group">
+                  <div className={`w-3 h-3 rounded border flex items-center justify-center transition-colors ${filters.one_time === 'yes' ? 'bg-indigo-600 border-indigo-600' : 'border-slate-600 bg-transparent'}`}>
+                      {filters.one_time === 'yes' && <div className="w-1.5 h-1.5 bg-white rounded-full" />}
+                  </div>
+                  <input 
+                      type="checkbox" 
+                      checked={filters.one_time === 'yes'}
+                      onChange={(e) => setFilters({...filters, one_time: e.target.checked ? 'yes' : ''})}
+                      className="hidden"
+                  />
+                  <span className="text-[10px] font-medium text-slate-400 group-hover:text-slate-200 transition-colors">One-Time Fees</span>
                 </label>
             </div>
       </div>

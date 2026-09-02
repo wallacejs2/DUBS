@@ -1,16 +1,108 @@
 
-import React, { useState, useMemo } from 'react';
-import { Plus, Package, Mail, Phone, Hash, Building2, Trash2, Edit3, Globe } from 'lucide-react';
-import { useProvidersProducts, useDealerships, useOrders } from '../hooks';
-import { ProviderProduct, ProviderProductCategory, ProviderType, DealershipStatus } from '../types';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Plus, Package, Mail, Phone, Hash, Building2, Trash2, Edit3, Globe, DollarSign } from 'lucide-react';
+import { useProvidersProducts, useDealerships, useOrders, useProductPricing } from '../hooks';
+import { ProviderProduct, ProviderProductCategory, ProviderType, DealershipStatus, ProductCode, ProductPricing } from '../types';
 import FilterBar from '../components/FilterBar';
 import ProviderProductDetailPanel from '../components/ProviderProductDetailPanel';
+
+// Editable table of default (fallback) prices per DMT product code.
+// A default is used as an *estimated* price wherever an order line item has no amount.
+const DefaultPricingPanel: React.FC<{
+  pricing: ProductPricing;
+  setPrice: (code: ProductCode, amount: number | null) => void;
+  unpricedCounts: Map<ProductCode, number>;
+}> = ({ pricing, setPrice, unpricedCounts }) => {
+  const toDraft = (p: ProductPricing) => {
+    const d = {} as Record<ProductCode, string>;
+    for (const code of Object.values(ProductCode)) {
+      const v = p[code];
+      d[code] = v === null || v === undefined ? '' : String(v);
+    }
+    return d;
+  };
+  const [draft, setDraft] = useState<Record<ProductCode, string>>(() => toDraft(pricing));
+
+  useEffect(() => { setDraft(toDraft(pricing)); }, [pricing]);
+
+  const commit = (code: ProductCode) => {
+    const raw = (draft[code] ?? '').trim();
+    if (raw === '') {
+      if (pricing[code] !== null && pricing[code] !== undefined) setPrice(code, null);
+      return;
+    }
+    const parsed = parseFloat(raw);
+    if (Number.isNaN(parsed) || parsed < 0) {
+      setDraft(prev => ({ ...prev, [code]: toDraft(pricing)[code] }));
+      return;
+    }
+    if (pricing[code] !== parsed) setPrice(code, parsed);
+  };
+
+  return (
+    <div className="rounded-2xl bg-white/80 dark:bg-[#2C2C2E] border border-slate-200/60 dark:border-[#38383A] p-4 mb-4">
+      <div className="flex items-start justify-between gap-4 mb-3">
+        <div>
+          <h3 className="flex items-center gap-2 text-sm font-bold text-slate-800 dark:text-slate-100">
+            <DollarSign size={15} className="text-emerald-500" /> Default Product Pricing
+          </h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            Used as an estimated price when a DMT order line item has no amount. Estimated values are marked "est." throughout the app. Leave blank for no default.
+          </p>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {Object.values(ProductCode).map(code => {
+          const unpriced = unpricedCounts.get(code) ?? 0;
+          const hasDefault = pricing[code] !== null && pricing[code] !== undefined;
+          return (
+            <div key={code} className="p-3 rounded-xl bg-slate-50/80 dark:bg-[#1C1C1E] border border-slate-100/60 dark:border-[#38383A]">
+              <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1 truncate" title={code}>{code}</label>
+              <div className="relative">
+                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 pointer-events-none">$</span>
+                <input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={draft[code] ?? ''}
+                  onChange={(e) => setDraft(prev => ({ ...prev, [code]: e.target.value }))}
+                  onBlur={() => commit(code)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                  placeholder="Not set"
+                  aria-label={`Default price for ${code}`}
+                  className="w-full pl-6 pr-2 py-1.5 text-sm border border-slate-200/60 dark:border-[#38383A] rounded-xl focus:ring-1 focus:ring-blue-500 outline-none bg-white dark:bg-[#2C2C2E] text-slate-900 dark:text-slate-100 font-mono placeholder:text-slate-400 dark:placeholder:text-slate-600 placeholder:font-sans"
+                />
+              </div>
+              <div className={`mt-1 text-[11px] ${unpriced > 0 ? (hasDefault ? 'text-amber-600 dark:text-amber-400' : 'text-red-500 dark:text-red-400') : 'text-slate-400 dark:text-slate-500'}`}>
+                {unpriced === 0
+                  ? 'No unpriced line items'
+                  : `${unpriced} unpriced line item${unpriced === 1 ? '' : 's'} ${hasDefault ? 'using this default' : '(no default → $0)'}`}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
 
 const ProvidersProductsPage: React.FC = () => {
   const [filters, setFilters] = useState({ search: '', category: '', provider_type: '' });
   const { items, loading, upsert, remove } = useProvidersProducts(filters);
   const { dealerships, getDetails } = useDealerships();
   const { orders } = useOrders();
+  const { pricing, setPrice } = useProductPricing();
+
+  // Count line items with no amount per product code (across all dealerships)
+  const unpricedCounts = useMemo(() => {
+    const counts = new Map<ProductCode, number>();
+    for (const o of orders) {
+      for (const p of o.products ?? []) {
+        if (p.amount == null) counts.set(p.product_code, (counts.get(p.product_code) ?? 0) + 1);
+      }
+    }
+    return counts;
+  }, [orders]);
 
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
@@ -87,6 +179,8 @@ const ProvidersProductsPage: React.FC = () => {
           <Plus size={16} /> New Provider/Product
         </button>
       </div>
+
+      <DefaultPricingPanel pricing={pricing} setPrice={setPrice} unpricedCounts={unpricedCounts} />
 
       <FilterBar
         searchValue={filters.search}
