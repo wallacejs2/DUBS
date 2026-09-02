@@ -3,6 +3,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Plus, Package, Mail, Phone, Hash, Building2, Trash2, Edit3, Globe, DollarSign } from 'lucide-react';
 import { useProvidersProducts, useDealerships, useOrders, useProductPricing } from '../hooks';
 import { ProviderProduct, ProviderProductCategory, ProviderType, DealershipStatus, ProductCode, ProductPricing } from '../types';
+import { getActiveOrders } from '../lib/orderPricing';
 import FilterBar from '../components/FilterBar';
 import ProviderProductDetailPanel from '../components/ProviderProductDetailPanel';
 
@@ -93,10 +94,11 @@ const ProvidersProductsPage: React.FC = () => {
   const { orders } = useOrders();
   const { pricing, setPrice } = useProductPricing();
 
-  // Count line items with no amount per product code (across all dealerships)
+  // Count line items with no amount per product code, across each dealership's
+  // ACTIVE DMT order only (previous orders do not affect any totals)
   const unpricedCounts = useMemo(() => {
     const counts = new Map<ProductCode, number>();
-    for (const o of orders) {
+    for (const o of getActiveOrders(orders)) {
       for (const p of o.products ?? []) {
         if (p.amount == null) counts.set(p.product_code, (counts.get(p.product_code) ?? 0) + 1);
       }

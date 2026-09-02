@@ -6,7 +6,7 @@ import {
   Shopper, Order, ProductCode, NewFeature, TeamMember,
   ProviderProduct, Meeting, Note, Task, ProductPricing
 } from './types.ts';
-import { hasOneTimeLine, hasUnpricedLine } from './lib/orderPricing.ts';
+import { hasOneTimeLine, hasUnpricedLine, activeOrderList } from './lib/orderPricing.ts';
 
 export function useEnterpriseGroups() {
   const [groups, setGroups] = useState<EnterpriseGroup[]>([]);
@@ -77,16 +77,18 @@ export function useDealerships(filters?: { search?: string; status?: string; gro
     if (filters?.group) {
       data = data.filter(d => d.enterprise_group_id === filters.group);
     }
+    // Order-based filters look at the ACTIVE DMT order only (most recent on or
+    // before today); previous orders are ignored so products are not double counted.
     if (filters?.managed === 'yes') {
       data = data.filter(d => {
          const details = db.getDealershipWithRelations(d.id);
-         return details?.orders?.some(o => o.products?.some(p => p.product_code === ProductCode.P15392_MANAGED));
+         return activeOrderList(details?.orders).some(o => o.products?.some(p => p.product_code === ProductCode.P15392_MANAGED));
       });
     }
     if (filters?.addl_web === 'yes') {
       data = data.filter(d => {
          const details = db.getDealershipWithRelations(d.id);
-         return details?.orders?.some(o => o.products?.some(p => p.product_code === ProductCode.P15435_ADDL_WEB || p.product_code === ProductCode.P15436_MNGD_ADDL));
+         return activeOrderList(details?.orders).some(o => o.products?.some(p => p.product_code === ProductCode.P15435_ADDL_WEB || p.product_code === ProductCode.P15436_MNGD_ADDL));
       });
     }
     if (filters?.sms === 'yes') {
@@ -95,7 +97,7 @@ export function useDealerships(filters?: { search?: string; status?: string; gro
     if (filters?.one_time === 'yes') {
       data = data.filter(d => {
          const details = db.getDealershipWithRelations(d.id);
-         return hasOneTimeLine(details?.orders);
+         return hasOneTimeLine(activeOrderList(details?.orders));
       });
     }
     if (filters?.issue) {
@@ -109,7 +111,7 @@ export function useDealerships(filters?: { search?: string; status?: string; gro
         }
 
         if (filters.issue === 'zero_price') {
-           return hasUnpricedLine(details.orders);
+           return hasUnpricedLine(activeOrderList(details.orders));
         }
 
         if (filters.issue === 'no_csm') {

@@ -10,7 +10,7 @@ import {
 } from '../types';
 import { db } from '../db';
 import { useTeamMembers, useProvidersProducts, useProductPricing } from '../hooks';
-import { FEE_TYPE_OPTIONS, resolveLineAmount, formatLineAmount, summarizeProducts, summarizeOrders, isOneTime } from '../lib/orderPricing';
+import { FEE_TYPE_OPTIONS, resolveLineAmount, formatLineAmount, summarizeProducts, summarizeOrders, isOneTime, partitionOrders, sortOrdersByRecency } from '../lib/orderPricing';
 
 interface DealershipDetailPanelProps {
   dealership: DealershipWithRelations;
@@ -374,6 +374,14 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
     }
   };
 
+  // Only the ACTIVE DMT order (most recent on or before today) counts toward
+  // totals; earlier orders are shown as "Previous" and excluded so a re-order
+  // never double counts the same products.
+  const displayedOrders: Order[] = isEditing ? (formData.orders || []) : sortOrdersByRecency(dealership.orders);
+  const orderPartition = partitionOrders(displayedOrders);
+  const activeOrderId = orderPartition.active?.id;
+  const hasMultipleOrders = displayedOrders.length > 1;
+
   const handleCopyCSV = () => {
     // ... same logic ...
     const d = formData;
@@ -411,6 +419,7 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
         baseInfo[`websiteLink${i+1}`] = link ? link.primary_url || '' : '';
     }
     if (d.orders && d.orders.length > 0) {
+        const csvActiveOrder = partitionOrders(d.orders).active;
         const sortedOrders = [...d.orders].sort((a,b) => (a.received_date || '').localeCompare(b.received_date || ''));
         sortedOrders.forEach(o => {
             const orderSummary = summarizeProducts(o.products, pricing);
@@ -421,6 +430,7 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                 Monthly_Total: orderSummary.monthly,
                 One_Time_Total: orderSummary.oneTime,
                 Estimated_Pricing: orderSummary.hasEstimated ? 'YES' : 'NO',
+                DMT_Order_Type: o === csvActiveOrder ? 'Active' : 'Previous',
             };
             productCodes.forEach(code => row[code] = '');
             if (o.products && o.products.length > 0) {
@@ -440,6 +450,7 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
             Monthly_Total: 0,
             One_Time_Total: 0,
             Estimated_Pricing: 'NO',
+            DMT_Order_Type: '',
         };
         productCodes.forEach(code => row[code] = '');
         flatData.push(row);
@@ -450,7 +461,7 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
       'Sales_Contact', 'Enrollment_Contact', 'CSM', 'POC_Name', 'POC_Email', 'POC_Phone', 
       'Received_Date', 'Order_Number', 'Onboarding_Date', 'Go_Live_Date', 'Term_Date',
       ...productCodes,
-      'Monthly_Total', 'One_Time_Total', 'Estimated_Pricing',
+      'Monthly_Total', 'One_Time_Total', 'Estimated_Pricing', 'DMT_Order_Type',
       'clientID1', 'websiteLink1', 'clientID2', 'websiteLink2', 
       'clientID3', 'websiteLink3', 'clientID4', 'websiteLink4'
     ];
@@ -1141,10 +1152,11 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                         <Plus size={10} /> Add Order
                      </button>
                   ) : (() => {
-                     const dealerSummary = summarizeOrders(dealership.orders, pricing);
-                     if (dealerSummary.lineCount === 0) return null;
+                     const dealerSummary = summarizeOrders(orderPartition.active ? [orderPartition.active] : [], pricing);
+                     if (dealerSummary.lineCount === 0 && !hasMultipleOrders) return null;
                      return (
-                        <div className="flex items-center gap-2 text-xs font-mono text-slate-500 dark:text-slate-400">
+                        <div className="flex items-center gap-2 text-xs font-mono text-slate-500 dark:text-slate-400" title={hasMultipleOrders ? 'Totals use the active DMT order only; previous orders are not counted' : undefined}>
+                           {hasMultipleOrders && <span className="font-sans text-[10px] text-slate-400 dark:text-slate-500">Active order:</span>}
                            <span>Monthly <span className="font-semibold text-slate-700 dark:text-slate-200">${dealerSummary.monthly.toLocaleString()}</span></span>
                            <span className="text-slate-300 dark:text-slate-600">·</span>
                            <span>One-Time <span className="font-semibold text-slate-700 dark:text-slate-200">${dealerSummary.oneTime.toLocaleString()}</span></span>
@@ -1156,8 +1168,20 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                   })()}
                </div>
                
-               {(isEditing ? (formData.orders || []) : (dealership.orders || [])).map((order, orderIdx) => (
-                  <div key={order.id || orderIdx} className="bg-slate-100/50 dark:bg-[#2C2C2E] p-4 rounded-xl border border-slate-200/60 dark:border-[#38383A] shadow-sm relative space-y-4">
+               {displayedOrders.map((order, orderIdx) => {
+                  const isActive = order.id === activeOrderId;
+                  return (
+                  <div key={order.id || orderIdx} className={`bg-slate-100/50 dark:bg-[#2C2C2E] p-4 rounded-xl border shadow-sm relative space-y-4 ${hasMultipleOrders && isActive ? 'border-emerald-300/70 dark:border-emerald-700/60' : 'border-slate-200/60 dark:border-[#38383A]'} ${!isEditing && hasMultipleOrders && !isActive ? 'opacity-70' : ''}`}>
+                     {hasMultipleOrders && (
+                        <div className="flex items-center gap-2">
+                           {isActive ? (
+                              <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800" title="Most recent DMT order on or before today. Counted in all totals.">Active</span>
+                           ) : (
+                              <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide bg-slate-100 text-slate-500 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700" title="Superseded by a more recent DMT order. Not counted in totals.">Previous</span>
+                           )}
+                           {!isActive && <span className="text-[10px] text-slate-400 dark:text-slate-500">Not counted in totals</span>}
+                        </div>
+                     )}
                      {isEditing && (
                         <button
                            type="button"
@@ -1264,7 +1288,7 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                         {!isEditing && order.products && order.products.length > 0 && (() => {
                             const orderSummary = summarizeProducts(order.products, pricing);
                             return (
-                                <div className="flex justify-end items-center gap-3 pt-1 px-1 text-[11px] font-mono text-slate-500 dark:text-slate-400">
+                                <div className={`flex justify-end items-center gap-3 pt-1 px-1 text-[11px] font-mono text-slate-500 dark:text-slate-400 ${!isActive ? 'line-through decoration-slate-300 dark:decoration-slate-600' : ''}`}>
                                     <span>Monthly <span className="font-semibold text-slate-700 dark:text-slate-200">${orderSummary.monthly.toLocaleString()}</span></span>
                                     <span className="text-slate-300 dark:text-slate-600">·</span>
                                     <span>One-Time <span className="font-semibold text-slate-700 dark:text-slate-200">${orderSummary.oneTime.toLocaleString()}</span></span>
@@ -1274,7 +1298,8 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                         })()}
                      </div>
                   </div>
-               ))}
+                  );
+               })}
                {isEditing && (!formData.orders || formData.orders.length === 0) && (
                   <div className="text-center py-6 text-slate-400 text-xs italic bg-slate-50/50 dark:bg-white/[0.02] rounded-xl border border-dashed border-slate-200/60 dark:border-[#38383A]">
                      No DMT orders. Click "Add Order" to create one.

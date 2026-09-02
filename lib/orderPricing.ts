@@ -127,3 +127,75 @@ export const hasUnpricedLine = (orders: Order[] | undefined): boolean =>
 
 export const formatLineAmount = (line: ResolvedLine): string =>
   `$${line.amount.toLocaleString()}${line.isEstimated ? ` ${EST_MARKER}` : ''}`;
+
+// ─── Active vs previous orders ────────────────────────────────────────────────
+//
+// A dealership may hold several DMT orders over time (e.g. an upgrade that
+// re-orders the same products). Only ONE order is "active" at a time: the most
+// recently received order dated on or before today. Every other order is
+// "previous" and is excluded from revenue, badges and filters so products are
+// never counted twice. If no order is dated on or before today (all
+// future-dated), the most recent order overall is treated as active.
+
+export interface OrderPartition {
+  active: Order | null;
+  previous: Order[];
+}
+
+export const todayKey = (): string => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+const dateKey = (o: Order): string => (o.received_date || '').slice(0, 10);
+
+export function partitionOrders(orders: Order[] | undefined, today: string = todayKey()): OrderPartition {
+  const list = orders ?? [];
+  if (list.length === 0) return { active: null, previous: [] };
+  if (list.length === 1) return { active: list[0], previous: [] };
+
+  // Most recent first; ties broken by array position (later entry wins)
+  const byRecency = list
+    .map((o, idx) => ({ o, idx, key: dateKey(o) }))
+    .sort((a, b) => (a.key === b.key ? b.idx - a.idx : b.key.localeCompare(a.key)));
+
+  const onOrBeforeToday = byRecency.filter(x => x.key && x.key <= today);
+  const active = (onOrBeforeToday[0] ?? byRecency[0]).o;
+  return { active, previous: list.filter(o => o !== active) };
+}
+
+export const getActiveOrder = (orders: Order[] | undefined, today?: string): Order | null =>
+  partitionOrders(orders, today).active;
+
+export const isActiveOrder = (order: Order, orders: Order[] | undefined, today?: string): boolean =>
+  partitionOrders(orders, today).active === order;
+
+/** Reduce a cross-dealership order list to one active order per dealership. */
+export function getActiveOrders(orders: Order[] | undefined, today: string = todayKey()): Order[] {
+  const byDealer = new Map<string, Order[]>();
+  for (const o of orders ?? []) {
+    const list = byDealer.get(o.dealership_id) ?? [];
+    list.push(o);
+    byDealer.set(o.dealership_id, list);
+  }
+  const result: Order[] = [];
+  for (const list of byDealer.values()) {
+    const active = partitionOrders(list, today).active;
+    if (active) result.push(active);
+  }
+  return result;
+}
+
+/** Orders sorted most recent first (active order first when it is the most recent). */
+export function sortOrdersByRecency(orders: Order[] | undefined): Order[] {
+  return [...(orders ?? [])]
+    .map((o, idx) => ({ o, idx, key: dateKey(o) }))
+    .sort((a, b) => (a.key === b.key ? b.idx - a.idx : b.key.localeCompare(a.key)))
+    .map(x => x.o);
+}
+
+/** The active order as a list (empty when there are no orders), for helpers that take order lists. */
+export const activeOrderList = (orders: Order[] | undefined, today?: string): Order[] => {
+  const active = getActiveOrder(orders, today);
+  return active ? [active] : [];
+};

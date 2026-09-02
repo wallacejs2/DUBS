@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { useDealerships, useOrders, useProductPricing } from '../hooks';
 import { DealershipFilterState, DealershipStatus, FeeType, Order, ProductCode } from '../types';
-import { ProductSalesEntry, resolveLineAmount, summarizeByProduct, summarizeOrders, summarizeProducts } from '../lib/orderPricing';
+import { ProductSalesEntry, resolveLineAmount, summarizeByProduct, summarizeOrders, summarizeProducts, getActiveOrders } from '../lib/orderPricing';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -247,11 +247,16 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
   const { orders } = useOrders();
   const { pricing } = useProductPricing();
 
+  // Only each dealership's ACTIVE DMT order (most recent on or before today)
+  // feeds revenue and product metrics. Previous orders are excluded so a
+  // re-order never double counts the same products.
+  const activeOrders = useMemo(() => getActiveOrders(orders), [orders]);
+
   // ─── Section 1 Metrics ─────────────────────────────────────────────────────
   const s1Metrics = useMemo(() => {
     const filteredDealerships = dealerships.filter(d => !s1ExcludedStatuses.includes(d.status));
     const filteredIds = new Set(filteredDealerships.map(d => d.id));
-    const filteredOrders = orders.filter(o => filteredIds.has(o.dealership_id));
+    const filteredOrders = activeOrders.filter(o => filteredIds.has(o.dealership_id));
 
     const totalDealerships = filteredDealerships.length;
     // Revenue split: monthly recurring vs one-time fees. Unpriced line items
@@ -284,7 +289,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
     const productSales = summarizeByProduct(filteredOrders, pricing);
 
     return { totalDealerships, totalLineItems, monthlyRevenue, oneTimeRevenue, hasEstimated, reallocatedRevenue, statusCounts, productSales };
-  }, [dealerships, orders, pricing, s1ExcludedStatuses]);
+  }, [dealerships, activeOrders, pricing, s1ExcludedStatuses]);
 
   // ─── Section 2 Metrics ─────────────────────────────────────────────────────
   const s2Range = useMemo(() => getS2DateRange(s2Preset, s2CustomRange), [s2Preset, s2CustomRange]);
@@ -329,10 +334,11 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
     );
     const avgDaysToGoLive = daysAcc.count > 0 ? Math.round(daysAcc.total / daysAcc.count) : null;
 
-    const s2ProductSales = summarizeByProduct(orders.filter(o => inRange(o.received_date)), pricing);
+    // Active orders received within the range (previous orders excluded)
+    const s2ProductSales = summarizeByProduct(activeOrders.filter(o => inRange(o.received_date)), pricing);
 
     return { received, onboarding, live, termed, avgDaysToGoLive, productSales: s2ProductSales };
-  }, [dealerships, orders, pricing, s2Range]);
+  }, [dealerships, orders, activeOrders, pricing, s2Range]);
 
   // ─── Section 3 Chart Data ──────────────────────────────────────────────────
   const s3ChartData = useMemo(() => {
@@ -363,7 +369,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
 
     // Group per-month revenue per product (non-cumulative)
     const perMonth = new Map<string, Map<ProductCode, number>>();
-    for (const o of orders) {
+    for (const o of activeOrders) {
       const mk = getMonthKey(o.received_date);
       if (!mk) continue;
       if (!o.products) continue;
@@ -414,7 +420,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
     );
 
     return { chartData, activeCodes };
-  }, [orders, pricing]);
+  }, [activeOrders, pricing]);
 
   // ─── Section 5 Chart Data: Cumulative Revenue by Go-Live Month ─────────────
   const goLiveRevenueTrend = useMemo(() => {
@@ -430,7 +436,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
 
     // Per-dealer monthly recurring revenue across that dealer's orders (one-time fees excluded)
     const dealerRevenue = new Map<string, number>();
-    for (const o of orders) {
+    for (const o of activeOrders) {
       if (!o.products) continue;
       const rev = summarizeProducts(o.products, pricing).monthly;
       dealerRevenue.set(o.dealership_id, (dealerRevenue.get(o.dealership_id) ?? 0) + rev);
@@ -457,7 +463,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
       running += revenueByMonth.get(month) ?? 0;
       return { month, label, revenue: running };
     });
-  }, [dealerships, orders, pricing]);
+  }, [dealerships, activeOrders, pricing]);
 
   // ─── Section 1 Toggle Helpers ──────────────────────────────────────────────
   const toggleS1Group = (statuses: readonly DealershipStatus[]) => {
@@ -686,7 +692,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
         accent="bg-violet-500/5 dark:bg-violet-500/10 border-violet-200/40 dark:border-violet-500/20"
       >
         <p className="text-xs text-slate-400 dark:text-slate-500 mb-2">
-          Cumulative monthly recurring revenue by order received month. Excludes one-time fees; includes estimated default pricing for unpriced line items.
+          Cumulative monthly recurring revenue by order received month, using each dealership's active DMT order only. Excludes one-time fees and previous orders; includes estimated default pricing for unpriced line items.
         </p>
         <ResponsiveContainer width="100%" height={260}>
           <BarChart data={productRevenue.chartData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
@@ -727,7 +733,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
         accent="bg-emerald-500/5 dark:bg-emerald-500/10 border-emerald-200/40 dark:border-emerald-500/20"
       >
         <p className="text-xs text-slate-400 dark:text-slate-500 mb-2">
-          Each dealership's monthly recurring revenue is attributed to its go-live month. Excludes one-time fees; includes estimated default pricing for unpriced line items.
+          Each dealership's active DMT order monthly recurring revenue is attributed to its go-live month. Excludes one-time fees and previous orders; includes estimated default pricing for unpriced line items.
         </p>
         <ResponsiveContainer width="100%" height={220}>
           <AreaChart data={goLiveRevenueTrend} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>

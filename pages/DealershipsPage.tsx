@@ -4,7 +4,7 @@ import { Plus, FileSpreadsheet, Search, Hash, X, ChevronDown } from 'lucide-reac
 import { useDealerships, useEnterpriseGroups, useOrders, useProvidersProducts, useTeamMembers, useProductPricing } from '../hooks';
 import { DealershipWithRelations, ProductCode, DealershipFilterState, DealershipStatus } from '../types';
 import { db } from '../db';
-import { hasOneTimeLine, hasUnpricedLine, summarizeOrders, summarizeProducts } from '../lib/orderPricing';
+import { hasOneTimeLine, hasUnpricedLine, summarizeOrders, summarizeProducts, activeOrderList, partitionOrders } from '../lib/orderPricing';
 import DealershipCard from '../components/DealershipCard';
 import DealershipForm from '../components/DealershipForm';
 import DealershipDetailPanel from '../components/DealershipDetailPanel';
@@ -51,26 +51,28 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
     }
   };
 
+  // Card badges look at the ACTIVE DMT order only (most recent on or before
+  // today); previous orders are ignored so products are not double counted.
+  const activeOrdersFor = (dealerId: string) => activeOrderList(orders.filter(o => o.dealership_id === dealerId));
+
   const checkIsManaged = (dealerId: string) => {
-    return orders.some(o =>
-      o.dealership_id === dealerId &&
+    return activeOrdersFor(dealerId).some(o =>
       o.products.some(p => p.product_code === ProductCode.P15392_MANAGED)
     );
   };
 
   const checkHasAddlWeb = (dealerId: string) => {
-    return orders.some(o =>
-      o.dealership_id === dealerId &&
+    return activeOrdersFor(dealerId).some(o =>
       o.products.some(p => p.product_code === ProductCode.P15435_ADDL_WEB || p.product_code === ProductCode.P15436_MNGD_ADDL)
     );
   };
 
   const checkHasZeroPrice = (dealerId: string) => {
-    return hasUnpricedLine(orders.filter(o => o.dealership_id === dealerId));
+    return hasUnpricedLine(activeOrdersFor(dealerId));
   };
 
   const checkHasOneTime = (dealerId: string) => {
-    return hasOneTimeLine(orders.filter(o => o.dealership_id === dealerId));
+    return hasOneTimeLine(activeOrdersFor(dealerId));
   };
 
   const buildExportData = () => {
@@ -83,10 +85,12 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
       const fullD = db.getDealershipWithRelations(d.id);
       if (!fullD) return;
       const groupName = allGroups.find(g => g.id === fullD.enterprise_group_id)?.name || 'Independent';
-      const isManaged = (fullD.orders || []).some(o =>
-        o.products?.some(p => p.product_code === ProductCode.P15392_MANAGED)
-      );
-      const dealerSummary = summarizeOrders(fullD.orders || [], pricing);
+      // Only the ACTIVE order (most recent on or before today) drives
+      // dealership-level flags and totals; previous orders are exported as
+      // rows but marked "Previous" so they are not double counted.
+      const { active: activeOrder } = partitionOrders(fullD.orders);
+      const isManaged = !!activeOrder?.products?.some(p => p.product_code === ProductCode.P15392_MANAGED);
+      const dealerSummary = summarizeOrders(activeOrder ? [activeOrder] : [], pricing);
 
       const baseInfo: any = {
          _dealerId: d.id,
@@ -139,6 +143,7 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
                   Monthly_Total: orderSummary.monthly,
                   One_Time_Total: orderSummary.oneTime,
                   Estimated_Pricing: orderSummary.hasEstimated ? 'YES' : 'NO',
+                  DMT_Order_Type: o === activeOrder ? 'Active' : 'Previous',
                   SortDate: o.received_date || '9999-99-99'
               };
               productCodes.forEach(code => row[code] = '');
@@ -159,6 +164,7 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
               Monthly_Total: 0,
               One_Time_Total: 0,
               Estimated_Pricing: 'NO',
+              DMT_Order_Type: '',
               SortDate: '9999-99-99'
           };
           productCodes.forEach(code => row[code] = '');
@@ -209,7 +215,7 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
     'Received_Date', 'Order_Number', 'Onboarding_Date',
     'Go_Live_Date', 'Term_Date', 'Managed_Package',
     ...productCodes,
-    'Monthly_Total', 'One_Time_Total', 'Estimated_Pricing',
+    'Monthly_Total', 'One_Time_Total', 'Estimated_Pricing', 'DMT_Order_Type',
   ];
 
   const handleExportCSV = () => {
@@ -227,13 +233,16 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
   const handleExportPerWebsite = () => {
     const { flatData } = buildExportData();
 
-    // One row per dealership — this export excludes DMT order line items
+    // One row per dealership — this export excludes DMT order line items.
+    // Prefer the ACTIVE order's row for each dealership.
     const seenDealers = new Set<string>();
-    const dealerRows = flatData.filter(row => {
-      if (seenDealers.has(row._dealerId)) return false;
-      seenDealers.add(row._dealerId);
-      return true;
-    });
+    const dealerRows = [...flatData]
+      .sort((a, b) => (a.DMT_Order_Type === 'Active' ? -1 : 0) - (b.DMT_Order_Type === 'Active' ? -1 : 0))
+      .filter(row => {
+        if (seenDealers.has(row._dealerId)) return false;
+        seenDealers.add(row._dealerId);
+        return true;
+      });
 
     const expanded: any[] = [];
     dealerRows.forEach(row => {
@@ -243,6 +252,7 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
         Monthly_Total: row._dealerMonthly,
         One_Time_Total: row._dealerOneTime,
         Estimated_Pricing: row._dealerEstimated ? 'YES' : 'NO',
+        DMT_Order_Type: row.DMT_Order_Type ? 'Active' : '',
       };
       const pairs = [1, 2, 3, 4]
         .map(i => ({ clientID: row[`clientID${i}`] || '', websiteLink: row[`websiteLink${i}`] || '' }))
