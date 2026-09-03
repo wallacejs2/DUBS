@@ -1,6 +1,9 @@
 /**
  * The single source of truth for the vehicle Makes a dealership can represent.
  *
+ * "Used" is included as a selectable Make so a dealership that sells only pre-owned
+ * inventory (or has a used-only rooftop) can be tagged alongside the franchised OEMs.
+ *
  * OEMs are stored at the dealership level as a flat, alphabetised list of Make names
  * (e.g. ["Acura", "Volkswagen"]). There is no OEM Group / parent-company layer: the Make
  * itself is the value used for selection, display, validation, filtering and export.
@@ -59,6 +62,7 @@ export const OEM_MAKES: readonly string[] = sortMakes([
   'Subaru',
   'Tesla',
   'Toyota',
+  'Used',
   'VinFast',
   'Volkswagen',
   'Volvo',
