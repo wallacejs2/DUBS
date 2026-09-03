@@ -1,167 +1,204 @@
-import React, { useMemo, useState } from 'react';
-import { Plus, X } from 'lucide-react';
-import { DealershipOEM } from '../types';
-import { OEM_HIERARCHY, createOemSelection, formatOem, makesForOemGroup } from '../lib/oem';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Check, ChevronDown, Search, X } from 'lucide-react';
+import { OEM_MAKES, sortOems } from '../lib/oem';
 
 interface OemSelectorProps {
-  /** Current selections, in display/export order. */
-  value: DealershipOEM[] | undefined;
-  /** Called with the full updated list whenever a selection is added or removed. */
-  onChange?: (oems: DealershipOEM[]) => void;
-  /** Render chips only (no add/remove controls). */
+  /** Currently selected Makes. Displayed and emitted in alphabetical order. */
+  value: string[] | undefined;
+  /** Called with the full, alphabetised list whenever a Make is added or removed. */
+  onChange?: (makes: string[]) => void;
+  /** Render selected chips only (no dropdown or remove controls). */
   readOnly?: boolean;
   /** Text shown when nothing is selected in read-only mode. */
   emptyText?: string;
+  /** Placeholder shown in the field when nothing is selected. */
+  placeholder?: string;
 }
 
-const selectClasses =
-  'w-full px-2 py-1 text-sm border border-slate-200/60 dark:border-[#38383A] rounded-xl focus:ring-1 focus:ring-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none bg-slate-100/50 dark:bg-[#2C2C2E] text-slate-900 dark:text-slate-100 font-normal disabled:opacity-50 disabled:cursor-not-allowed';
-
 const chipClasses =
-  'inline-flex items-center gap-1 px-2 py-0.5 bg-violet-50 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 border border-violet-100 dark:border-violet-800 rounded-md text-xs font-bold tracking-wide';
+  'inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 text-xs font-bold leading-4 max-w-full';
 
 /**
- * Compact OEM picker: selected OEMs are shown as "OEM Group - Make" chips, and "+ Add OEM"
- * reveals a two-level OEM Group -> Make picker. Choosing a Make adds it immediately (its OEM
- * Group is resolved from the shared hierarchy), and Makes already selected are hidden so a
- * Make can never be added twice.
+ * Searchable multi-select for a dealership's OEMs (vehicle Makes).
+ *
+ * Selected Makes render as compact chips inside a single input-styled field; clicking
+ * anywhere in the field opens a dropdown that lists every Make alphabetically with a
+ * selected-state indicator. The dropdown stays open while multiple Makes are toggled and
+ * closes on outside click or Escape. Selections are always alphabetised and de-duplicated.
  */
-const OemSelector: React.FC<OemSelectorProps> = ({ value, onChange, readOnly = false, emptyText = 'No OEMs selected' }) => {
-  const selections = value || [];
-  const [isPickerOpen, setIsPickerOpen] = useState(false);
-  const [pickerGroup, setPickerGroup] = useState('');
+const OemSelector: React.FC<OemSelectorProps> = ({
+  value,
+  onChange,
+  readOnly = false,
+  emptyText = 'No OEMs selected',
+  placeholder = 'Select Makes...',
+}) => {
+  const selected = useMemo(() => sortOems(value), [value]);
+  const selectedSet = useMemo(() => new Set(selected), [selected]);
 
-  const selectedMakes = useMemo(() => new Set(selections.map(s => s.make)), [selections]);
+  const [isOpen, setIsOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const containerRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
 
-  // Available Makes = hierarchy minus Makes already on this dealership, optionally
-  // narrowed to the chosen OEM Group.
-  const availableGroups = useMemo(
-    () =>
-      OEM_HIERARCHY
-        .filter(g => !pickerGroup || g.group === pickerGroup)
-        .map(g => ({ group: g.group, makes: g.makes.filter(m => !selectedMakes.has(m)) })),
-    [pickerGroup, selectedMakes]
-  );
-  const availableMakeCount = availableGroups.reduce((n, g) => n + g.makes.length, 0);
-  const groupExhausted = !!pickerGroup && makesForOemGroup(pickerGroup).every(m => selectedMakes.has(m));
+  // Close on outside click (mousedown so the click never reaches the page underneath).
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen]);
 
-  const addMake = (make: string) => {
-    if (!make || selectedMakes.has(make)) return;
-    const selection = createOemSelection(make);
-    if (!selection) return;
-    // Keep the OEM Group filter so the next Make from the same group is one click away.
-    onChange?.([...selections, selection]);
+  // Focus the search box and reset the query each time the dropdown opens.
+  useEffect(() => {
+    if (isOpen) {
+      setQuery('');
+      searchRef.current?.focus();
+    }
+  }, [isOpen]);
+
+  const filteredMakes = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    // OEM_MAKES is already alphabetical, so filtering preserves the ordering.
+    return q ? OEM_MAKES.filter(make => make.toLowerCase().includes(q)) : OEM_MAKES;
+  }, [query]);
+
+  const emit = (next: Iterable<string>) => onChange?.(sortOems(Array.from(new Set(next))));
+
+  const toggleMake = (make: string) => {
+    if (selectedSet.has(make)) {
+      emit(selected.filter(m => m !== make));
+    } else {
+      emit([...selected, make]);
+    }
   };
 
-  const removeAt = (idx: number) => {
-    onChange?.(selections.filter((_, i) => i !== idx));
-  };
+  const removeMake = (make: string) => emit(selected.filter(m => m !== make));
 
-  const closePicker = () => {
-    setIsPickerOpen(false);
-    setPickerGroup('');
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape' && isOpen) {
+      e.stopPropagation();
+      setIsOpen(false);
+    }
   };
-
-  const chips = selections.map((oem, idx) => (
-    <span key={oem.make} className={chipClasses} title={formatOem(oem)}>
-      {formatOem(oem)}
-      {!readOnly && (
-        <button
-          type="button"
-          onClick={() => removeAt(idx)}
-          className="text-violet-400 hover:text-red-500 transition-colors"
-          aria-label={`Remove ${formatOem(oem)}`}
-        >
-          <X size={10} />
-        </button>
-      )}
-    </span>
-  ));
 
   if (readOnly) {
     return (
-      <div className="flex flex-wrap gap-1.5 mt-1">
-        {selections.length === 0 ? (
+      <div className="flex flex-wrap gap-1 mt-1">
+        {selected.length === 0 ? (
           <span className="text-sm font-normal leading-tight text-slate-700 dark:text-slate-300">{emptyText}</span>
         ) : (
-          chips
+          selected.map(make => (
+            <span key={make} className={chipClasses}>{make}</span>
+          ))
         )}
       </div>
     );
   }
 
   return (
-    <div className="space-y-2">
-      <div className="flex flex-wrap gap-1.5 items-center min-h-[26px]">
-        {chips}
-        <button
-          type="button"
-          onClick={() => (isPickerOpen ? closePicker() : setIsPickerOpen(true))}
-          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold border border-dashed transition-colors ${
-            isPickerOpen
-              ? 'border-blue-400 text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-900/20'
-              : 'border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-400'
-          }`}
-          aria-expanded={isPickerOpen}
-        >
-          <Plus size={12} /> Add OEM
-        </button>
+    <div className="relative w-full" ref={containerRef} onKeyDown={handleKeyDown}>
+      {/* Trigger: looks like the form's Input/Select controls; grows only when chips wrap. */}
+      <div
+        role="combobox"
+        tabIndex={0}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        aria-label="OEMs"
+        onClick={() => setIsOpen(open => !open)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
+            e.preventDefault();
+            setIsOpen(true);
+          }
+        }}
+        className={`w-full flex items-center justify-between gap-2 px-2 py-1 min-h-[30px] text-sm border rounded-xl outline-none cursor-pointer transition-colors bg-slate-100/50 dark:bg-[#2C2C2E] text-slate-900 dark:text-slate-100 font-normal focus:ring-1 focus:ring-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500/50 ${
+          isOpen
+            ? 'border-blue-500 ring-1 ring-blue-500'
+            : 'border-slate-200/60 dark:border-[#38383A] hover:border-slate-300 dark:hover:border-[#48484A]'
+        }`}
+      >
+        <div className="flex flex-wrap items-center gap-1 flex-1 min-w-0">
+          {selected.length === 0 ? (
+            <span className="text-slate-400 dark:text-slate-600">{placeholder}</span>
+          ) : (
+            selected.map(make => (
+              <span key={make} className={chipClasses}>
+                <span className="truncate">{make}</span>
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); removeMake(make); }}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  className="text-blue-400 dark:text-blue-400/80 hover:text-blue-900 dark:hover:text-blue-100 transition-colors rounded-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500"
+                  aria-label={`Remove ${make}`}
+                  title={`Remove ${make}`}
+                >
+                  <X size={10} />
+                </button>
+              </span>
+            ))
+          )}
+        </div>
+        <ChevronDown size={14} className={`shrink-0 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </div>
 
-      {isPickerOpen && (
-        <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-2 items-end bg-slate-50/50 dark:bg-white/[0.02] p-2 rounded-lg border border-slate-100/60 dark:border-[#38383A]">
-          <div>
-            <label className="text-xs font-semibold text-slate-400 dark:text-slate-500 mb-1 block">OEM Group</label>
-            <select
-              value={pickerGroup}
-              onChange={(e) => setPickerGroup(e.target.value)}
-              className={selectClasses}
-              aria-label="OEM Group"
-            >
-              <option value="">All OEM Groups</option>
-              {OEM_HIERARCHY.map(g => (
-                <option key={g.group} value={g.group}>{g.group}</option>
-              ))}
-            </select>
+      {isOpen && (
+        <div className="absolute z-50 w-full mt-1 bg-white/95 dark:bg-[#1C1C1E]/95 backdrop-blur border border-slate-200/60 dark:border-[#38383A] rounded-xl shadow-xl animate-in fade-in slide-in-from-top-2 duration-150 overflow-hidden">
+          {/* Search */}
+          <div className="p-1.5 border-b border-slate-100/60 dark:border-[#38383A]">
+            <div className="relative">
+              <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              <input
+                ref={searchRef}
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search Makes..."
+                aria-label="Search Makes"
+                className="w-full pl-6 pr-2 py-1 text-sm border border-slate-200/60 dark:border-[#38383A] rounded-lg focus:ring-1 focus:ring-blue-500 outline-none bg-slate-100/50 dark:bg-[#2C2C2E] text-slate-900 dark:text-slate-100 font-normal placeholder:text-slate-400 dark:placeholder:text-slate-600"
+              />
+            </div>
           </div>
-          <div>
-            <label className="text-xs font-semibold text-slate-400 dark:text-slate-500 mb-1 block">Make</label>
-            <select
-              value=""
-              onChange={(e) => addMake(e.target.value)}
-              disabled={availableMakeCount === 0}
-              className={selectClasses}
-              aria-label="Make"
-            >
-              <option value="">
-                {availableMakeCount === 0
-                  ? (groupExhausted ? 'All makes in this group selected' : 'All makes selected')
-                  : 'Select a Make...'}
-              </option>
-              {pickerGroup
-                ? availableGroups.flatMap(g => g.makes).map(make => (
-                    <option key={make} value={make}>{make}</option>
-                  ))
-                : availableGroups
-                    .filter(g => g.makes.length > 0)
-                    .map(g => (
-                      <optgroup key={g.group} label={g.group}>
-                        {g.makes.map(make => (
-                          <option key={make} value={make}>{make}</option>
-                        ))}
-                      </optgroup>
-                    ))}
-            </select>
+
+          {/* Options */}
+          <div role="listbox" aria-multiselectable="true" aria-label="Makes" className="max-h-60 overflow-y-auto custom-scrollbar p-1">
+            {filteredMakes.length === 0 ? (
+              <div className="p-3 text-center text-slate-400 italic text-xs">No Makes found</div>
+            ) : (
+              filteredMakes.map(make => {
+                const isSelected = selectedSet.has(make);
+                return (
+                  <div
+                    key={make}
+                    role="option"
+                    aria-selected={isSelected}
+                    onClick={() => toggleMake(make)}
+                    className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg cursor-pointer select-none transition-colors ${
+                      isSelected
+                        ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                        : 'hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
+                    }`}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`flex items-center justify-center w-3.5 h-3.5 rounded border shrink-0 transition-colors ${
+                        isSelected
+                          ? 'bg-blue-500 border-blue-500 text-white'
+                          : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-[#2C2C2E]'
+                      }`}
+                    >
+                      {isSelected && <Check size={10} strokeWidth={3} />}
+                    </span>
+                    <span className="text-sm">{make}</span>
+                  </div>
+                );
+              })
+            )}
           </div>
-          <button
-            type="button"
-            onClick={closePicker}
-            className="h-[30px] px-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
-            aria-label="Done adding OEMs"
-            title="Done"
-          >
-            <X size={14} />
-          </button>
         </div>
       )}
     </div>

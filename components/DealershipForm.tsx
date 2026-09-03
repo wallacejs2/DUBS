@@ -561,6 +561,14 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
                         <Input value={formData.zip_code} onChange={(v) => updateField('zip_code', v)} placeholder="Zip Code" />
                     </div>
                 </div>
+
+                <div>
+                    <Label>OEMs</Label>
+                    <OemSelector
+                        value={formData.oems}
+                        onChange={(oems) => updateField('oems', oems)}
+                    />
+                </div>
             </div>
 
             <hr className="border-slate-100 dark:border-slate-800" />
@@ -678,16 +686,6 @@ const DealershipForm: React.FC<DealershipFormProps> = ({ initialData, onSubmit, 
                 ))}
             </div>
 
-            <hr className="border-slate-100 dark:border-slate-800" />
-
-            {/* OEMs */}
-            <div className="space-y-3">
-                <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">OEMs</h3>
-                <OemSelector
-                    value={formData.oems}
-                    onChange={(oems) => updateField('oems', oems)}
-                />
-            </div>
 
             <hr className="border-slate-100 dark:border-slate-800" />
 

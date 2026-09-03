@@ -3,7 +3,7 @@ import React from 'react';
 import { Filter, Search, Hash, X, ChevronDown } from 'lucide-react';
 import { DealershipFilterState, DealershipStatus } from '../types';
 import { useEnterpriseGroups } from '../hooks';
-import { OEM_GROUPS, OEM_MAKES_ALPHABETICAL, encodeOemFilter } from '../lib/oem';
+import { OEM_MAKES } from '../lib/oem';
 
 interface DealershipSidebarFiltersProps {
   filters: DealershipFilterState;
@@ -167,16 +167,11 @@ const DealershipSidebarFilters: React.FC<DealershipSidebarFiltersProps> = ({ fil
                   <select 
                       value={filters.oem} 
                       onChange={(e) => setFilters({...filters, oem: e.target.value})}
-                      title="Filter by OEM Group (any Make in the group) or by an exact Make"
+                      title="Filter by Make"
                       className="w-full pl-2 pr-6 py-1.5 bg-[#1e293b] border border-slate-700 rounded-lg text-[11px] text-slate-300 appearance-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 outline-none cursor-pointer"
                   >
                       <option value="">All OEMs</option>
-                      <optgroup label="OEM Groups">
-                          {OEM_GROUPS.map(g => <option key={encodeOemFilter('group', g)} value={encodeOemFilter('group', g)}>{g}</option>)}
-                      </optgroup>
-                      <optgroup label="Makes">
-                          {OEM_MAKES_ALPHABETICAL.map(m => <option key={encodeOemFilter('make', m)} value={encodeOemFilter('make', m)}>{m}</option>)}
-                      </optgroup>
+                      {OEM_MAKES.map(m => <option key={m} value={m}>{m}</option>)}
                   </select>
                   <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={10} />
               </div>

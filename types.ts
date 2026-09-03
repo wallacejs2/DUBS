@@ -106,16 +106,6 @@ export interface EnterpriseGroup {
   era_system_id?: string;
 }
 
-/**
- * One OEM a dealership represents, stored as the OEM Group -> Make relationship rather
- * than display text. The Make is the identity of the selection (a Make belongs to exactly
- * one OEM Group, see lib/oem.ts); the display value is "OEM Group - Make".
- */
-export interface DealershipOEM {
-  oem_group: string;
-  make: string;
-}
-
 export interface WebsiteLink {
   id: string;
   dealership_id: string;
@@ -166,8 +156,8 @@ export interface Dealership {
   crm_provider: string;
   website_provider?: string;
   inventory_provider?: string;
-  /** OEMs represented by the dealership, in selection order. */
-  oems?: DealershipOEM[];
+  /** Makes (OEMs) represented by the dealership, stored as an alphabetised list of Make names (see lib/oem.ts). */
+  oems?: string[];
   products?: string[];
   contract_value: number;
   purchase_date: string;
@@ -338,7 +328,7 @@ export interface DealershipFilterState {
   status: string;
   group: string;
   issue: string;
-  // OEM Group / Make filter, encoded as "group:<OEM Group>" or "make:<Make>" (see lib/oem.ts)
+  // Make filter: the exact Make name to match, or '' for all (see lib/oem.ts)
   oem: string;
   managed: string;
   addl_web: string;
