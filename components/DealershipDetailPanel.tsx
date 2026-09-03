@@ -846,6 +846,18 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                         )}
                     </div>
                 </div>
+
+                <div>
+                    <Label>OEMs</Label>
+                    {isEditing ? (
+                        <OemSelector
+                            value={formData.oems}
+                            onChange={(oems) => updateField('oems', oems)}
+                        />
+                    ) : (
+                        <OemSelector value={dealership.oems} readOnly emptyText="---" />
+                    )}
+                </div>
             </div>
 
             <hr className="border-slate-100/60 dark:border-[#38383A]" />
@@ -1056,20 +1068,6 @@ const DealershipDetailPanel: React.FC<DealershipDetailPanelProps> = ({
                 ))}
             </div>
 
-            <hr className="border-slate-100/60 dark:border-[#38383A]" />
-
-            {/* OEMs */}
-            <div className="space-y-3">
-                <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">OEMs</h3>
-                {isEditing ? (
-                    <OemSelector
-                        value={formData.oems}
-                        onChange={(oems) => updateField('oems', oems)}
-                    />
-                ) : (
-                    <OemSelector value={dealership.oems} readOnly />
-                )}
-            </div>
 
             <hr className="border-slate-100/60 dark:border-[#38383A]" />
 

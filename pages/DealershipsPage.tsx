@@ -5,7 +5,7 @@ import { useDealerships, useEnterpriseGroups, useOrders, useProvidersProducts, u
 import { DealershipWithRelations, ProductCode, DealershipFilterState, DealershipStatus } from '../types';
 import { db } from '../db';
 import { hasOneTimeLine, hasUnpricedLine, summarizeOrders, summarizeProducts, activeOrderList, partitionOrders, allProductCodes, resolveLineAmount } from '../lib/orderPricing';
-import { formatOemsForExport, hasNoOems, OEM_GROUPS, OEM_MAKES_ALPHABETICAL, encodeOemFilter } from '../lib/oem';
+import { formatOemsForExport, hasNoOems, OEM_MAKES } from '../lib/oem';
 import DealershipCard from '../components/DealershipCard';
 import DealershipForm from '../components/DealershipForm';
 import DealershipDetailPanel from '../components/DealershipDetailPanel';
@@ -115,7 +115,7 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
          State: fullD.state || '',
          Zip_Code: fullD.zip_code ? `="${fullD.zip_code}"` : '',
          CRM: fullD.crm_provider,
-         // All selected OEMs in one cell: "OEM Group - Make", comma separated, in saved order
+         // All selected Makes in one cell, alphabetised and comma separated (e.g. "Buick, Chevrolet, GMC")
          OEMs: formatOemsForExport(fullD.oems),
          Sales_Contact: fullD.contacts?.sales_contact_name || '',
          Enrollment_Contact: fullD.contacts?.enrollment_contact_name || '',
@@ -532,16 +532,11 @@ const DealershipsPage: React.FC<DealershipsPageProps> = ({ filters, setFilters }
               <select
                 value={filters.oem}
                 onChange={(e) => setFilters({...filters, oem: e.target.value})}
-                title="Filter by OEM Group (any Make in the group) or by an exact Make"
+                title="Filter by Make"
                 className="w-full pl-2.5 pr-7 py-1.5 bg-slate-100/50 dark:bg-[#1C1C1E] border border-slate-200/60 dark:border-[#38383A] rounded-xl text-sm text-slate-700 dark:text-slate-300 appearance-none focus:ring-1 focus:ring-blue-500 outline-none cursor-pointer"
               >
                 <option value="">All OEMs</option>
-                <optgroup label="OEM Groups">
-                  {OEM_GROUPS.map(g => <option key={encodeOemFilter('group', g)} value={encodeOemFilter('group', g)}>{g}</option>)}
-                </optgroup>
-                <optgroup label="Makes">
-                  {OEM_MAKES_ALPHABETICAL.map(m => <option key={encodeOemFilter('make', m)} value={encodeOemFilter('make', m)}>{m}</option>)}
-                </optgroup>
+                {OEM_MAKES.map(m => <option key={m} value={m}>{m}</option>)}
               </select>
               <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={12} />
             </div>
