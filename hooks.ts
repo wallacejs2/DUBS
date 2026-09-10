@@ -154,7 +154,8 @@ export function useDealerships(filters?: { search?: string; status?: string; gro
       });
     }
 
-    // OEM filter: matches dealerships that have the selected Make (see matchesOemFilter in lib/oem.ts).
+    // OEM filter: "group:<OEM Group>" matches any dealership with a Make in that group,
+    // "make:<Make>" matches only that exact Make (see matchesOemFilter in lib/oem.ts).
     if (filters?.oem) {
       data = data.filter(d => matchesOemFilter(d.oems, filters.oem));
     }

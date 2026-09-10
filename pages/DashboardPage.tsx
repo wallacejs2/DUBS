@@ -9,7 +9,7 @@ import {
 import { useDealerships, useOrders, useProductPricing } from '../hooks';
 import { DealershipFilterState, DealershipStatus, FeeType, Order, ProductCode } from '../types';
 import { ProductSalesEntry, resolveLineAmount, summarizeByProduct, summarizeOrders, summarizeProducts, getActiveOrders, allProductCodes } from '../lib/orderPricing';
-import { hasNoOems, normalizeOems } from '../lib/oem';
+import { encodeOemFilter, groupOems, hasNoOems, normalizeOems, OemFilterKind } from '../lib/oem';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -18,6 +18,12 @@ interface DashboardPageProps {
 }
 
 type S2Preset = 'this_month' | 'last_month' | 'this_quarter' | 'last_quarter' | 'this_year' | 'last_year' | 'custom';
+
+/** Section 6 chart rollup: one bar per OEM Group, or one bar per Make. */
+type OemChartMode = OemFilterKind;
+
+/** One row of the Section 6 chart: a group/make label, a total, and a count per status. */
+type OemChartRow = { label: string; total: number } & Partial<Record<DealershipStatus, number>>;
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -183,9 +189,24 @@ const ProductSalesTable: React.FC<ProductSalesTableProps> = ({ sales, productCod
 // ─── Constants ─────────────────────────────────────────────────────────────────
 
 const GOLIVE_COLOR = '#10b981';
-const OEM_BAR_COLOR = '#3b82f6';
-/** Vertical space per Make row in the OEM bar chart (bar + spacer). */
+/** Vertical space per OEM Group / Make row in the OEM bar chart (bar + spacer). */
 const OEM_ROW_HEIGHT = 24;
+
+/** Stack segment colour per dealership status in the OEM bar chart (aligned with STATUS_TOGGLE_GROUPS dots). */
+const STATUS_BAR_COLORS: Record<DealershipStatus, string> = {
+  [DealershipStatus.LIVE]: '#10b981',
+  [DealershipStatus.LEGACY]: '#14b8a6',
+  [DealershipStatus.ONBOARDING]: '#6366f1',
+  [DealershipStatus.DMT_PENDING]: '#94a3b8',
+  [DealershipStatus.DMT_APPROVED]: '#64748b',
+  [DealershipStatus.HOLD]: '#f97316',
+  [DealershipStatus.CANCELLED]: '#ef4444',
+};
+
+const OEM_CHART_MODES: Array<{ key: OemChartMode; label: string }> = [
+  { key: 'group', label: 'OEM Groups' },
+  { key: 'make', label: 'Makes' },
+];
 
 const PRODUCT_COLORS: Record<string, string> = {
   [ProductCode.P15391_SE]: '#3b82f6',
@@ -259,6 +280,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
   // Section 2: date range filter
   const [s2Preset, setS2Preset] = useState<S2Preset>('this_month');
   const [s2CustomRange, setS2CustomRange] = useState({ start: '', end: '' });
+  const [oemChartMode, setOemChartMode] = useState<OemChartMode>('group');
 
   const { dealerships } = useDealerships();
   const { orders } = useOrders();
@@ -483,23 +505,33 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
     });
   }, [dealerships, activeOrders, pricing]);
 
-  // ─── Section 6 Chart Data: Dealerships by OEM (Make) ───────────────────────
-  // One bar per Make with the number of dealerships that represent it. A dealership
-  // with several Makes counts once under each, so bars sum to more than the total.
+  // ─── Section 6 Chart Data: Dealerships by OEM, stacked by status ───────────
+  // One bar per OEM Group (or per Make), split into a segment per dealership status.
+  // A dealership counts once under each group it represents (GM with Chevrolet + Buick
+  // adds 1 to GM), or once under each Make in Make mode, so bars can sum to more than
+  // the total. Statuses no dealership has are left out of the stack and legend.
   const oemChartData = useMemo(() => {
-    const counts = new Map<string, number>();
+    const rows = new Map<string, OemChartRow>();
+    const statusTotals = new Map<DealershipStatus, number>();
     let missing = 0;
     for (const d of dealerships) {
       if (hasNoOems(d.oems)) { missing += 1; continue; }
-      for (const make of normalizeOems(d.oems)) {
-        counts.set(make, (counts.get(make) ?? 0) + 1);
+      const labels = oemChartMode === 'group'
+        ? groupOems(d.oems).map(g => g.group)
+        : normalizeOems(d.oems);
+      for (const label of labels) {
+        const row = rows.get(label) ?? { label, total: 0 };
+        row[d.status] = (row[d.status] ?? 0) + 1;
+        row.total += 1;
+        rows.set(label, row);
+        statusTotals.set(d.status, (statusTotals.get(d.status) ?? 0) + 1);
       }
     }
-    const data = [...counts.entries()]
-      .map(([make, count]) => ({ make, count }))
-      .sort((a, b) => b.count - a.count || a.make.localeCompare(b.make, 'en', { sensitivity: 'base' }));
-    return { data, missing };
-  }, [dealerships]);
+    const data = [...rows.values()]
+      .sort((a, b) => b.total - a.total || a.label.localeCompare(b.label, 'en', { sensitivity: 'base' }));
+    const statuses = Object.values(DealershipStatus).filter(s => (statusTotals.get(s) ?? 0) > 0);
+    return { data, statuses, missing };
+  }, [dealerships, oemChartMode]);
 
   // ─── Section 1 Toggle Helpers ──────────────────────────────────────────────
   const toggleS1Group = (statuses: readonly DealershipStatus[]) => {
@@ -812,25 +844,46 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
         icon={<Car size={15} />}
         accent="bg-blue-500/5 dark:bg-blue-500/10 border-blue-200/40 dark:border-blue-500/20"
         headerRight={
-          oemChartData.missing > 0 ? (
-            <button
-              onClick={() => onNavigateToDealerships?.({ issue: 'no_oem', oem: '' })}
-              className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-all"
-              title="View dealerships with no OEM recorded"
-            >
-              {oemChartData.missing} missing OEM
-              <ArrowRight size={12} />
-            </button>
-          ) : undefined
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-slate-100 dark:bg-slate-800" role="tablist" aria-label="Chart rollup">
+              {OEM_CHART_MODES.map(({ key, label }) => (
+                <button
+                  key={key}
+                  role="tab"
+                  aria-selected={oemChartMode === key}
+                  onClick={() => setOemChartMode(key)}
+                  className={`px-2 py-0.5 rounded-md text-xs font-semibold transition-all ${
+                    oemChartMode === key
+                      ? 'bg-blue-500 text-white shadow-sm'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            {oemChartData.missing > 0 && (
+              <button
+                onClick={() => onNavigateToDealerships?.({ issue: 'no_oem', oem: '' })}
+                className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-all"
+                title="View dealerships with no OEM recorded"
+              >
+                {oemChartData.missing} missing OEM
+                <ArrowRight size={12} />
+              </button>
+            )}
+          </div>
         }
       >
         <p className="text-xs text-slate-400 dark:text-slate-500 mb-2">
-          Number of dealerships representing each Make, across all statuses. A dealership with several Makes is counted under each one. Click a bar to view those dealerships.
+          {oemChartMode === 'group'
+            ? 'Number of dealerships representing each OEM Group, split by dealership status. A dealership with Makes in several groups is counted once under each group. Click a segment to view those dealerships.'
+            : 'Number of dealerships representing each Make, split by dealership status. A dealership with several Makes is counted once under each Make. Click a segment to view those dealerships.'}
         </p>
         {oemChartData.data.length === 0 ? (
           <p className="text-xs text-slate-400 dark:text-slate-600 italic">No dealerships have an OEM recorded yet.</p>
         ) : (
-          <ResponsiveContainer width="100%" height={oemChartData.data.length * OEM_ROW_HEIGHT + 30}>
+          <ResponsiveContainer width="100%" height={oemChartData.data.length * OEM_ROW_HEIGHT + 60}>
             <BarChart
               data={oemChartData.data}
               layout="vertical"
@@ -847,7 +900,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
               />
               <YAxis
                 type="category"
-                dataKey="make"
+                dataKey="label"
                 width={100}
                 interval={0}
                 tick={{ fontSize: 11, fill: '#94a3b8' }}
@@ -855,25 +908,31 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
                 tickLine={false}
               />
               <Tooltip
-                formatter={(v: number) => [`${v.toLocaleString()} dealership${v === 1 ? '' : 's'}`, 'Dealerships']}
+                formatter={(v: number) => `${v.toLocaleString()} dealership${v === 1 ? '' : 's'}`}
                 contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '10px', fontSize: '12px' }}
                 labelStyle={{ color: '#e2e8f0', fontWeight: 600 }}
                 itemStyle={{ color: '#cbd5e1' }}
                 cursor={{ fill: 'rgba(148,163,184,0.05)' }}
               />
-              <Bar
-                dataKey="count"
-                name="Dealerships"
-                fill={OEM_BAR_COLOR}
-                radius={[0, 4, 4, 0]}
-                maxBarSize={OEM_ROW_HEIGHT - 2}
-                className="cursor-pointer"
-                onClick={(entry) => {
-                  const make = entry?.payload?.make;
-                  if (typeof make === 'string') onNavigateToDealerships?.({ oem: make, issue: '' });
-                }}
-                label={{ position: 'right', fontSize: 10, fill: '#94a3b8' }}
-              />
+              <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: '11px', color: '#94a3b8' }} />
+              {oemChartData.statuses.map((status, i) => (
+                <Bar
+                  key={status}
+                  dataKey={status}
+                  name={status}
+                  stackId="oem"
+                  fill={STATUS_BAR_COLORS[status]}
+                  radius={i === oemChartData.statuses.length - 1 ? [0, 4, 4, 0] : [0, 0, 0, 0]}
+                  maxBarSize={OEM_ROW_HEIGHT - 2}
+                  className="cursor-pointer"
+                  onClick={(entry) => {
+                    const label = entry?.payload?.label;
+                    if (typeof label === 'string') {
+                      onNavigateToDealerships?.({ oem: encodeOemFilter(oemChartMode, label), status, issue: '' });
+                    }
+                  }}
+                />
+              ))}
             </BarChart>
           </ResponsiveContainer>
         )}

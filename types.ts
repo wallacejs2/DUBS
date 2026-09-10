@@ -156,7 +156,10 @@ export interface Dealership {
   crm_provider: string;
   website_provider?: string;
   inventory_provider?: string;
-  /** Makes (OEMs) represented by the dealership, stored as an alphabetised list of Make names (see lib/oem.ts). */
+  /**
+   * Makes (OEMs) represented by the dealership, stored as an alphabetised list of Make names.
+   * The OEM Group (GM, CDJR, ...) is derived from each Make via lib/oem.ts and never stored.
+   */
   oems?: string[];
   products?: string[];
   contract_value: number;
@@ -328,7 +331,8 @@ export interface DealershipFilterState {
   status: string;
   group: string;
   issue: string;
-  // Make filter: the exact Make name to match, or '' for all (see lib/oem.ts)
+  // OEM filter, encoded as "group:<OEM Group>" (any Make in the group) or "make:<Make>"
+  // (exact Make), or '' for all (see encodeOemFilter in lib/oem.ts)
   oem: string;
   managed: string;
   addl_web: string;
