@@ -1,10 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import {
-  AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
+  AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LabelList
 } from 'recharts';
 import {
-  BarChart3, Building2, Calendar, Car, Clock, DollarSign,
-  Rocket, TrendingUp, UserPlus, X, ArrowRight
+  AlertTriangle, BarChart3, Building2, Calendar, Car, Clock, DollarSign, Layers,
+  Rocket, Tag, TrendingUp, UserPlus, X, ArrowRight
 } from 'lucide-react';
 import { useDealerships, useOrders, useProductPricing } from '../hooks';
 import { DealershipFilterState, DealershipStatus, FeeType, Order, ProductCode } from '../types';
@@ -533,6 +533,71 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
     return { data, statuses, missing };
   }, [dealerships, oemChartMode]);
 
+  // ─── Section 6 Totals: dealership-level OEM metrics ─────────────────────────
+  // Unlike the chart rows, every dealership is counted ONCE here regardless of how
+  // many Makes it has, so "With OEM" + "Missing OEM" always equals the dealership
+  // total. Status totals count dealerships with an OEM recorded, so they match the
+  // chart's population without double-counting multi-Make dealerships.
+  const oemTotals = useMemo(() => {
+    const groups = new Set<string>();
+    const makes = new Set<string>();
+    const statusCounts: Partial<Record<DealershipStatus, number>> = {};
+    let withOem = 0;
+    let missing = 0;
+    let multiMake = 0;
+    let multiGroup = 0;
+    let makeAssignments = 0;
+    for (const d of dealerships) {
+      if (hasNoOems(d.oems)) { missing += 1; continue; }
+      const dealerMakes = normalizeOems(d.oems);
+      const dealerGroups = groupOems(d.oems).map(g => g.group);
+      withOem += 1;
+      makeAssignments += dealerMakes.length;
+      if (dealerMakes.length > 1) multiMake += 1;
+      if (dealerGroups.length > 1) multiGroup += 1;
+      dealerMakes.forEach(m => makes.add(m));
+      dealerGroups.forEach(g => groups.add(g));
+      statusCounts[d.status] = (statusCounts[d.status] ?? 0) + 1;
+    }
+    const avgMakes = withOem > 0 ? makeAssignments / withOem : 0;
+    return {
+      withOem,
+      missing,
+      total: withOem + missing,
+      groupCount: groups.size,
+      makeCount: makes.size,
+      multiMake,
+      multiGroup,
+      makeAssignments,
+      avgMakes,
+      statusCounts,
+    };
+  }, [dealerships]);
+
+  // Total label at the end of each OEM bar. Every stacked segment gets a LabelList,
+  // but the value only resolves on the row's LAST non-empty segment, so the total
+  // sits at the bar's right edge even for rows missing the top-most status. The
+  // dataKey reads the row payload directly (not a list index) because Recharts
+  // drops empty segments from a Bar's label entries.
+  const oemBarTotalValue = (statusIndex: number) => (row: OemChartRow): number | undefined => {
+    const status = oemChartData.statuses[statusIndex];
+    if (!(row[status] ?? 0)) return undefined;
+    const hasLater = oemChartData.statuses.slice(statusIndex + 1).some(s => (row[s] ?? 0) > 0);
+    return hasLater ? undefined : row.total;
+  };
+  const renderOemBarTotal = (props: Record<string, unknown>) => {
+    const { value } = props;
+    if (typeof value !== 'number') return null;
+    const x = Number(props.x) + Number(props.width) + 6;
+    const y = Number(props.y) + Number(props.height) / 2;
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+    return (
+      <text x={x} y={y} dy={3.5} fontSize={10} fontWeight={600} fill="#94a3b8">
+        {value.toLocaleString()}
+      </text>
+    );
+  };
+
   // ─── Section 1 Toggle Helpers ──────────────────────────────────────────────
   const toggleS1Group = (statuses: readonly DealershipStatus[]) => {
     setS1ExcludedStatuses(prev => {
@@ -875,6 +940,79 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
           </div>
         }
       >
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
+          <KpiCard
+            icon={<Building2 size={15} className="text-blue-500" />}
+            label="With OEM"
+            value={oemTotals.withOem.toLocaleString()}
+            sub={
+              <span className="ml-1.5 text-xs font-semibold text-slate-400 dark:text-slate-500 align-middle">
+                of {oemTotals.total.toLocaleString()}
+              </span>
+            }
+            iconBg="bg-blue-50 dark:bg-blue-900/30"
+          />
+          <KpiCard
+            icon={<AlertTriangle size={15} className={oemTotals.missing > 0 ? 'text-amber-500' : 'text-slate-400'} />}
+            label="Missing OEM"
+            value={oemTotals.missing.toLocaleString()}
+            iconBg={oemTotals.missing > 0 ? 'bg-amber-50 dark:bg-amber-900/30' : 'bg-slate-100 dark:bg-slate-700'}
+            clickable={oemTotals.missing > 0}
+            onClick={oemTotals.missing > 0 ? () => onNavigateToDealerships?.({ issue: 'no_oem', oem: '' }) : undefined}
+          />
+          <KpiCard
+            icon={<Layers size={15} className="text-indigo-500" />}
+            label="OEM Groups"
+            value={oemTotals.groupCount.toLocaleString()}
+            sub={
+              <span className="ml-1.5 text-xs font-semibold text-slate-400 dark:text-slate-500 align-middle">
+                {oemTotals.multiGroup.toLocaleString()} multi-group
+              </span>
+            }
+            iconBg="bg-indigo-50 dark:bg-indigo-900/30"
+          />
+          <KpiCard
+            icon={<Tag size={15} className="text-violet-500" />}
+            label="Makes"
+            value={oemTotals.makeCount.toLocaleString()}
+            sub={
+              <span className="ml-1.5 text-xs font-semibold text-slate-400 dark:text-slate-500 align-middle">
+                {oemTotals.multiMake.toLocaleString()} multi-make
+              </span>
+            }
+            iconBg="bg-violet-50 dark:bg-violet-900/30"
+          />
+          <KpiCard
+            icon={<Car size={15} className="text-emerald-500" />}
+            label="Avg Makes"
+            value={oemTotals.withOem > 0 ? oemTotals.avgMakes.toFixed(1) : '—'}
+            sub={
+              oemTotals.withOem > 0 ? (
+                <span className="ml-1.5 text-xs font-semibold text-slate-400 dark:text-slate-500 align-middle">
+                  {oemTotals.makeAssignments.toLocaleString()} total
+                </span>
+              ) : undefined
+            }
+            iconBg="bg-emerald-50 dark:bg-emerald-900/30"
+          />
+        </div>
+
+        <div className="flex flex-wrap gap-2 mb-4">
+          {STATUS_TOGGLE_GROUPS.map(sg => {
+            const count = sg.statuses.reduce((sum, st) => sum + (oemTotals.statusCounts[st] ?? 0), 0);
+            return (
+              <div
+                key={sg.label}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border bg-white/80 dark:bg-[#2C2C2E] border-slate-200/60 dark:border-[#38383A] ${sg.color}`}
+                title={`${count.toLocaleString()} dealership${count === 1 ? '' : 's'} with an OEM recorded`}
+              >
+                <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: sg.dotColor }} />
+                {sg.label} ({count.toLocaleString()})
+              </div>
+            );
+          })}
+        </div>
+
         <p className="text-xs text-slate-400 dark:text-slate-500 mb-2">
           {oemChartMode === 'group'
             ? 'Number of dealerships representing each OEM Group, split by dealership status. A dealership with Makes in several groups is counted once under each group. Click a segment to view those dealerships.'
@@ -931,7 +1069,9 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToDealerships }
                       onNavigateToDealerships?.({ oem: encodeOemFilter(oemChartMode, label), status, issue: '' });
                     }
                   }}
-                />
+                >
+                  <LabelList dataKey={oemBarTotalValue(i)} content={renderOemBarTotal} />
+                </Bar>
               ))}
             </BarChart>
           </ResponsiveContainer>
